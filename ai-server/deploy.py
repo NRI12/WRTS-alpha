@@ -85,7 +85,8 @@ def health():
     return {"status": "ok", "service": ModalConfig.APP_NAME}
 
 @app.function(
-    image=image, 
+    image=image,
+    gpu="T4",
     allow_concurrent_inputs=ModalConfig.WEAPON_DETECT_CONCURRENT_INPUTS, 
     timeout=ModalConfig.WEAPON_DETECT_TIMEOUT, 
     container_idle_timeout=ModalConfig.WEAPON_DETECT_CONTAINER_IDLE_TIMEOUT
@@ -197,7 +198,8 @@ async def extract_template(request):
         return {"error": str(e)}, 500
 
 @app.function(
-    image=image, 
+    image=image,
+    gpu="T4",
     allow_concurrent_inputs=ModalConfig.POSE_CONCURRENT_INPUTS, 
     timeout=ModalConfig.POSE_TIMEOUT, 
     container_idle_timeout=ModalConfig.POSE_CONTAINER_IDLE_TIMEOUT
