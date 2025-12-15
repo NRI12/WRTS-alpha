@@ -42,9 +42,11 @@ class AIClientService:
             
             with open(video_file_path, 'rb') as f:
                 files = {'video': (video_filename, f, 'video/mp4')}
+                data = {}
                 response = requests.post(
                     endpoint,
                     files=files,
+                    data=data,
                     timeout=1200
                 )
             
@@ -82,9 +84,11 @@ class AIClientService:
             
             with open(video_file_path, 'rb') as f:
                 files = {'video': (video_filename, f, 'video/mp4')}
+                data = {}
                 response = requests.post(
                     endpoint,
                     files=files,
+                    data=data,
                     timeout=1800
                 )
             
@@ -115,9 +119,11 @@ class AIClientService:
                     'student_video': ('student.mp4', sv, 'video/mp4'),
                     'teacher_template': ('template.npy', tt, 'application/octet-stream')
                 }
+                data = {}
                 response = requests.post(
                     endpoint,
                     files=files,
+                    data=data,
                     timeout=1800
                 )
             
