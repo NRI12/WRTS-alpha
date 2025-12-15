@@ -152,12 +152,26 @@ async def pose_score_endpoint(
         with open(template_path, "wb") as f:
             f.write(await teacher_template.read())
 
-        # Load template
-        teacher_template_data = np.load(template_path)
-
         # Score
-        result = PoseScorer.score_student_video(student_path, teacher_template_data)
+        result = PoseScorer.score_video(student_path, template_path)
+
+        # Convert numpy types to Python native types
+        def convert_to_native(obj):
+            if isinstance(obj, np.integer):
+                return int(obj)
+            elif isinstance(obj, np.floating):
+                return float(obj)
+            elif isinstance(obj, np.ndarray):
+                return obj.tolist()
+            elif isinstance(obj, dict):
+                return {key: convert_to_native(value) for key, value in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_to_native(item) for item in obj]
+            return obj
+
+        result = convert_to_native(result)
         return result
+
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)
 
