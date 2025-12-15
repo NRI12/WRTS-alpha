@@ -240,7 +240,7 @@
                     <div class="assignment-action-compact">
                         <div class="d-flex gap-2 flex-wrap">
                             {% if item.assignment.instructor_video_url %}
-                            <a href="{{ item.assignment.instructor_video_url }}" target="_blank" 
+                            <a href="{{ get_video_url(item.assignment.instructor_video_url) }}" target="_blank" 
                                class="btn btn-sm btn-outline-success">
                                 <i class="fas fa-video"></i> Demo
                             </a>

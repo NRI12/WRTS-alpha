@@ -11,6 +11,7 @@ from app.services.evaluation_service import EvaluationService
 from app.services.analytics_service import AnalyticsService
 from app.services.report_service import ReportService
 from app.utils.decorators import login_required, role_required
+from app.utils.storage_service import StorageService
 from app.forms.class_forms import ClassCreateForm, ClassEditForm, EnrollStudentForm
 from app.forms.routine_forms import RoutineCreateForm, RoutineEditForm
 from app.forms.assignment_forms import AssignmentCreateForm
@@ -65,15 +66,11 @@ def class_detail(class_id: int):
 
     enrollments = ClassService.get_enrolled_students(class_id)
     
-    # Lấy thống kê lớp học
     class_overview = AnalyticsService.get_class_overview(class_id)
     
-    # Lấy điểm trung bình từng học viên (chỉ trong phạm vi assignment của lớp)
     student_scores = {}
     for enrollment in enrollments:
         student_scores[enrollment.student_id] = AnalyticsService.get_student_avg_for_class(enrollment.student_id, class_id)
-    
-    # Tiến độ 4 tuần gần nhất: trung bình theo tuần, tính trung bình mỗi học viên/tuần để không bị lệch
     from datetime import timedelta
     from app.models.training_video import TrainingVideo
     now = datetime.now()
@@ -85,7 +82,6 @@ def class_detail(class_id: int):
 
     student_ids = [e.student_id for e in enrollments]
     if student_ids:
-        # Chỉ lấy video thuộc assignment của lớp này
         from app.models.assignment import Assignment
         videos = (
             TrainingVideo.query
@@ -355,16 +351,14 @@ def remove_student(enrollment_id: int):
     return redirect(url_for('instructor.class_detail', class_id=class_id))
 
 
-# ============ ROUTINE MANAGEMENT ============
 
 @instructor_bp.route('/routines')
 @login_required
 @role_required('INSTRUCTOR')
 def routines():
-    # Read filters from query params
-    level_filter = request.args.get('level')  # beginner | intermediate | advanced | ''
+    level_filter = request.args.get('level')
     weapon_filter = request.args.get('weapon_id', type=int)
-    status_filter = request.args.get('status')  # published | draft | ''
+    status_filter = request.args.get('status')
 
     filters = {}
     if level_filter in ['beginner', 'intermediate', 'advanced']:
@@ -395,7 +389,6 @@ def create_routine():
     weapons = RoutineService.get_all_weapons()
     form.weapon_id.choices = [(0, '-- Chọn binh khí --')] + [(w.weapon_id, w.weapon_name_vi) for w in weapons]
     
-    # DEBUG REQUEST
     if request.method == 'POST':
         print("=" * 50)
         print("REQUEST FILES:")
@@ -410,23 +403,18 @@ def create_routine():
     if form.validate_on_submit():
         video_url = None
         
-        # ƯU TIÊN: Upload file nếu có
         if form.reference_video_file.data:
             video_file = form.reference_video_file.data
             filename = secure_filename(video_file.filename)
-            # Tạo tên ngẫu nhiên, giữ phần mở rộng
             ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else 'mp4'
-            filename = f"{uuid.uuid4().hex}.{ext}"
-            # Lưu file
-            upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'routines')
-            os.makedirs(upload_path, exist_ok=True)
+            unique_filename = f"{uuid.uuid4().hex}.{ext}"
             
-            filepath = os.path.join(upload_path, filename)
-            video_file.save(filepath)
+            try:
+                video_url = StorageService.upload_file(video_file, folder='routines', filename=unique_filename)
+            except Exception as e:
+                flash(f'Lỗi khi upload video: {str(e)}', 'error')
+                return render_template('instructor/routine_create.html', form=form)
             
-            video_url = f"/static/uploads/routines/{filename}"
-            
-        # PHƯƠNG ÁN 2: Dùng URL nếu không upload file
         elif form.reference_video_url.data:
             video_url = form.reference_video_url.data
         
@@ -477,24 +465,20 @@ def edit_routine(routine_id: int):
     form.weapon_id.choices = [(w.weapon_id, w.weapon_name_vi) for w in weapons]
     
     if form.validate_on_submit():
-        video_url = routine.reference_video_url  # Giữ URL cũ nếu không có thay đổi
+        video_url = routine.reference_video_url
         
-        # ƯU TIÊN: Upload file nếu có
         if form.reference_video_file.data:
             video_file = form.reference_video_file.data
             filename = secure_filename(video_file.filename)
             ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else 'mp4'
-            filename = f"{uuid.uuid4().hex}.{ext}"
-            # Lưu file
-            upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'routines')
-            os.makedirs(upload_path, exist_ok=True)
+            unique_filename = f"{uuid.uuid4().hex}.{ext}"
             
-            filepath = os.path.join(upload_path, filename)
-            video_file.save(filepath)
+            try:
+                video_url = StorageService.upload_file(video_file, folder='routines', filename=unique_filename)
+            except Exception as e:
+                flash(f'Lỗi khi upload video: {str(e)}', 'error')
+                return render_template('instructor/routine_edit.html', form=form, routine=routine)
             
-            video_url = f"/static/uploads/routines/{filename}"
-            
-        # PHƯƠNG ÁN 2: Dùng URL nếu không upload file
         elif form.reference_video_url.data:
             video_url = form.reference_video_url.data
         
@@ -551,18 +535,13 @@ def delete_routine(routine_id: int):
         return redirect(url_for('instructor.routine_detail', routine_id=routine_id))
 
 
-    # Criteria features removed
-
-
-# ============ ASSIGNMENT MANAGEMENT ============
 
 @instructor_bp.route('/assignments')
 @login_required
 @role_required('INSTRUCTOR')
 def assignments():
-    # Read filters
-    assignment_type = request.args.get('assignment_type')  # individual | class | ''
-    priority = request.args.get('priority')  # low | normal | high | urgent | ''
+    assignment_type = request.args.get('assignment_type')
+    priority = request.args.get('priority')
 
     filters = {}
     if assignment_type in ['individual', 'class']:
@@ -572,11 +551,10 @@ def assignments():
 
     assignments = AssignmentService.get_assignments_by_instructor(session['user_id'], filters)
 
-    # Tính toán thống kê trạng thái nộp/chấm điểm
     assignment_stats = {}
-    total_pending = 0      # Chờ nộp
-    total_submitted = 0    # Đã nộp, chờ chấm
-    total_graded = 0       # Đã chấm
+    total_pending = 0
+    total_submitted = 0
+    total_graded = 0
 
     for assignment in assignments:
         status_list = AssignmentService.get_submission_status(assignment.assignment_id)
@@ -633,23 +611,15 @@ def create_assignment():
     form.assigned_to_student.choices = [(0, '-- Chọn học viên --')] + [(s.user_id, s.full_name) for s in students]
     form.assigned_to_class.choices = [(0, '-- Chọn lớp --')] + [(c.class_id, c.class_name) for c in instructor_classes]
     if form.validate_on_submit():
-        # XỬ LÝ VIDEO - BẮT BUỘC
         instructor_video_url = None
         
-        # Ưu tiên 1: Upload file
         if form.instructor_video_file.data:
-            from werkzeug.utils import secure_filename
-            import os
-            from datetime import datetime
-            from flask import current_app
-            
             try:
                 video_file = form.instructor_video_file.data
                 filename = secure_filename(video_file.filename)
                 
-                # Kiểm tra kích thước file từ config
                 file_size = len(video_file.read())
-                video_file.seek(0)  # Reset file pointer
+                video_file.seek(0)
                 
                 max_size = current_app.config.get('MAX_VIDEO_SIZE', 100 * 1024 * 1024)
                 if file_size > max_size:
@@ -658,30 +628,21 @@ def create_assignment():
                     return render_template('instructor/assignment_create.html', form=form)
                 
                 ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else 'mp4'
-                filename = f"{uuid.uuid4().hex}.{ext}"
+                unique_filename = f"{uuid.uuid4().hex}.{ext}"
                 
-                upload_path = os.path.join(current_app.config.get('UPLOAD_FOLDER', 'static/uploads'), 'assignments')
-                os.makedirs(upload_path, exist_ok=True)
-                
-                filepath = os.path.join(upload_path, filename)
-                video_file.save(filepath)
-                
-                instructor_video_url = f"/static/uploads/assignments/{filename}"
+                instructor_video_url = StorageService.upload_file(video_file, folder='assignments', filename=unique_filename)
                 
             except Exception as e:
                 flash(f'Lỗi khi upload video: {str(e)}', 'error')
                 return render_template('instructor/assignment_create.html', form=form)
             
-        # Ưu tiên 2: Dùng URL
         elif form.instructor_video_url.data:
             instructor_video_url = form.instructor_video_url.data
         
-        # KIỂM TRA BẮT BUỘC
         if not instructor_video_url:
             flash('Vui lòng upload video demo hoặc nhập link video!', 'error')
             return render_template('instructor/assignment_create.html', form=form)
         
-        # Tạo assignment
         data = {
             'routine_id': form.routine_id.data,
             'assignment_type': form.assignment_type.data,
@@ -691,7 +652,7 @@ def create_assignment():
             'instructions': form.instructions.data,
             'priority': form.priority.data,
             'is_mandatory': form.is_mandatory.data,
-            'instructor_video_url': instructor_video_url,  # BẮT BUỘC
+            'instructor_video_url': instructor_video_url,
             'grading_method': form.grading_method.data
         }
         
@@ -725,7 +686,6 @@ def delete_assignment(assignment_id: int):
     return redirect(url_for('instructor.assignments'))
 
 
-# ============ EXAM MANAGEMENT ============
 
 @instructor_bp.route('/exams')
 @login_required
@@ -741,7 +701,6 @@ def exams():
 def create_exam():
     form = ExamCreateForm()
     
-    # Load choices
     routines = RoutineService.get_routines_by_instructor(session['user_id'], {'is_published': True})
     form.routine_id.choices = [(0, '-- Chọn bài võ --')] + [(r.routine_id, r.routine_name) for r in routines]
     
@@ -749,7 +708,6 @@ def create_exam():
     form.class_id.choices = [(0, '-- Không chọn (tất cả) --')] + [(c.class_id, c.class_name) for c in classes]
     
     if form.validate_on_submit():
-        # Chuẩn bị data
         data = {
             'exam_code': form.exam_code.data,
             'exam_name': form.exam_name.data,
@@ -760,14 +718,12 @@ def create_exam():
             'start_time': form.start_time.data,
             'end_time': form.end_time.data,
             'pass_score': form.pass_score.data,
-            'video_source': form.video_source.data,  # THÊM
+            'video_source': form.video_source.data,
         }
         
-        # Lấy video file nếu có
-        video_file = form.reference_video.data if form.video_source.data == 'upload' else None  # THÊM
+        video_file = form.reference_video.data if form.video_source.data == 'upload' else None
         
-        # Tạo exam với video file
-        result = ExamService.create_exam(data, session['user_id'], video_file)  # SỬA: thêm video_file
+        result = ExamService.create_exam(data, session['user_id'], video_file)
         
         if result['success']:
             flash('Tạo bài kiểm tra thành công! (Trạng thái: Nháp)', 'success')
@@ -812,45 +768,35 @@ def delete_exam(exam_id: int):
         return redirect(url_for('instructor.exam_detail', exam_id=exam_id))
 
 
-# ============ EVALUATION MANAGEMENT ============
 
 @instructor_bp.route('/evaluations/pending')
 @login_required
 @role_required('INSTRUCTOR')
 def pending_evaluations():
-    """Danh sách video chờ chấm điểm"""
     from flask import request
     from datetime import datetime, timedelta
     
-    # Get filter parameter
     show_all = request.args.get('show_all', 'false').lower() == 'true'
     
     if show_all:
-        # Show all videos (both pending and completed)
         videos = EvaluationService.get_all_submissions(session['user_id'])
     else:
-        # Show only pending videos
         videos = EvaluationService.get_pending_submissions(session['user_id'])
     
-    # Calculate statistics
     all_videos = EvaluationService.get_all_submissions(session['user_id'])
     
-    # Count pending videos
     pending_count = len([v for v in all_videos if not v.manual_evaluations])
     
-    # Count evaluated today
     today = datetime.now().date()
     evaluated_today = len([v for v in all_videos 
                           if v.manual_evaluations and 
                           v.manual_evaluations[0].evaluated_at.date() == today])
     
-    # Count evaluated this week
     week_start = today - timedelta(days=today.weekday())
     evaluated_this_week = len([v for v in all_videos 
                               if v.manual_evaluations and 
                               v.manual_evaluations[0].evaluated_at.date() >= week_start])
     
-    # Calculate average score
     evaluated_videos = [v for v in all_videos if v.manual_evaluations]
     if evaluated_videos:
         avg_score = sum(v.manual_evaluations[0].overall_score for v in evaluated_videos) / len(evaluated_videos)
@@ -874,7 +820,6 @@ def pending_evaluations():
 @login_required
 @role_required('INSTRUCTOR')
 def evaluate_video(video_id):
-    """Chấm điểm video thủ công"""
     from app.services.video_service import VideoService
     
     video_data = VideoService.get_video_with_analysis(video_id)
@@ -884,21 +829,17 @@ def evaluate_video(video_id):
     
     video = video_data['video']
     
-    # CHỈ LẤY VIDEO TỪ ASSIGNMENT - BẮT BUỘC
     if not video.assignment_id or not video.assignment:
         flash('Video này không thuộc assignment nào!', 'error')
         return redirect(url_for('instructor.pending_evaluations'))
     
     assignment = video.assignment
     
-    # Kiểm tra quyền dựa trên loại assignment
     has_permission = False
     
     if assignment.assignment_type == 'individual':
-        # Assignment cá nhân: Kiểm tra xem instructor có phải là người giao assignment không
         has_permission = assignment.assigned_by == session['user_id']
     elif assignment.assignment_type == 'class':
-        # Assignment lớp học: Kiểm tra xem instructor có phải là instructor của lớp không
         if assignment.assigned_to_class and assignment.class_obj:
             has_permission = assignment.class_obj.instructor_id == session['user_id']
     
@@ -913,10 +854,8 @@ def evaluate_video(video_id):
     reference_video_url = video.assignment.instructor_video_url
     video_source = f"Video demo Assignment #{video.assignment.assignment_id}"
     
-    # Lấy đánh giá hiện có (nếu giảng viên đã chấm trước đó)
     existing_eval = EvaluationService.get_evaluation_for_instructor(video.video_id, session['user_id'])
     
-    # Nếu đã có đánh giá thì prefill form
     if request.method == 'GET' and existing_eval:
         form = ManualEvaluationForm(
             overall_score=existing_eval.overall_score,
@@ -944,7 +883,6 @@ def evaluate_video(video_id):
             'evaluation_method': 'manual'
         }
         
-        # Nếu đã có đánh giá thì cập nhật, ngược lại tạo mới
         if existing_eval:
             result = EvaluationService.update_evaluation(existing_eval, data)
             success_message = 'Cập nhật đánh giá thành công! Đã gửi thông báo cho học viên.'
@@ -969,19 +907,15 @@ def evaluate_video(video_id):
                          video_source=video_source)
 
 
-# ============ ANALYTICS ============
 
 @instructor_bp.route('/analytics')
 @login_required
 @role_required('INSTRUCTOR')
 def analytics():
-    """Dashboard phân tích giảng viên"""
     instructor_id = session['user_id']
     
-    # Lấy các lớp của giảng viên
     classes = ClassService.get_approved_classes_by_instructor(instructor_id)
     
-    # Thống kê bài võ
     routine_stats = AnalyticsService.get_routine_usage_stats(instructor_id)
     
     return render_template('instructor/analytics.html',
@@ -992,7 +926,6 @@ def analytics():
 @login_required
 @role_required('INSTRUCTOR')
 def class_analytics(class_id):
-    """Phân tích chi tiết lớp học"""
     class_obj = ClassService.get_class_by_id(class_id)
     
     if not class_obj or class_obj.instructor_id != session['user_id']:
@@ -1011,7 +944,6 @@ def class_analytics(class_id):
 @login_required
 @role_required('INSTRUCTOR')
 def export_class_report(class_id):
-    """Export báo cáo lớp học (JSON)"""
     from flask import jsonify
     
     class_obj = ClassService.get_class_by_id(class_id)
@@ -1022,5 +954,4 @@ def export_class_report(class_id):
     
     report = ReportService.generate_class_report(class_id)
     
-    # Trả về JSON (có thể mở rộng export PDF/Excel)
     return jsonify(report)

@@ -282,7 +282,7 @@
             {% if video_url %}
                 <div class="video-container">
                     <video controls>
-                        <source src="{{ video_url }}" type="video/mp4">
+                        <source src="{{ get_video_url(video_url) }}" type="video/mp4">
                         Trình duyệt không hỗ trợ video.
                     </video>
                 </div>

@@ -106,7 +106,7 @@
                 {% if routine.reference_video_url %}
                 <div class="video-container">
                     <video controls class="w-100">
-                        <source src="{{ routine.reference_video_url }}" type="video/mp4">
+                        <source src="{{ get_video_url(routine.reference_video_url) }}" type="video/mp4">
                         Trình duyệt không hỗ trợ video
                     </video>
                 </div>

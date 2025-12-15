@@ -173,9 +173,9 @@
                         <label class="text-muted small mb-1 d-block">Video Demo</label>
                         <div class="video-demo-container">
                             <video controls class="w-100 assignment-video-preview">
-                                <source src="{{ assignment.instructor_video_url }}" type="video/mp4">
-                                <source src="{{ assignment.instructor_video_url }}" type="video/webm">
-                                <source src="{{ assignment.instructor_video_url }}" type="video/ogg">
+                                <source src="{{ get_video_url(assignment.instructor_video_url) }}" type="video/mp4">
+                                <source src="{{ get_video_url(assignment.instructor_video_url) }}" type="video/webm">
+                                <source src="{{ get_video_url(assignment.instructor_video_url) }}" type="video/ogg">
                                 Trình duyệt của bạn không hỗ trợ video HTML5.
                             </video>
                         </div>

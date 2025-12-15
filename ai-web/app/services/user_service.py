@@ -67,6 +67,10 @@ class UserService:
         user.role_id = data['role_id']
         user.is_active = data.get('is_active', True)
         
+        # Cập nhật mật khẩu nếu có
+        if data.get('new_password'):
+            user.set_password(data['new_password'])
+        
         db.session.commit()
         return {'success': True, 'user': user}
     

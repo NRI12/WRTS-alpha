@@ -67,7 +67,7 @@
                                 </div>
                                 {% if exam.routine.reference_video_url %}
                                 <div class="mt-2">
-                                    <a href="{{ exam.routine.reference_video_url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <a href="{{ get_video_url(exam.routine.reference_video_url) }}" target="_blank" class="btn btn-sm btn-outline-primary">
                                         <i class="fas fa-play me-1"></i>Xem video
                                     </a>
                                 </div>
@@ -79,7 +79,7 @@
                                 </div>
                                 {% if exam.reference_video_path %}
                                 <div class="mt-2">
-                                    <a href="{{ exam.get_video_url() }}" target="_blank" class="btn btn-sm btn-outline-success">
+                                    <a href="{{ get_video_url(exam.get_video_url()) }}" target="_blank" class="btn btn-sm btn-outline-success">
                                         <i class="fas fa-play me-1"></i>Xem video
                                     </a>
                                     {% if exam.video_duration %}
@@ -155,7 +155,7 @@
                 {% if exam.video_upload_method == 'routine' and exam.routine and exam.routine.reference_video_url %}
                     <div class="ratio ratio-16x9">
                         <video controls class="rounded">
-                            <source src="{{ exam.routine.reference_video_url }}" type="video/mp4">
+                            <source src="{{ get_video_url(exam.routine.reference_video_url) }}" type="video/mp4">
                             Trình duyệt không hỗ trợ video.
                         </video>
                     </div>
@@ -167,7 +167,7 @@
                 {% elif exam.video_upload_method == 'upload' and exam.reference_video_path %}
                     <div class="ratio ratio-16x9">
                         <video controls class="rounded">
-                            <source src="{{ exam.get_video_url() }}" type="video/mp4">
+                            <source src="{{ get_video_url(exam.get_video_url()) }}" type="video/mp4">
                             Trình duyệt không hỗ trợ video.
                         </video>
                     </div>

@@ -1,6 +1,7 @@
 from app.models.training_video import TrainingVideo
 from app import db
 from app.utils.helpers import get_vietnam_time
+from app.utils.storage_service import StorageService
 from datetime import datetime
 import uuid
 from werkzeug.utils import secure_filename
@@ -9,12 +10,12 @@ import random
 import time
 import cv2
 import json
+import tempfile
 
 class VideoService:
     
     @staticmethod
     def get_student_videos(student_id, routine_id=None, status=None):
-        """Lấy danh sách video của học viên"""
         query = TrainingVideo.query.filter_by(student_id=student_id)
         
         if routine_id:
@@ -27,32 +28,26 @@ class VideoService:
     
     @staticmethod
     def save_video(file, student_id, routine_id, assignment_id=None, notes=None):
-        """Lưu video và metadata"""
+        temp_filepath = None
         try:
-            # Tạo tên file ngẫu nhiên, giữ nguyên phần mở rộng
             filename = secure_filename(file.filename)
             ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else 'mp4'
             unique_filename = f"{uuid.uuid4().hex}.{ext}"
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             
-            # Tạo đường dẫn lưu trữ
-            upload_folder = os.path.join('static', 'uploads', 'videos')
-            os.makedirs(upload_folder, exist_ok=True)
+            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=f'.{ext}')
+            temp_filepath = temp_file.name
+            temp_file.close()
             
-            filepath = os.path.join(upload_folder, unique_filename)
             try:
-                file.save(filepath)
+                file.save(temp_filepath)
             except Exception as e:
-                # Avoid non-ASCII in error message to prevent codec issues on some consoles
                 raise Exception(f"Save file error: {repr(e)}")
             
-            # Trích xuất metadata từ video (fallback to simple method if cv2 fails)
             try:
-                metadata = VideoService.extract_video_metadata(filepath)
-                thumbnail_path = VideoService.generate_thumbnail(filepath)
+                metadata = VideoService.extract_video_metadata(temp_filepath)
+                thumbnail_path = VideoService.generate_thumbnail(temp_filepath)
             except:
-                # Fallback to simple metadata extraction
-                file_size_bytes = os.path.getsize(filepath)
+                file_size_bytes = os.path.getsize(temp_filepath)
                 file_size_mb = round(file_size_bytes / (1024 * 1024), 2)
                 metadata = {
                     'duration_seconds': random.randint(30, 180),
@@ -62,13 +57,27 @@ class VideoService:
                 }
                 thumbnail_path = None
             
-            # Lưu vào database
+            try:
+                file.seek(0)
+                video_url = StorageService.upload_file(file, folder='videos', filename=unique_filename)
+            except Exception as e:
+                raise Exception(f"Error uploading video to storage: {str(e)}")
+            
+            thumbnail_url = None
+            if thumbnail_path:
+                try:
+                    thumbnail_url = StorageService.upload_file_from_path(thumbnail_path, folder='thumbnails')
+                    if os.path.exists(thumbnail_path):
+                        os.remove(thumbnail_path)
+                except Exception as e:
+                    print(f"Warning: Could not upload thumbnail: {str(e)}")
+            
             video = TrainingVideo(
                 student_id=student_id,
                 routine_id=routine_id,
                 assignment_id=assignment_id,
-                video_url=filepath,
-                thumbnail_url=thumbnail_path,
+                video_url=video_url,
+                thumbnail_url=thumbnail_url,
                 file_size_mb=metadata['file_size_mb'],
                 duration_seconds=metadata['duration_seconds'],
                 resolution=metadata['resolution'],
@@ -80,21 +89,23 @@ class VideoService:
             db.session.add(video)
             db.session.commit()
             
-            # Goals feature removed: no-op
-            
             return video
             
         except Exception as e:
             db.session.rollback()
             raise Exception(f"Lỗi khi lưu video: {str(e)}")
+        finally:
+            if temp_filepath and os.path.exists(temp_filepath):
+                try:
+                    os.remove(temp_filepath)
+                except:
+                    pass
     
     @staticmethod
     def extract_video_metadata(filepath):
-        """Trích xuất metadata từ video"""
         try:
             cap = cv2.VideoCapture(filepath)
             
-            # Lấy thông tin video
             fps = cap.get(cv2.CAP_PROP_FPS)
             frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             duration = int(frame_count / fps) if fps > 0 else 0
@@ -103,7 +114,6 @@ class VideoService:
             
             cap.release()
             
-            # Lấy kích thước file
             file_size_bytes = os.path.getsize(filepath)
             file_size_mb = round(file_size_bytes / (1024 * 1024), 2)
             
@@ -114,10 +124,9 @@ class VideoService:
                 'fps': fps
             }
         except:
-            # Fallback nếu không đọc được video
             file_size_mb = round(os.path.getsize(filepath) / (1024 * 1024), 2)
             return {
-                'duration_seconds': 60,  # Default
+                'duration_seconds': 60,
                 'file_size_mb': file_size_mb,
                 'resolution': '1920x1080',
                 'fps': 30
@@ -125,23 +134,16 @@ class VideoService:
     
     @staticmethod
     def generate_thumbnail(video_path):
-        """Tạo thumbnail từ video"""
         try:
             cap = cv2.VideoCapture(video_path)
             
-            # Lấy frame đầu tiên
             ret, frame = cap.read()
             cap.release()
             
             if ret:
-                # Tạo đường dẫn thumbnail
-                thumb_folder = os.path.join('static', 'uploads', 'thumbnails')
-                os.makedirs(thumb_folder, exist_ok=True)
-                # Tạo tên thumbnail ngẫu nhiên
                 thumb_filename = f"{uuid.uuid4().hex}.jpg"
-                thumb_path = os.path.join(thumb_folder, thumb_filename)
+                thumb_path = os.path.join(tempfile.gettempdir(), thumb_filename)
                 
-                # Lưu thumbnail
                 try:
                     cv2.imwrite(thumb_path, frame)
                 except Exception as _e:
@@ -154,12 +156,10 @@ class VideoService:
     
     @staticmethod
     def get_video_by_id(video_id):
-        """Lấy video theo ID"""
         return TrainingVideo.query.get(video_id)
     
     @staticmethod
     def get_video_with_analysis(video_id):
-        """Lấy video kèm kết quả đánh giá"""
         video = TrainingVideo.query.get(video_id)
         if video:
             return {

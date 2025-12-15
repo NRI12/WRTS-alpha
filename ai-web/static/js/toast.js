@@ -49,10 +49,9 @@ class ToastManager {
         const template = this.toastTemplate ? this.toastTemplate.content.cloneNode(true) : this.createFallbackTemplate();
         const toast = template.querySelector('.toast');
         
-        // Set type-specific classes and icon
+        // Set type-specific classes
         const config = this.getTypeConfig(type);
         toast.classList.add(config.bgClass);
-        toast.querySelector('.toast-icon').className = `toast-icon ${config.icon}`;
         toast.querySelector('.toast-message').textContent = message;
 
         return toast;
@@ -67,10 +66,7 @@ class ToastManager {
             <div class="toast align-items-center text-white border-0" role="alert">
                 <div class="d-flex">
                     <div class="toast-body">
-                        <div class="d-flex align-items-center gap-2">
-                            <i class="toast-icon"></i>
-                            <span class="toast-message"></span>
-                        </div>
+                        <span class="toast-message"></span>
                     </div>
                     <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
                 </div>
@@ -85,20 +81,16 @@ class ToastManager {
     getTypeConfig(type) {
         const configs = {
             success: {
-                bgClass: 'bg-success',
-                icon: 'fas fa-check-circle'
+                bgClass: 'bg-success'
             },
             error: {
-                bgClass: 'bg-danger',
-                icon: 'fas fa-exclamation-circle'
+                bgClass: 'bg-danger'
             },
             warning: {
-                bgClass: 'bg-warning',
-                icon: 'fas fa-exclamation-triangle'
+                bgClass: 'bg-warning'
             },
             info: {
-                bgClass: 'bg-info',
-                icon: 'fas fa-info-circle'
+                bgClass: 'bg-info'
             }
         };
 

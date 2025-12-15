@@ -1,44 +1,95 @@
+import os
 import modal
 from modal import Image, App, web_endpoint
+
+# Load environment variables từ .env file (nếu có python-dotenv)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    print("Warning: python-dotenv not installed. Install it with: pip install python-dotenv")
+    print("Continuing without .env file support...")
+
+from config import ModalConfig
 
 def download_model():
     import gdown
     import os
-    models_dir = "/root/models"
-    os.makedirs(f"{models_dir}/weapon_detection", exist_ok=True)
-    model_path = f"{models_dir}/weapon_detection/best.pt"
+    import sys
+    
+    # Đảm bảo /root trong Python path để import config
+    if "/root" not in sys.path:
+        sys.path.insert(0, "/root")
+    
+    from config import ModalConfig
+    
+    models_dir = ModalConfig.MODELS_DIR
+    weapon_model_dir = ModalConfig.WEAPON_MODEL_DIR
+    weapon_model_file = ModalConfig.WEAPON_MODEL_FILE
+    file_id = ModalConfig.GOOGLE_DRIVE_FILE_ID
+    
+    os.makedirs(f"{models_dir}/{weapon_model_dir}", exist_ok=True)
+    model_path = f"{models_dir}/{weapon_model_dir}/{weapon_model_file}"
+    
     if not os.path.exists(model_path):
-        file_id = "11twpIDRYgAelMkat3DwXOUI3k1BBgYl8"
+        if not file_id:
+            raise ValueError("GOOGLE_DRIVE_FILE_ID không được để trống trong .env file")
         url = f"https://drive.google.com/uc?id={file_id}"
         gdown.download(url, model_path, quiet=False)
     return model_path
 
+# Build image với cấu hình từ config
+# Đọc tất cả environment variables từ .env và set vào image
+env_vars = {
+    "YOLO_MODELS_DIR": ModalConfig.YOLO_MODELS_DIR,
+    "PYTHONPATH": "/root",
+    "MODAL_APP_NAME": ModalConfig.APP_NAME,
+    "PYTHON_VERSION": ModalConfig.PYTHON_VERSION,
+    "MODELS_DIR": ModalConfig.MODELS_DIR,
+    "WEAPON_MODEL_DIR": ModalConfig.WEAPON_MODEL_DIR,
+    "WEAPON_MODEL_FILE": ModalConfig.WEAPON_MODEL_FILE,
+    "GOOGLE_DRIVE_FILE_ID": ModalConfig.GOOGLE_DRIVE_FILE_ID,
+    "LOCAL_APP_DIR": ModalConfig.LOCAL_APP_DIR,
+    "REMOTE_APP_PATH": ModalConfig.REMOTE_APP_PATH,
+    "HEALTH_CONCURRENT_INPUTS": str(ModalConfig.HEALTH_CONCURRENT_INPUTS),
+    "HEALTH_TIMEOUT": str(ModalConfig.HEALTH_TIMEOUT),
+    "HEALTH_CONTAINER_IDLE_TIMEOUT": str(ModalConfig.HEALTH_CONTAINER_IDLE_TIMEOUT),
+    "WEAPON_DETECT_CONCURRENT_INPUTS": str(ModalConfig.WEAPON_DETECT_CONCURRENT_INPUTS),
+    "WEAPON_DETECT_TIMEOUT": str(ModalConfig.WEAPON_DETECT_TIMEOUT),
+    "WEAPON_DETECT_CONTAINER_IDLE_TIMEOUT": str(ModalConfig.WEAPON_DETECT_CONTAINER_IDLE_TIMEOUT),
+    "POSE_CONCURRENT_INPUTS": str(ModalConfig.POSE_CONCURRENT_INPUTS),
+    "POSE_TIMEOUT": str(ModalConfig.POSE_TIMEOUT),
+    "POSE_CONTAINER_IDLE_TIMEOUT": str(ModalConfig.POSE_CONTAINER_IDLE_TIMEOUT),
+}
+
 image = (
-    Image.debian_slim(python_version="3.11")
-    .apt_install("ffmpeg", "libsm6", "libxext6")
-    .pip_install(
-        "opencv-python>=4.12.0",
-        "ultralytics>=8.0.0",
-        "scipy>=1.9.0",
-        "fastdtw>=0.3.4",
-        "Pillow>=9.0.0",
-        "numpy>=2.0.0",
-        "gdown>=4.7.0"
-    )
+    Image.debian_slim(python_version=ModalConfig.PYTHON_VERSION)
+    .apt_install(*ModalConfig.SYSTEM_PACKAGES)
+    .pip_install(*ModalConfig.PYTHON_PACKAGES)
+    .add_local_file("config.py", remote_path="/root/config.py", copy=True)
+    .env(env_vars)
     .run_function(download_model)
-    .env({"YOLO_MODELS_DIR": "/root/models"})
+    .add_local_dir(ModalConfig.LOCAL_APP_DIR, remote_path=ModalConfig.REMOTE_APP_PATH)
 )
 
-mount = modal.Mount.from_local_dir("app", remote_path="/root/app")
+app = App(ModalConfig.APP_NAME)
 
-app = App("ai-server")
-
-@app.function(image=image, mounts=[mount], allow_concurrent_inputs=100, timeout=600, container_idle_timeout=300)
+@app.function(
+    image=image, 
+    allow_concurrent_inputs=ModalConfig.HEALTH_CONCURRENT_INPUTS, 
+    timeout=ModalConfig.HEALTH_TIMEOUT, 
+    container_idle_timeout=ModalConfig.HEALTH_CONTAINER_IDLE_TIMEOUT
+)
 @web_endpoint(method="GET", label="health")
 def health():
-    return {"status": "ok", "service": "ai-server"}
+    return {"status": "ok", "service": ModalConfig.APP_NAME}
 
-@app.function(image=image, mounts=[mount], allow_concurrent_inputs=50, timeout=300, container_idle_timeout=300)
+@app.function(
+    image=image, 
+    allow_concurrent_inputs=ModalConfig.WEAPON_DETECT_CONCURRENT_INPUTS, 
+    timeout=ModalConfig.WEAPON_DETECT_TIMEOUT, 
+    container_idle_timeout=ModalConfig.WEAPON_DETECT_CONTAINER_IDLE_TIMEOUT
+)
 @web_endpoint(method="POST", label="weapon-detect")
 async def detect_weapon(request):
     from app.services.weapon_detection.weapon_detector import WeaponDetector
@@ -79,7 +130,12 @@ async def detect_weapon(request):
     except Exception as e:
         return {"error": str(e)}, 500
 
-@app.function(image=image, mounts=[mount], allow_concurrent_inputs=20, timeout=600, container_idle_timeout=300)
+@app.function(
+    image=image, 
+    allow_concurrent_inputs=ModalConfig.POSE_CONCURRENT_INPUTS, 
+    timeout=ModalConfig.POSE_TIMEOUT, 
+    container_idle_timeout=ModalConfig.POSE_CONTAINER_IDLE_TIMEOUT
+)
 @web_endpoint(method="POST", label="pose-extract-template")
 async def extract_template(request):
     from app.services.pose_scoring.pose_scorer import PoseScorer
@@ -140,7 +196,12 @@ async def extract_template(request):
     except Exception as e:
         return {"error": str(e)}, 500
 
-@app.function(image=image, mounts=[mount], allow_concurrent_inputs=20, timeout=600, container_idle_timeout=300)
+@app.function(
+    image=image, 
+    allow_concurrent_inputs=ModalConfig.POSE_CONCURRENT_INPUTS, 
+    timeout=ModalConfig.POSE_TIMEOUT, 
+    container_idle_timeout=ModalConfig.POSE_CONTAINER_IDLE_TIMEOUT
+)
 @web_endpoint(method="POST", label="pose-score")
 async def score_pose(request):
     from app.services.pose_scoring.pose_scorer import PoseScorer

@@ -4,7 +4,10 @@ from flask_wtf.csrf import CSRFProtect
 from app.models import db
 from app.config import Config
 from datetime import datetime
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
 
 migrate = Migrate()
 csrf = CSRFProtect()
@@ -12,7 +15,6 @@ csrf = CSRFProtect()
 
 def create_app(config_class=None):
     app = Flask(__name__, template_folder='../templates', static_folder='../static')
-    # Use provided config or default Config
     if config_class:
         app.config.from_object(config_class)
     else:
@@ -35,8 +37,9 @@ def create_app(config_class=None):
         }
     
     # Jinja filters
-    from app.utils.helpers import nl2br
+    from app.utils.helpers import nl2br, get_video_url
     app.jinja_env.filters['nl2br'] = nl2br
+    app.jinja_env.globals['get_video_url'] = get_video_url
     
     # Error handlers
     @app.errorhandler(413)

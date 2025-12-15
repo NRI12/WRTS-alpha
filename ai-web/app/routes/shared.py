@@ -1,8 +1,10 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, session
+from flask import Blueprint, render_template, redirect, url_for, flash, session, request, Response, stream_with_context
 from app.utils.decorators import login_required
+from app.utils.storage_service import StorageService
 from app.forms.feedback_forms import FeedbackSubmitForm
 from app.services.feedback_service import FeedbackService
 from app.services.analytics_service import AnalyticsService
+import requests
 
 shared_bp = Blueprint('shared', __name__)
 
@@ -73,3 +75,29 @@ def my_feedback():
     """Xem feedback của mình"""
     feedbacks = FeedbackService.get_user_feedback(session['user_id'])
     return render_template('shared/my_feedback.html', feedbacks=feedbacks)
+
+@shared_bp.route('/storage/<path:file_path>')
+def serve_storage_file(file_path):
+    """Proxy route để serve file từ Railway storage"""
+    try:
+        s3_client, bucket_name = StorageService._get_s3_client()
+        file_url = f"https://storage.railway.app/{bucket_name}/{file_path}"
+        
+        presigned_url = StorageService.get_presigned_url(file_url, expiration=3600)
+        
+        response = requests.get(presigned_url, stream=True, timeout=30)
+        response.raise_for_status()
+        
+        headers = {
+            'Content-Type': response.headers.get('Content-Type', 'application/octet-stream'),
+            'Content-Length': response.headers.get('Content-Length'),
+            'Cache-Control': 'public, max-age=3600'
+        }
+        
+        return Response(
+            stream_with_context(response.iter_content(chunk_size=8192)),
+            headers=headers,
+            status=response.status_code
+        )
+    except Exception as e:
+        return f"Error serving file: {str(e)}", 500

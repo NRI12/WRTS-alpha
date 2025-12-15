@@ -1,9 +1,11 @@
 from app import db
 from app.models.training_video import TrainingVideo
 from app.models.assignment import Assignment
+from app.utils.storage_service import StorageService
 from flask import current_app
 import threading
 import os
+import tempfile
 
 
 class WeaponDetectionService:
@@ -24,17 +26,28 @@ class WeaponDetectionService:
                 if not video:
                     return
 
-                video_path = video.video_url
-                if not os.path.exists(video_path):
-                    if not os.path.isabs(video_path):
-                        current_file = os.path.abspath(__file__)
-                        project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_file)))
-                        rel_path = video_path.lstrip('/')
-                        video_path = os.path.join(project_root, rel_path)
+                video_url = video.video_url
+                temp_video_path = None
                 
-                if not os.path.exists(video_path):
-                    print(f"[WeaponDetectionService] Video file not found: {video.video_url}")
-                    return
+                if video_url.startswith('https://storage.railway.app'):
+                    try:
+                        temp_video_path = StorageService.download_file_to_temp(video_url)
+                        video_path = temp_video_path
+                    except Exception as e:
+                        print(f"[WeaponDetectionService] Error downloading video from storage: {e}")
+                        return
+                else:
+                    video_path = video_url
+                    if not os.path.exists(video_path):
+                        if not os.path.isabs(video_path):
+                            current_file = os.path.abspath(__file__)
+                            project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_file)))
+                            rel_path = video_path.lstrip('/')
+                            video_path = os.path.join(project_root, rel_path)
+                    
+                    if not os.path.exists(video_path):
+                        print(f"[WeaponDetectionService] Video file not found: {video.video_url}")
+                        return
 
                 from app.services.ai_client_service import AIClientService
                 
@@ -108,6 +121,12 @@ class WeaponDetectionService:
                 print(f"[WeaponDetectionService] Lỗi detect vũ khí cho video {video_id}: {e}")
                 import traceback
                 traceback.print_exc()
+            finally:
+                if 'temp_video_path' in locals() and temp_video_path and os.path.exists(temp_video_path):
+                    try:
+                        os.remove(temp_video_path)
+                    except:
+                        pass
 
     @staticmethod
     def detect_async(video_id: int):

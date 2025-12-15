@@ -3,6 +3,7 @@ from app.models.exam import Exam
 from app.models.exam_result import ExamResult
 from app.models.class_enrollment import ClassEnrollment
 from app.utils.helpers import get_vietnam_time, get_vietnam_time_naive, vietnam_to_utc
+from app.utils.storage_service import StorageService
 from datetime import datetime
 import uuid
 import os
@@ -11,6 +12,7 @@ import cv2
 from flask import current_app
 from sqlalchemy import or_
 from datetime import datetime as dt
+import tempfile
 
 
 class ExamService:
@@ -19,7 +21,6 @@ class ExamService:
     
     @staticmethod
     def _validate_video_file(file):
-        """Validate uploaded video file"""
         if not file:
             return False, "Không có file"
         
@@ -38,7 +39,6 @@ class ExamService:
     
     @staticmethod
     def _get_video_duration(file_path):
-        """Lấy độ dài video bằng OpenCV"""
         try:
             cap = cv2.VideoCapture(file_path)
             fps = cap.get(cv2.CAP_PROP_FPS)
@@ -52,39 +52,47 @@ class ExamService:
     
     @staticmethod
     def _save_video_file(file, exam_id):
-        """Lưu video file và trả về path + duration"""
         is_valid, result = ExamService._validate_video_file(file)
         if not is_valid:
             return None, result
         
         filename = result
+        temp_filepath = None
         
-        upload_folder = os.path.join(
-            current_app.config.get('UPLOAD_FOLDER', 'static/uploads'),
-            'exam_videos'
-        )
-        os.makedirs(upload_folder, exist_ok=True)
-        
-        ext = filename.rsplit('.', 1)[1].lower()
-        timestamp = int(get_vietnam_time().timestamp())
-        new_filename = f"exam_{exam_id}_{timestamp}.{ext}"
-        file_path = os.path.join(upload_folder, new_filename)
-
         try:
-            file.save(file_path)
-        except Exception as e:
-            print(f"Error saving file: {repr(e)}")
-            return None, "Loi luu file"
-        
-        duration = ExamService._get_video_duration(file_path)
-        
-        return new_filename, duration
+            ext = filename.rsplit('.', 1)[1].lower()
+            timestamp = int(get_vietnam_time().timestamp())
+            new_filename = f"exam_{exam_id}_{timestamp}.{ext}"
+            
+            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=f'.{ext}')
+            temp_filepath = temp_file.name
+            temp_file.close()
+
+            try:
+                file.save(temp_filepath)
+            except Exception as e:
+                print(f"Error saving file: {repr(e)}")
+                return None, "Loi luu file"
+            
+            duration = ExamService._get_video_duration(temp_filepath)
+            
+            try:
+                file.seek(0)
+                video_url = StorageService.upload_file(file, folder='exam_videos', filename=new_filename)
+            except Exception as e:
+                print(f"Error uploading file to storage: {repr(e)}")
+                return None, "Loi upload file"
+            
+            return video_url, duration
+        finally:
+            if temp_filepath and os.path.exists(temp_filepath):
+                try:
+                    os.remove(temp_filepath)
+                except:
+                    pass
 
     @staticmethod
     def create_exam(data: dict, instructor_id: int, video_file=None):
-        """
-        Tạo exam mới, hỗ trợ cả routine và upload video.
-        """
         if Exam.query.filter_by(exam_code=data['exam_code']).first():
             return {'success': False, 'message': 'Mã bài kiểm tra đã tồn tại'}
 
@@ -126,12 +134,12 @@ class ExamService:
             db.session.flush()
             
             if data.get('video_source') == 'upload':
-                filename, duration = ExamService._save_video_file(video_file, exam.exam_id)
-                if filename is None:
+                video_url, duration = ExamService._save_video_file(video_file, exam.exam_id)
+                if video_url is None:
                     db.session.rollback()
                     return {'success': False, 'message': duration}
                 
-                exam.reference_video_path = filename
+                exam.reference_video_path = video_url
                 exam.video_duration = duration
             
             db.session.commit()
@@ -171,18 +179,11 @@ class ExamService:
         if result_count > 0:
             return {'success': False, 'message': f'Không thể xóa - đã có {result_count} kết quả thi'}
         
-        # Xóa video file nếu có
         if exam.video_upload_method == 'upload' and exam.reference_video_path:
             try:
-                file_path = os.path.join(
-                    current_app.config.get('UPLOAD_FOLDER', 'static/uploads'),
-                    'exam_videos',
-                    exam.reference_video_path
-                )
-                if os.path.exists(file_path):
-                    os.remove(file_path)
+                StorageService.delete_file(exam.reference_video_path)
             except Exception as e:
-                print(f"Error deleting video file: {e}")
+                print(f"Error deleting video file from storage: {e}")
         
         db.session.delete(exam)
         db.session.commit()
@@ -228,9 +229,6 @@ class ExamService:
 
     @staticmethod
     def can_take_exam(exam_id: int, student_id: int):
-        """
-        Kiểm tra xem học sinh có thể vào thi không.
-        """
         exam = Exam.query.get(exam_id)
         if not exam:
             return False, "Không tìm thấy bài kiểm tra"
@@ -268,9 +266,6 @@ class ExamService:
     
     @staticmethod
     def submit_exam_result(exam_id: int, student_id: int, video_file, notes: str = ''):
-        """
-        Nộp bài thi và lưu kết quả.
-        """
         from app.services.video_service import VideoService
         
         can_take, message = ExamService.can_take_exam(exam_id, student_id)
@@ -292,7 +287,7 @@ class ExamService:
                 file=video_file,
                 student_id=student_id,
                 routine_id=routine_id,
-                assignment_id=None,  # Exam không có assignment_id
+                assignment_id=None,
                 notes=f"Exam: {exam.exam_name} - Lần {attempt_number}"
             )
             
@@ -310,7 +305,6 @@ class ExamService:
             db.session.add(exam_result)
             db.session.commit()
             
-            # Nhận diện vũ khí bất đồng bộ
             from app.services.weapon_detection_service import WeaponDetectionService
             WeaponDetectionService.detect_async(video.video_id)
             
@@ -326,5 +320,4 @@ class ExamService:
                 'success': False,
                 'message': f'Lỗi khi nộp bài: {str(e)}'
             }
-
 

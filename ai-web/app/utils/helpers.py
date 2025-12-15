@@ -1,5 +1,6 @@
 from datetime import datetime, timezone, timedelta
 from markupsafe import Markup, escape
+from flask import url_for
 
 def get_vietnam_time():
     """
@@ -49,3 +50,31 @@ def nl2br(value: str) -> Markup:
         return Markup("")
     escaped = escape(value)
     return Markup(escaped.replace("\n", "<br>\n"))
+
+def get_video_url(video_url):
+    """Helper function để lấy video URL, tự động dùng presigned URL nếu là Railway storage URL"""
+    if not video_url:
+        return ""
+    
+    if video_url.startswith('https://storage.railway.app'):
+        try:
+            from app.utils.storage_service import StorageService
+            from flask import current_app
+            try:
+                presigned_url = StorageService.get_presigned_url(video_url, expiration=3600)
+                return presigned_url
+            except:
+                try:
+                    s3_client, bucket_name = StorageService._get_s3_client()
+                    if bucket_name in video_url:
+                        file_path = video_url.split(f"{bucket_name}/", 1)[1]
+                        return url_for('shared.serve_storage_file', file_path=file_path, _external=True)
+                except:
+                    pass
+                return video_url
+        except:
+            return video_url
+    elif video_url.startswith('/static/'):
+        return video_url
+    else:
+        return video_url

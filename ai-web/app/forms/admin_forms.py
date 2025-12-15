@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SelectField, DateField, TextAreaField, BooleanField
-from wtforms.validators import DataRequired, Email, Length, Optional, Regexp
+from wtforms.validators import DataRequired, Email, Length, Optional, Regexp, EqualTo
 
 class CreateUserForm(FlaskForm):
     username = StringField('Tên đăng nhập', validators=[
@@ -58,3 +58,11 @@ class EditUserForm(FlaskForm):
         DataRequired(message='Vui lòng chọn vai trò')
     ])
     is_active = BooleanField('Kích hoạt tài khoản')
+    new_password = PasswordField('Mật khẩu mới', validators=[
+        Optional(),
+        Length(min=6, message='Mật khẩu tối thiểu 6 ký tự')
+    ])
+    confirm_password = PasswordField('Xác nhận mật khẩu mới', validators=[
+        Optional(),
+        EqualTo('new_password', message='Mật khẩu xác nhận không khớp')
+    ])

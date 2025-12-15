@@ -3,11 +3,14 @@ from app.models.training_video import TrainingVideo
 from app.models.manual_evaluation import ManualEvaluation
 from app.models.assignment import Assignment
 from app.services.ai_client_service import AIClientService
+from app.utils.storage_service import StorageService
 from flask import current_app
 import threading
 import os
 import sys
 import base64
+import tempfile
+import numpy as np
 
 
 class AIGradingService:
@@ -29,17 +32,28 @@ class AIGradingService:
         if not os.path.exists(template_path):
             print(f"[AIGradingService] Teacher template not found, generating from instructor video...", flush=True)
             
-            instructor_video_path = assignment.instructor_video_url
-            if not os.path.isabs(instructor_video_path):
-                rel_path = instructor_video_path.lstrip('/').replace('/', os.sep).replace('\\', os.sep)
-                instructor_video_path = os.path.join(project_root, rel_path)
-                instructor_video_path = os.path.normpath(instructor_video_path)
+            instructor_video_url = assignment.instructor_video_url
+            temp_instructor_path = None
             
-            print(f"[AIGradingService] Instructor video path (normalized): {instructor_video_path}", flush=True)
-            
-            if not os.path.exists(instructor_video_path):
-                print(f"[AIGradingService] ERROR: Instructor video not found: {assignment.instructor_video_url} (tried: {instructor_video_path})", flush=True)
-                return None
+            if instructor_video_url.startswith('https://storage.railway.app'):
+                try:
+                    temp_instructor_path = StorageService.download_file_to_temp(instructor_video_url)
+                    instructor_video_path = temp_instructor_path
+                except Exception as e:
+                    print(f"[AIGradingService] ERROR downloading instructor video from storage: {e}", flush=True)
+                    return None
+            else:
+                instructor_video_path = instructor_video_url
+                if not os.path.isabs(instructor_video_path):
+                    rel_path = instructor_video_path.lstrip('/').replace('/', os.sep).replace('\\', os.sep)
+                    instructor_video_path = os.path.join(project_root, rel_path)
+                    instructor_video_path = os.path.normpath(instructor_video_path)
+                
+                print(f"[AIGradingService] Instructor video path (normalized): {instructor_video_path}", flush=True)
+                
+                if not os.path.exists(instructor_video_path):
+                    print(f"[AIGradingService] ERROR: Instructor video not found: {assignment.instructor_video_url} (tried: {instructor_video_path})", flush=True)
+                    return None
             
             print(f"[AIGradingService] Extracting template from instructor video: {instructor_video_path}", flush=True)
             sys.stdout.flush()
@@ -49,16 +63,13 @@ class AIGradingService:
                 sys.stdout.flush()
                 template_result = AIClientService.extract_template(instructor_video_path)
                 
-                # Decode base64 template
                 template_base64 = template_result['template_base64']
                 template_bytes = base64.b64decode(template_base64)
                 
-                # Load numpy array from bytes
                 import io
                 template_buffer = io.BytesIO(template_bytes)
                 teacher_template = np.load(template_buffer)
                 
-                # Save to file
                 np.save(template_path, teacher_template)
                 print(f"[AIGradingService] Teacher template saved to: {template_path}", flush=True)
                 print(f"[AIGradingService] Template shape: {teacher_template.shape}", flush=True)
@@ -70,6 +81,12 @@ class AIGradingService:
                 traceback.print_exc()
                 sys.stdout.flush()
                 return None
+            finally:
+                if temp_instructor_path and os.path.exists(temp_instructor_path):
+                    try:
+                        os.remove(temp_instructor_path)
+                    except:
+                        pass
         
         return template_path if os.path.exists(template_path) else None
     
@@ -118,21 +135,33 @@ class AIGradingService:
                 print(f"[AIGradingService] Teacher template path: {teacher_template_path}", flush=True)
                 sys.stdout.flush()
                 
-                student_video_path = video.video_url
-                if not os.path.exists(student_video_path):
-                    if not os.path.isabs(student_video_path):
-                        current_file = os.path.abspath(__file__)
-                        project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_file)))
-                        rel_path = student_video_path.lstrip('/').replace('/', os.sep).replace('\\', os.sep)
-                        student_video_path = os.path.join(project_root, rel_path)
-                        student_video_path = os.path.normpath(student_video_path)
+                student_video_url = video.video_url
+                temp_student_path = None
                 
-                print(f"[AIGradingService] Student video path (normalized): {student_video_path}", flush=True)
-                
-                if not os.path.exists(student_video_path):
-                    print(f"[AIGradingService] Student video not found: {video.video_url} (tried: {student_video_path})", flush=True)
-                    sys.stdout.flush()
-                    return
+                if student_video_url.startswith('https://storage.railway.app'):
+                    try:
+                        temp_student_path = StorageService.download_file_to_temp(student_video_url)
+                        student_video_path = temp_student_path
+                    except Exception as e:
+                        print(f"[AIGradingService] ERROR downloading student video from storage: {e}", flush=True)
+                        sys.stdout.flush()
+                        return
+                else:
+                    student_video_path = student_video_url
+                    if not os.path.exists(student_video_path):
+                        if not os.path.isabs(student_video_path):
+                            current_file = os.path.abspath(__file__)
+                            project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_file)))
+                            rel_path = student_video_path.lstrip('/').replace('/', os.sep).replace('\\', os.sep)
+                            student_video_path = os.path.join(project_root, rel_path)
+                            student_video_path = os.path.normpath(student_video_path)
+                    
+                    print(f"[AIGradingService] Student video path (normalized): {student_video_path}", flush=True)
+                    
+                    if not os.path.exists(student_video_path):
+                        print(f"[AIGradingService] Student video not found: {video.video_url} (tried: {student_video_path})", flush=True)
+                        sys.stdout.flush()
+                        return
                 
                 import sys
                 sys.stdout.flush()
@@ -212,6 +241,12 @@ class AIGradingService:
                 import traceback
                 traceback.print_exc()
                 sys.stdout.flush()
+            finally:
+                if 'temp_student_path' in locals() and temp_student_path and os.path.exists(temp_student_path):
+                    try:
+                        os.remove(temp_student_path)
+                    except:
+                        pass
     
     @staticmethod
     def grade_async(video_id: int):

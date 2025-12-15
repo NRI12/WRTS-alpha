@@ -82,7 +82,7 @@
             </div>
             <div class="ratio ratio-16x9 bg-black rounded">
                 <video controls class="w-100 h-100">
-                    <source src="{{ assignment.instructor_video_url }}" type="video/mp4">
+                    <source src="{{ get_video_url(assignment.instructor_video_url) }}" type="video/mp4">
                     <p class="text-white text-center p-3">Trình duyệt không hỗ trợ video hoặc file không tồn tại</p>
                 </video>
             </div>

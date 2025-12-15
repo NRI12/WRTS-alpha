@@ -5,4 +5,6 @@ fastdtw>=0.3.4
 Pillow>=9.0.0
 numpy>=2.0.0
 gdown>=4.7.0
+python-dotenv>=1.0.0
+fastapi>=0.104.0
 

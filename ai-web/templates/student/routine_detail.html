@@ -48,7 +48,7 @@
         <div class="card-body p-0">
             <div class="ratio ratio-16x9">
                 <video controls playsinline preload="metadata" class="w-100 h-100" style="object-fit: contain;">
-                    <source src="{{ routine.reference_video_url }}" type="video/mp4">
+                    <source src="{{ get_video_url(routine.reference_video_url) }}" type="video/mp4">
                     Trình duyệt không hỗ trợ video.
                 </video>
             </div>

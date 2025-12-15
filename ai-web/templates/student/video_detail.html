@@ -102,7 +102,7 @@
                 <div class="card-body p-0">
                     <div class="ratio ratio-16x9">
                         <video controls playsinline preload="metadata" style="object-fit: contain;">
-                            <source src="/{{ video.video_url }}" type="video/mp4">
+                            <source src="{{ get_video_url(video.video_url) }}" type="video/mp4">
                         </video>
                     </div>
                 </div>
@@ -359,7 +359,7 @@
                             {% if reference_video %}
                             <div class="ratio ratio-16x9">
                                 <video controls playsinline preload="metadata" style="object-fit: contain;">
-                                    <source src="{{ reference_video }}" type="video/mp4">
+                                    <source src="{{ get_video_url(reference_video) }}" type="video/mp4">
                                 </video>
                             </div>
                             {% else %}
@@ -382,7 +382,7 @@
                         <div class="card-body p-0">
                             <div class="ratio ratio-16x9">
                                 <video controls playsinline preload="metadata" style="object-fit: contain;">
-                                    <source src="/{{ current_video.video_url }}" type="video/mp4">
+                                    <source src="{{ get_video_url(current_video.video_url) }}" type="video/mp4">
                                 </video>
                             </div>
                         </div>

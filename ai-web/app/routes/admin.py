@@ -151,6 +151,10 @@ def create_user():
 @role_required('ADMIN')
 def edit_user(user_id):
     user = UserService.get_user_by_id(user_id)
+    if not user:
+        flash('Không tìm thấy người dùng', 'error')
+        return redirect(url_for('admin.users'))
+    
     form = EditUserForm(obj=user)
     
     # Load roles vào SelectField
@@ -168,6 +172,10 @@ def edit_user(user_id):
             'role_id': form.role_id.data,
             'is_active': form.is_active.data
         }
+        
+        # Chỉ cập nhật mật khẩu nếu có nhập mật khẩu mới
+        if form.new_password.data:
+            data['new_password'] = form.new_password.data
         
         result = UserService.update_user(user_id, data)
         if result['success']:
