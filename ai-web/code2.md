@@ -1,72 +1,62 @@
-import requests
+Sự khác biệt Storage URL vs Local Path:
+Storage URLLocal PathVí dụhttps://storage.railway.app/bucket/videos/abc.mp4/home/user/uploads/abc.mp4Vị tríFile trên cloud (Railway Storage)File trên máy chủ cụ thểTruy cậpAi cũng download được qua HTTPChỉ server đó truy cập file systemHiện tạiai-web lưu video ở đây ✅Modal tìm file ở đây ❌
+Vấn đề:
+
+ai-web upload video → Railway Storage → nhận URL
+ai-web gọi Modal với video_path = URL
+Modal tìm file tại path đó trong container của Modal → không có → lỗi
+
+Fix cần làm:
+File cần sửa: ai-web/app/services/ai_client_service.py
+pythonimport requests
 import os
 from flask import current_app
+import base64
 from app.utils.storage_service import StorageService
-
 
 class AIClientService:
     
     @staticmethod
-    def _get_ai_server_url():
-        return os.getenv('AI_SERVER_URL', 'http://localhost:5001')
-    
-    @staticmethod
-    def _get_endpoint_url(endpoint_label: str) -> str:
-        ai_server_url = AIClientService._get_ai_server_url()
-        if ai_server_url.startswith('http://localhost') or ai_server_url.startswith('http://127.0.0.1'):
-            return f"{ai_server_url}/{endpoint_label}"
-        elif '--' in ai_server_url:
-            base_url = ai_server_url.split('--')[0]
-            return f"{base_url}--{endpoint_label}.modal.run"
-        else:
-            return f"{ai_server_url}--{endpoint_label}.modal.run"
-    
-    @staticmethod
     def detect_weapon(video_url: str) -> dict:
-        endpoint = AIClientService._get_endpoint_url("weapon-detect")
+        """
+        video_url: URL từ Storage hoặc local path
+        """
+        ai_server_url = AIClientService._get_ai_server_url()
+        endpoint = f"{ai_server_url}/api/v1/weapon/detect"
         
         temp_path = None
         try:
+            # Download từ Storage về temp
             if video_url.startswith('https://storage.railway.app'):
                 temp_path = StorageService.download_file_to_temp(video_url)
                 video_file_path = temp_path
             else:
                 video_file_path = video_url
             
-            video_filename = os.path.basename(video_file_path)
-            if not video_filename or not video_filename.endswith(('.mp4', '.avi', '.mov')):
-                video_filename = 'video.mp4'
-            
-            print(f"[AIClientService] Calling endpoint: {endpoint}", flush=True)
-            print(f"[AIClientService] Video file: {video_filename}", flush=True)
-            
+            # Upload lên Modal qua multipart
             with open(video_file_path, 'rb') as f:
-                files = {'video': (video_filename, f, 'video/mp4')}
+                files = {'video': ('video.mp4', f, 'video/mp4')}
                 response = requests.post(
                     endpoint,
                     files=files,
-                    timeout=1200
+                    timeout=1200  # 20 phút
                 )
-            
-            print(f"[AIClientService] Response status: {response.status_code}", flush=True)
-            if response.status_code != 200:
-                print(f"[AIClientService] Response text: {response.text[:500]}", flush=True)
             
             response.raise_for_status()
             return response.json()
             
         except requests.exceptions.RequestException as e:
             print(f"[AIClientService] Error: {e}", flush=True)
-            if hasattr(e, 'response') and e.response is not None:
-                print(f"[AIClientService] Response: {e.response.text[:500]}", flush=True)
             raise Exception(f"Failed to detect weapon: {str(e)}")
         finally:
+            # Xóa temp file
             if temp_path and os.path.exists(temp_path):
                 os.remove(temp_path)
     
     @staticmethod
     def extract_template(video_url: str) -> dict:
-        endpoint = AIClientService._get_endpoint_url("pose-extract-template")
+        ai_server_url = AIClientService._get_ai_server_url()
+        endpoint = f"{ai_server_url}/api/v1/pose/extract-template"
         
         temp_path = None
         try:
@@ -76,16 +66,12 @@ class AIClientService:
             else:
                 video_file_path = video_url
             
-            video_filename = os.path.basename(video_file_path)
-            if not video_filename or not video_filename.endswith(('.mp4', '.avi', '.mov')):
-                video_filename = 'video.mp4'
-            
             with open(video_file_path, 'rb') as f:
-                files = {'video': (video_filename, f, 'video/mp4')}
+                files = {'video': ('video.mp4', f, 'video/mp4')}
                 response = requests.post(
                     endpoint,
                     files=files,
-                    timeout=1800
+                    timeout=1800  # 30 phút
                 )
             
             response.raise_for_status()
@@ -100,17 +86,21 @@ class AIClientService:
     
     @staticmethod
     def score_pose(student_video_url: str, teacher_template_path: str) -> dict:
-        endpoint = AIClientService._get_endpoint_url("pose-score")
+        ai_server_url = AIClientService._get_ai_server_url()
+        endpoint = f"{ai_server_url}/api/v1/pose/score"
         
         temp_video_path = None
         try:
+            # Download student video
             if student_video_url.startswith('https://storage.railway.app'):
                 temp_video_path = StorageService.download_file_to_temp(student_video_url)
                 student_file_path = temp_video_path
             else:
                 student_file_path = student_video_url
             
-            with open(student_file_path, 'rb') as sv, open(teacher_template_path, 'rb') as tt:
+            # Upload cả video và template
+            with open(student_file_path, 'rb') as sv, \
+                 open(teacher_template_path, 'rb') as tt:
                 files = {
                     'student_video': ('student.mp4', sv, 'video/mp4'),
                     'teacher_template': ('template.npy', tt, 'application/octet-stream')
@@ -130,4 +120,12 @@ class AIClientService:
         finally:
             if temp_video_path and os.path.exists(temp_video_path):
                 os.remove(temp_video_path)
+File cần sửa: ai-server/.env
+bashWEAPON_DETECT_TIMEOUT=1200  # 20 phút
+POSE_TIMEOUT=1800           # 30 phút
+Sau khi fix:
 
+ai-web download video từ Storage → temp file local
+Upload temp file → Modal qua multipart/form-data
+Modal nhận file và xử lý
+ai-web xóa temp file
