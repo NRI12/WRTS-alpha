@@ -175,7 +175,11 @@ class PoseScorer:
     
     @classmethod
     def score_video(cls, student_video_path: str, teacher_template_path: str) -> dict:
+        import gc
+        
         student_template = cls.extract_template_from_video(student_video_path)
+        gc.collect()  # Thêm dòng này
+        
         teacher_template = cls.load_teacher_template(teacher_template_path)
         teacher_aligned = cls.align_length(teacher_template, student_template)
         cosine_sim, dtw_dist, jitter = cls.compare_templates(teacher_aligned, student_template)

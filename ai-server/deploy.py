@@ -180,9 +180,10 @@ async def pose_score_endpoint(
 @app.function(
     image=image,
     gpu="T4",
-    allow_concurrent_inputs=50,
-    timeout=1800,
-    container_idle_timeout=300,
+    allow_concurrent_inputs=10,  # Giảm từ 50
+    timeout=3600,  # Tăng từ 1800
+    container_idle_timeout=600,
+    memory=8192,  # Thêm memory
 )
 @asgi_app()
 def fastapi_app():

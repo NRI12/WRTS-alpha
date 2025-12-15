@@ -13,21 +13,22 @@ def get_url(endpoint):
 
 def upload_file(url, files, timeout=300):
     """Upload file với retry và debug"""
-    for i in range(2):
+    for i in range(3):  # Tăng từ 2
         try:
-            print(f"   Upload (lần {i+1})...", end=" ")
+            print(f"   Upload (lần {i+1})...", end=" ", flush=True)
             res = requests.post(url, files=files, timeout=timeout)
             print(f"Status: {res.status_code}")
             
-            # Debug response
             if res.status_code != 200:
-                print(f"   ❌ Error response: {res.text[:300]}")
-            
+                print(f"   ❌ Error: {res.text[:200]}")
+                if i < 2:
+                    time.sleep(5)
+                    continue
             return res
         except Exception as e:
             print(f"❌ {type(e).__name__}: {str(e)[:100]}")
-            if i == 0:
-                time.sleep(3)
+            if i < 2:
+                time.sleep(5)
     return None
 
 def test_health():
@@ -81,19 +82,20 @@ def test_extract(video_file):
 
 def test_score(video_file, template_file):
     print(f"\n4️⃣ TEST SCORE")
-    print(f"   Video: {video_file}")
-    print(f"   Template: {template_file}")
-    
     url = get_url("pose/score")
     video_path = os.path.join(VIDEO_DIR, video_file)
     template_path = os.path.join(VIDEO_DIR, template_file)
+    
+    # Thêm log size
+    size_mb = os.path.getsize(video_path) / (1024*1024)
+    print(f"   Size: {size_mb:.1f}MB")
     
     with open(video_path, 'rb') as v, open(template_path, 'rb') as t:
         files = {
             'student_video': (video_file, v, 'video/mp4'),
             'teacher_template': (template_file, t, 'application/octet-stream')
         }
-        res = upload_file(url, files, timeout=600)
+        res = upload_file(url, files, timeout=3600)  # Tăng timeout
     
     if res and res.status_code == 200:
         print(f"   ✅ Score: {res.json()}")
