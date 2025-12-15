@@ -1,0 +1,51 @@
+{% if session.role_code == 'INSTRUCTOR' %}
+    {% extends "base/instructor_base.html" %}
+{% elif session.role_code == 'STUDENT' %}
+    {% extends "base/student_base.html" %}
+{% elif session.role_code == 'ADMIN' %}
+    {% extends "base/admin_base.html" %}
+{% elif session.role_code == 'MANAGER' %}
+    {% extends "base/manager_base.html" %}
+{% else %}
+    {% extends "base/base.html" %}
+{% endif %}
+
+{% block title %}Thông tin cá nhân - AI-WRTS System{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/auth.css') }}" rel="stylesheet">
+{% if session.role_code == 'INSTRUCTOR' %}
+<link href="{{ url_for('static', filename='css/instructor.css') }}" rel="stylesheet">
+{% elif session.role_code == 'STUDENT' %}
+<link href="{{ url_for('static', filename='css/student.css') }}" rel="stylesheet">
+{% elif session.role_code == 'ADMIN' %}
+{# Dùng lại header style từ instructor + màu admin #}
+<link href="{{ url_for('static', filename='css/instructor.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/admin.css') }}" rel="stylesheet">
+{% endif %}
+{% endblock %}
+
+{% block instructor_content %}
+    {% include 'auth/_profile_content.html' %}
+{% endblock %}
+
+{% block student_content %}
+    {% include 'auth/_profile_content.html' %}
+{% endblock %}
+
+{% block admin_content %}
+    {% include 'auth/_profile_content.html' %}
+{% endblock %}
+
+{% block manager_content %}
+    {% include 'auth/_profile_content.html' %}
+{% endblock %}
+
+{% block content %}
+    {# Fallback when using base/base.html #}
+    {% include 'auth/_profile_content.html' %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+{% endblock %}

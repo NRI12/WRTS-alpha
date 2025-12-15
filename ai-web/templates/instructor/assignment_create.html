@@ -1,0 +1,238 @@
+{% extends "base/instructor_base.html" %}
+
+{% block title %}Giao bài tập mới{% endblock %}
+
+{% block instructor_content %}
+<div class="page-header-modern">
+    <div class="page-header-content">
+        <div class="page-header-icon">
+            <i class="fas fa-tasks"></i>
+        </div>
+        <div class="page-header-text">
+            <h1 class="page-header-title">Giao bài tập mới</h1>
+            <p class="page-header-subtitle">Tạo bài tập cho học viên hoặc lớp học</p>
+        </div>
+    </div>
+    <div class="page-header-circles">
+        <div class="circle circle-1"></div>
+        <div class="circle circle-2"></div>
+        <div class="circle circle-3"></div>
+    </div>
+</div>
+
+<form method="POST" id="assignmentForm" enctype="multipart/form-data" class="py-4">
+    {{ form.hidden_tag() }}
+    
+    <div class="row g-3">
+        <!-- Main Form -->
+        <div class="col-lg-8">
+            <!-- Gộp bài võ và đối tượng vào 1 card -->
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label required">Bài võ</label>
+                            {{ form.routine_id(class="form-select") }}
+                            {% if form.routine_id.errors %}
+                            <div class="invalid-feedback d-block">{{ form.routine_id.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label required">Loại bài tập</label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="assignment_type" id="typeIndividual" value="individual" checked>
+                                <label class="btn btn-outline-primary" for="typeIndividual">
+                                    <i class="fas fa-user me-1"></i>Cá nhân
+                                </label>
+                                <input type="radio" class="btn-check" name="assignment_type" id="typeClass" value="class">
+                                <label class="btn btn-outline-primary" for="typeClass">
+                                    <i class="fas fa-users me-1"></i>Lớp học
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row g-3 mt-2">
+                        <div class="col-12" id="individualSelect">
+                            <label class="form-label required">Học viên</label>
+                            {{ form.assigned_to_student(class="form-select") }}
+                            {% if form.assigned_to_student.errors %}
+                            <div class="invalid-feedback d-block">{{ form.assigned_to_student.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-12" id="classSelect" style="display:none;">
+                            <label class="form-label required">Lớp học</label>
+                            {{ form.assigned_to_class(class="form-select") }}
+                            {% if form.assigned_to_class.errors %}
+                            <div class="invalid-feedback d-block">{{ form.assigned_to_class.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label required">Phương thức chấm điểm</label>
+                            {{ form.grading_method(class="form-select") }}
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                <strong>Chấm tay:</strong> Chỉ giảng viên chấm điểm<br>
+                                <strong>AI tự động:</strong> Hệ thống tự động chấm điểm bằng AI<br>
+                                <strong>Cả hai:</strong> AI chấm điểm trước, giảng viên có thể xem và điều chỉnh
+                            </small>
+                            {% if form.grading_method.errors %}
+                            <div class="invalid-feedback d-block">{{ form.grading_method.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Hướng dẫn và Video gộp lại -->
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <label class="form-label">Hướng dẫn thực hiện</label>
+                    {{ form.instructions(class="form-control", rows="4", placeholder="Nhập hướng dẫn chi tiết cho học viên...") }}
+                </div>
+            </div>
+            
+            <!-- VIDEO DEMO - BẮT BUỘC -->
+            <div class="card border-0 shadow-sm mb-3 assignment-video-card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-video text-danger me-2"></i>
+                        <label class="form-label mb-0 text-danger fw-bold">Video Demo - BẮT BUỘC</label>
+                    </div>
+                    <div class="alert alert-warning py-2 mb-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <small><strong>BẮT BUỘC:</strong> Upload video demo hoặc nhập link video</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small">Link Video (tùy chọn)</label>
+                        {{ form.instructor_video_url(class="form-control", placeholder="https://example.com/video.mp4") }}
+                    </div>
+                    <div>
+                        <label class="form-label small text-danger required">Upload Video</label>
+                        {{ form.instructor_video_file(class="form-control") }}
+                        {% if form.instructor_video_file.errors %}
+                        <div class="text-danger small mt-1">{{ form.instructor_video_file.errors[0] }}</div>
+                        {% endif %}
+                        <small class="text-muted d-block mt-1">MP4, MOV, AVI, MKV - Tối đa {{ (config.MAX_VIDEO_SIZE // (1024 * 1024)) if config.MAX_VIDEO_SIZE else 100 }}MB</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar Settings -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <h6 class="mb-3 fw-bold">
+                        <i class="fas fa-cog text-secondary me-2"></i>
+                        Cài đặt
+                    </h6>
+                    <div class="mb-3">
+                        <label class="form-label required small">Deadline</label>
+                        <div class="input-group input-group-sm">
+                            {{ form.deadline(class="form-control datepicker", placeholder="DD/MM/YYYY HH:MM") }}
+                            <span class="input-group-text">
+                                <i class="fas fa-calendar-alt"></i>
+                            </span>
+                        </div>
+                        {% if form.deadline.errors %}
+                        <div class="invalid-feedback d-block">{{ form.deadline.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small">Độ ưu tiên</label>
+                        {{ form.priority(class="form-select form-select-sm") }}
+                    </div>
+                    <div class="form-check form-switch">
+                        {{ form.is_mandatory(class="form-check-input", checked=true) }}
+                        <label class="form-check-label small" for="is_mandatory">
+                            Bắt buộc hoàn thành
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body">
+                    <h6 class="mb-2 small fw-bold">
+                        <i class="fas fa-lightbulb text-warning me-2"></i>
+                        Gợi ý
+                    </h6>
+                    <ul class="small mb-0 ps-3" style="line-height: 1.8;">
+                        <li>Deadline nên cách ngày giao 3-7 ngày</li>
+                        <li>Ghi rõ yêu cầu trong hướng dẫn</li>
+                        <li>Kiểm tra bài võ đã có video mẫu</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card border-0 shadow-sm mt-3">
+        <div class="card-body d-flex justify-content-between align-items-center py-3">
+            <a href="{{ url_for('instructor.assignments') }}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-times me-2"></i>Hủy
+            </a>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-paper-plane me-2"></i>Giao bài tập
+            </button>
+        </div>
+    </div>
+</form>
+
+<script>
+// Toggle assignment type
+document.querySelectorAll('input[name="assignment_type"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        if (this.value === 'individual') {
+            document.getElementById('individualSelect').style.display = 'block';
+            document.getElementById('classSelect').style.display = 'none';
+        } else {
+            document.getElementById('individualSelect').style.display = 'none';
+            document.getElementById('classSelect').style.display = 'block';
+        }
+    });
+});
+
+// Date picker initialization
+document.addEventListener('DOMContentLoaded', function() {
+    const deadlineInput = document.querySelector('input[name="deadline"]');
+    
+    if (deadlineInput) {
+        if (typeof flatpickr === 'undefined') {
+            console.error('Flatpickr not loaded! Check CDN in base template.');
+            deadlineInput.type = 'datetime-local';
+        } else {
+            flatpickr(deadlineInput, {
+                enableTime: true,
+                dateFormat: 'Y-m-d\\TH:i',
+                altInput: true,
+                altFormat: 'd/m/Y H:i',
+                time_24hr: true,
+                minDate: "today",
+                locale: "vn"
+            });
+        }
+    }
+    
+    // File size validation
+    const videoFileInput = document.querySelector('input[name="instructor_video_file"]');
+    if (videoFileInput) {
+        videoFileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const maxSize = {{ config.MAX_VIDEO_SIZE if config.MAX_VIDEO_SIZE else 100 * 1024 * 1024 }};
+                const maxSizeMB = maxSize / (1024 * 1024);
+                
+                if (file.size > maxSize) {
+                    alert(`File video quá lớn! Vui lòng chọn file nhỏ hơn ${maxSizeMB}MB.`);
+                    e.target.value = '';
+                } else {
+                    const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+                    console.log(`File size: ${sizeInMB} MB (Max: ${maxSizeMB} MB)`);
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

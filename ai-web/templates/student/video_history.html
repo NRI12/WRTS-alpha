@@ -1,0 +1,128 @@
+{% extends 'base/student_base.html' %}
+
+{% block title %}Lịch Sử Nộp Bài{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/student.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">
+                <i class="fas fa-history text-info me-2"></i>
+                Lịch Sử Nộp Bài Video
+            </h1>
+            <p class="text-muted mb-0">Xem và quản lý các lần nộp video của bạn</p>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ 'success' if category == 'success' else ('danger' if category == 'error' else category) }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Filters -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3 align-items-end">
+                <div class="col-md-6">
+                    <label class="form-label">{{ filter_form.routine_id.label.text }}</label>
+                    {{ filter_form.routine_id(class='form-select') }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ filter_form.status.label.text }}</label>
+                    {{ filter_form.status(class='form-select') }}
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-outline-primary w-100"><i class="fas fa-filter me-2"></i>Lọc</button>
+                    <a href="{{ url_for('student_videos.history') }}" class="btn btn-light w-100">Xóa lọc</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Videos list -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 py-3">
+            <h5 class="mb-0"><i class="fas fa-video text-primary me-2"></i>Danh sách video ({{ videos|length }})</h5>
+        </div>
+        <div class="card-body">
+            {% if videos %}
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Bài Võ</th>
+                                <th>Thông tin</th>
+                                <th>Ngày Upload</th>
+                                <th>Trạng thái</th>
+                                <th>Binh khí</th>
+                                <th class="text-end">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for v in videos %}
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">{{ v.routine.routine_name }}</div>
+                                    <small class="text-muted">{{ v.routine.routine_code }}</small>
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ v.duration_seconds }}s • {{ v.file_size_mb }}MB</small>
+                                </td>
+                                <td>{{ v.uploaded_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td>
+                                    {% if v.processing_status == 'pending' %}
+                                        <span class="badge bg-secondary">Chờ xử lý</span>
+                                    {% elif v.processing_status == 'processing' %}
+                                        <span class="badge bg-info">Đang xử lý</span>
+                                    {% elif v.processing_status == 'completed' %}
+                                        <span class="badge bg-success">Hoàn thành</span>
+                                    {% elif v.processing_status == 'failed' %}
+                                        <span class="badge bg-danger">Thất bại</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if v.detected_weapon %}
+                                        <span class="badge bg-info">{{ v.detected_weapon }}</span>
+                                    {% else %}
+                                        <span class="text-muted">Đang nhận diện...</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if v.processing_status == 'completed' %}
+                                        <a href="{{ url_for('student_videos.video_detail', video_id=v.video_id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye me-1"></i>Xem chi tiết
+                                        </a>
+                                    {% else %}
+                                        <small class="text-muted">Đang xử lý...</small>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                 
+                    </table>
+                </div>
+            {% else %}
+                <div class="student-empty-state">
+                    <i class="fas fa-video-slash"></i>
+                    <p class="mb-0">Bạn chưa upload video nào</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/student.js') }}"></script>
+{% endblock %}

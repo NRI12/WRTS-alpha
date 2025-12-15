@@ -1,0 +1,139 @@
+{% extends 'base/student_base.html' %}
+
+{% block title %}Danh Sách Bài Võ{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/student.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Modern Header -->
+    <div class="page-header-modern mb-4">
+        <div class="page-header-content">
+            <div class="page-header-icon">
+                <i class="fas fa-book-open"></i>
+            </div>
+            <div class="page-header-text">
+                <h1 class="page-header-title">Danh Sách Bài Võ</h1>
+                <p class="page-header-subtitle">Khám phá và học tập các bài võ</p>
+            </div>
+        </div>
+        <div class="page-header-actions">
+            <a href="{{ url_for('student.dashboard') }}" class="btn btn-light btn-sm">
+                <i class="fas fa-arrow-left me-2"></i>Quay lại
+            </a>
+        </div>
+    </div>
+    
+    <!-- Filter Bar -->
+    <div class="student-filter-bar mb-4">
+        <form method="GET" class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="student-filter-label">
+                    Cấp độ
+                </label>
+                <select name="level" class="form-select student-filter-select">
+                    <option value="">Tất cả cấp độ</option>
+                    <option value="beginner" {{ 'selected' if request.args.get('level') == 'beginner' }}>Sơ cấp</option>
+                    <option value="intermediate" {{ 'selected' if request.args.get('level') == 'intermediate' }}>Trung cấp</option>
+                    <option value="advanced" {{ 'selected' if request.args.get('level') == 'advanced' }}>Nâng cao</option>
+                </select>
+            </div>
+            
+            <div class="col-md-5">
+                <label class="student-filter-label">
+                    Binh khí
+                </label>
+                <select name="weapon_id" class="form-select student-filter-select">
+                    <option value="" {{ 'selected' if not request.args.get('weapon_id') }}>Tất cả binh khí</option>
+                    {% for weapon in weapons %}
+                    <option value="{{ weapon.weapon_id }}" {{ 'selected' if (request.args.get('weapon_id')|int) == weapon.weapon_id }}>
+                        {{ weapon.weapon_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search me-2"></i>Lọc
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Routines List -->
+    {% if routines %}
+        <div class="row">
+            <div class="col-12">
+                <p class="text-muted mb-3">
+                    <i class="fas fa-info-circle me-2"></i>Tìm thấy <strong>{{ routines|length }}</strong> bài võ
+                </p>
+            </div>
+        </div>
+        
+        {% for routine in routines %}
+        <div class="student-routine-card">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                    <h5 class="mb-2">{{ routine.routine_name }}</h5>
+                    <span class="badge bg-secondary me-2">{{ routine.routine_code }}</span>
+                    <span class="student-level-badge 
+                        {% if routine.level == 'beginner' %}student-level-beginner
+                        {% elif routine.level == 'intermediate' %}student-level-intermediate
+                        {% elif routine.level == 'advanced' %}student-level-advanced
+                        {% endif %}">
+                        {% if routine.level == 'beginner' %}Sơ cấp
+                        {% elif routine.level == 'intermediate' %}Trung cấp
+                        {% elif routine.level == 'advanced' %}Nâng cao
+                        {% endif %}
+                    </span>
+                </div>
+                {% if routine.weapon %}
+                <span class="student-weapon-badge">
+                    <i class="fas fa-shield-alt me-1"></i>{{ routine.weapon.weapon_name }}
+                </span>
+                {% endif %}
+            </div>
+            
+            {% if routine.description %}
+            <p class="text-muted mb-3">{{ routine.description }}</p>
+            {% endif %}
+            
+            <div class="student-info-grid mb-3">
+                <div class="student-info-item">
+                    <i class="fas fa-clock"></i>
+                    <span><strong>Thời lượng:</strong> {{ routine.duration_minutes }} phút</span>
+                </div>
+                <div class="student-info-item">
+                    <i class="fas fa-user-tie"></i>
+                    <span><strong>Giảng dạy:</strong> {{ routine.creator.full_name }}</span>
+                </div>
+                <div class="student-info-item">
+                    <i class="fas fa-calendar-plus"></i>
+                    <span><strong>Tạo lúc:</strong> {{ routine.created_at.strftime('%d/%m/%Y') }}</span>
+                </div>
+            </div>
+            
+            <a href="{{ url_for('student.routine_detail', routine_id=routine.routine_id) }}" 
+               class="btn btn-primary btn-sm">
+                Xem chi tiết
+            </a>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="student-empty-state">
+            <i class="fas fa-search-minus"></i>
+            <h4 class="student-empty-state-title">Không tìm thấy bài võ nào</h4>
+            <p class="student-empty-state-text">
+                Thử thay đổi bộ lọc để xem thêm bài võ khác
+            </p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/student.js') }}"></script>
+{% endblock %}

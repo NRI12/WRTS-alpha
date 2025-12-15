@@ -1,0 +1,329 @@
+{% extends "base/base.html" %}
+
+{% block extra_css %}
+<style>
+    /* Role-specific color variables */
+    {% if session.role_code == 'ADMIN' %}
+        :root {
+            --role-primary: #11998e;
+            --role-secondary: #38ef7d;
+            --role-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --role-light: rgba(17, 153, 142, 0.1);
+        }
+    {% elif session.role_code == 'STUDENT' %}
+        :root {
+            --role-primary: #667eea;
+            --role-secondary: #764ba2;
+            --role-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --role-light: rgba(102, 126, 234, 0.1);
+        }
+    {% elif session.role_code == 'INSTRUCTOR' %}
+        :root {
+            --role-primary: #f5576c;
+            --role-secondary: #f093fb;
+            --role-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --role-light: rgba(240, 147, 251, 0.1);
+        }
+    {% elif session.role_code == 'MANAGER' %}
+        :root {
+            --role-primary: #eb3349;
+            --role-secondary: #f45c43;
+            --role-gradient: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            --role-light: rgba(235, 51, 73, 0.1);
+        }
+    {% else %}
+        :root {
+            --role-primary: #667eea;
+            --role-secondary: #764ba2;
+            --role-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --role-light: rgba(102, 126, 234, 0.1);
+        }
+    {% endif %}
+
+    /* Unified Dashboard Styles */
+    .dashboard-container {
+        background: var(--light-bg);
+        min-height: calc(100vh - var(--navbar-height) - var(--footer-height));
+    }
+
+    /* Stat Cards - Unified Style */
+    .stat-card {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        box-shadow: var(--box-shadow);
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--role-gradient);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--box-shadow-lg);
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: var(--border-radius);
+        background: var(--role-light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+        color: var(--role-primary);
+        margin-bottom: 1rem;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .stat-change {
+        font-size: 0.8rem;
+        font-weight: 500;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    /* Panel Components - Unified Style */
+    .panel {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        box-shadow: var(--box-shadow);
+        margin-bottom: 1.5rem;
+    }
+
+    .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--light-bg);
+    }
+
+    .panel-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .panel-title i {
+        color: var(--role-primary);
+    }
+
+    /* Page Header - Unified Style */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .page-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .page-title i {
+        color: var(--role-primary);
+    }
+
+    .page-description {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+    }
+
+    /* Buttons - Role-colored */
+    .btn-primary {
+        background: var(--role-gradient);
+        border: none;
+        color: white;
+        font-weight: 500;
+        padding: 0.625rem 1.25rem;
+        border-radius: var(--border-radius-sm);
+        transition: var(--transition);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--box-shadow);
+        filter: brightness(1.05);
+    }
+
+    .btn-outline-primary {
+        border: 2px solid var(--role-primary);
+        color: var(--role-primary);
+        background: transparent;
+        font-weight: 500;
+        padding: 0.625rem 1.25rem;
+        border-radius: var(--border-radius-sm);
+        transition: var(--transition);
+    }
+
+    .btn-outline-primary:hover {
+        background: var(--role-primary);
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    /* Cards - Unified Style */
+    .card {
+        border: none;
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        transition: var(--transition);
+        overflow: hidden;
+    }
+
+    .card:hover {
+        box-shadow: var(--box-shadow-lg);
+        transform: translateY(-3px);
+    }
+
+    .card-header {
+        background: white;
+        border-bottom: 2px solid var(--light-bg);
+        padding: 1.25rem 1.5rem;
+        font-weight: 600;
+    }
+
+    .card-header h5 {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin: 0;
+    }
+
+    .card-header h5 i {
+        color: var(--role-primary);
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    /* Tables - Unified Style */
+    .data-table-wrapper {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        box-shadow: var(--box-shadow);
+    }
+
+    .table {
+        margin-bottom: 0;
+    }
+
+    .table thead th {
+        background: var(--light-bg);
+        border-bottom: 2px solid var(--border-color);
+        font-weight: 600;
+        color: var(--text-primary);
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+        padding: 1rem;
+    }
+
+    .table tbody tr {
+        transition: var(--transition);
+    }
+
+    .table tbody tr:hover {
+        background: var(--light-bg);
+    }
+
+    /* Badges - Role-colored */
+    .badge {
+        padding: 0.5rem 0.75rem;
+        border-radius: var(--border-radius-sm);
+        font-weight: 500;
+        font-size: 0.75rem;
+    }
+
+    .bg-primary {
+        background: var(--role-gradient) !important;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--text-secondary);
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        color: var(--text-light);
+    }
+
+    .empty-state p {
+        font-size: 1.1rem;
+        margin: 0;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .panel-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+    }
+</style>
+{% block role_specific_css %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="container-fluid px-4 py-4">
+        {% block dashboard_content %}{% endblock %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% block role_specific_js %}{% endblock %}
+{% endblock %}
+

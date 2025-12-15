@@ -1,0 +1,93 @@
+{% extends "base/instructor_base.html" %}
+
+{% block title %}Quản lý lịch học{% endblock %}
+
+{% block instructor_content %}
+<div class="page-header-modern">
+    <div class="page-header-content">
+        <div class="page-header-icon">
+            <i class="fas fa-calendar-alt"></i>
+        </div>
+        <div class="page-header-text">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{{ url_for('instructor.classes') }}">Lớp học</a></li>
+                    <li class="breadcrumb-item active">Lịch học</li>
+                </ol>
+            </nav>
+            <h1 class="page-header-title">
+                Lịch học - {{ class_obj.class_name }} ({{ class_obj.class_code }})
+            </h1>
+        </div>
+    </div>
+    <div class="page-header-actions">
+        <a href="{{ url_for('instructor.add_schedule', class_id=class_obj.class_id) }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus me-2"></i>Thêm lịch học mới
+        </a>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        {% if schedules %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Ngày</th>
+                        <th>Giờ học</th>
+                        <th>Địa điểm</th>
+                        <th>Ghi chú</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for schedule in schedules %}
+                    <tr>
+                        <td>{{ schedule.day_display }}</td>
+                        <td>{{ schedule.time_start.strftime('%H:%M') }} - {{ schedule.time_end.strftime('%H:%M') }}</td>
+                        <td>{{ schedule.location or '-' }}</td>
+                        <td>{{ schedule.notes or '-' }}</td>
+                        <td>
+                            {% if schedule.is_active %}
+                                <span class="badge bg-success">Hoạt động</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">Tạm dừng</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{{ url_for('instructor.edit_schedule', schedule_id=schedule.schedule_id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <form method="POST" action="{{ url_for('instructor.delete_schedule', schedule_id=schedule.schedule_id) }}" style="display:inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Xác nhận xóa?')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-calendar-alt fa-2x text-muted mb-2"></i>
+            <p class="text-muted mb-0">Chưa có lịch học nào</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="mt-3">
+    <a href="{{ url_for('instructor.class_detail', class_id=class_obj.class_id) }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Về chi tiết lớp
+    </a>
+    <a href="{{ url_for('instructor.classes') }}" class="btn btn-outline-secondary ms-2">
+        Danh sách lớp
+    </a>
+</div>
+
+{% endblock %}

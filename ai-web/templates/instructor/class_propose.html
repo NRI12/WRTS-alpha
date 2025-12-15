@@ -1,0 +1,78 @@
+{% extends "base/instructor_base.html" %}
+
+{% block title %}Đề xuất lớp học mới{% endblock %}
+
+{% block instructor_content %}
+<div class="page-header-modern">
+    <div class="page-header-content">
+        <div class="page-header-icon">
+            <i class="fas fa-plus-circle"></i>
+        </div>
+        <div class="page-header-text">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{{ url_for('instructor.my_proposals') }}">Đề xuất</a></li>
+                    <li class="breadcrumb-item active">Tạo đề xuất</li>
+                </ol>
+            </nav>
+            <h1 class="page-header-title">Đề xuất lớp học mới</h1>
+            <p class="page-header-subtitle">Gửi đề xuất mở lớp học mới cho quản lý phê duyệt</p>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <form method="POST">
+            {{ form.hidden_tag() }}
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.class_code.label }}</label>
+                    {{ form.class_code(class="form-control", placeholder="VD: KMA-101") }}
+                    {% for error in form.class_code.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label">{{ form.class_name.label }}</label>
+                    {{ form.class_name(class="form-control", placeholder="Tên lớp học") }}
+                    {% for error in form.class_name.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="col-12">
+                    <label class="form-label">{{ form.description.label }}</label>
+                    {{ form.description(class="form-control", rows=3, placeholder="Mục tiêu, nội dung và yêu cầu của lớp...") }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.level.label }}</label>
+                    {{ form.level(class="form-select") }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.max_students.label }}</label>
+                    {{ form.max_students(class="form-control", min=1) }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.start_date.label }}</label>
+                    {{ form.start_date(class="form-control") }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.end_date.label }}</label>
+                    {{ form.end_date(class="form-control") }}
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+                <a href="{{ url_for('instructor.my_proposals') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Quay lại
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane me-2"></i>Gửi đề xuất
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

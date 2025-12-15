@@ -1,0 +1,89 @@
+{% extends "base/manager_base.html" %}
+
+{% block title %}Xét duyệt lớp học{% endblock %}
+
+{% block manager_content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title"><i class="fas fa-check-circle me-2"></i>Xét duyệt lớp học</h1>
+        <p class="text-muted mb-0">{{ class_obj.class_name }} ({{ class_obj.class_code }})</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0"><i class="fas fa-info-circle text-primary me-2"></i>Thông tin lớp học</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6"><label class="text-muted small">Mã lớp</label><div class="fw-semibold">{{ class_obj.class_code }}</div></div>
+                    <div class="col-md-6"><label class="text-muted small">Giảng viên</label><div>{{ class_obj.instructor.full_name }} ({{ class_obj.instructor.username }})</div></div>
+                    <div class="col-12"><label class="text-muted small">Tên lớp</label><div class="fw-semibold">{{ class_obj.class_name }}</div></div>
+                    <div class="col-12"><label class="text-muted small">Mô tả</label><div>{{ class_obj.description or 'Không có' }}</div></div>
+                    <div class="col-md-6"><label class="text-muted small">Cấp độ</label>
+                        <div>
+                            {% if class_obj.level == 'beginner' %}
+                                <span class="badge bg-success">Sơ cấp</span>
+                            {% elif class_obj.level == 'intermediate' %}
+                                <span class="badge bg-info">Trung cấp</span>
+                            {% elif class_obj.level == 'advanced' %}
+                                <span class="badge bg-danger">Nâng cao</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ class_obj.level }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6"><label class="text-muted small">Số HV tối đa</label><div>{{ class_obj.max_students }}</div></div>
+                    <div class="col-md-6"><label class="text-muted small">Ngày bắt đầu</label><div>{{ class_obj.start_date.strftime('%d/%m/%Y') }}</div></div>
+                    <div class="col-md-6"><label class="text-muted small">Ngày kết thúc</label><div>{{ class_obj.end_date.strftime('%d/%m/%Y') if class_obj.end_date else 'Chưa xác định' }}</div></div>
+                    <div class="col-md-6"><label class="text-muted small">Ngày đề xuất</label><div>{{ class_obj.created_at.strftime('%d/%m/%Y %H:%M') }}</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3"><h5 class="mb-0"><i class="fas fa-gavel text-warning me-2"></i>Quyết định</h5></div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.decision.label }}</label>
+                        <div>
+                            {% for choice in form.decision %}
+                            <div class="form-check">
+                                {{ choice(class="form-check-input", id=choice.id) }}
+                                <label class="form-check-label" for="{{ choice.id }}">{{ choice.label.text }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if form.decision.errors %}
+                        <div class="invalid-feedback d-block">{{ form.decision.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.rejection_reason.label }}</label>
+                        {{ form.rejection_reason(class="form-control", rows=4, placeholder="Lý do từ chối (nếu có)") }}
+                        {% if form.rejection_reason.errors %}
+                        <div class="invalid-feedback d-block">{{ form.rejection_reason.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('manager.pending_classes') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Quay lại
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-check me-2"></i>Xác nhận
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+

@@ -1,0 +1,174 @@
+{% extends 'base/student_base.html' %}
+
+{% block title %}Lịch Học Tuần{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/student.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Modern Header -->
+    <div class="page-header-modern mb-4">
+        <div class="page-header-content">
+            <div class="page-header-icon">
+                <i class="fas fa-calendar-week"></i>
+            </div>
+            <div class="page-header-text">
+                <h1 class="page-header-title">Lịch Học Tuần</h1>
+                <p class="page-header-subtitle">Xem lịch học của tất cả các lớp trong tuần</p>
+            </div>
+        </div>
+        <div class="page-header-actions">
+            <a href="{{ url_for('student.classes') }}" class="btn btn-light btn-sm me-2">
+                <i class="fas fa-users me-2"></i>Lớp học
+            </a>
+            <a href="{{ url_for('student.dashboard') }}" class="btn btn-light btn-sm">
+                <i class="fas fa-arrow-left me-2"></i>Quay lại
+            </a>
+        </div>
+    </div>
+    
+    <!-- Weekly Schedule Grid -->
+    <div class="row g-3">
+        {% for day_key, day_name, day_class in [
+            ('monday', 'Thứ 2', 'day-monday'),
+            ('tuesday', 'Thứ 3', 'day-tuesday'),
+            ('wednesday', 'Thứ 4', 'day-wednesday'),
+            ('thursday', 'Thứ 5', 'day-thursday'),
+            ('friday', 'Thứ 6', 'day-friday'),
+            ('saturday', 'Thứ 7', 'day-saturday'),
+            ('sunday', 'Chủ nhật', 'day-sunday')
+        ] %}
+        <div class="col-lg-6 col-xl-4">
+            <div class="day-column {{ day_class }}">
+                <div class="day-header">
+                    <div class="day-icon">
+                        {{ day_name[4] if day_name.startswith('Thứ') else 'CN' }}
+                    </div>
+                    <div>
+                        <div>{{ day_name }}</div>
+                        {% if schedule_by_day[day_key] %}
+                        <small class="text-muted">{{ schedule_by_day[day_key]|length }} buổi học</small>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if schedule_by_day[day_key] and schedule_by_day[day_key]|length > 0 %}
+                    {% for s in schedule_by_day[day_key] %}
+                    <div class="schedule-time-card">
+                        <div class="schedule-time">
+                            <i class="fas fa-clock"></i>
+                            {{ s.time_start.strftime('%H:%M') }} - {{ s.time_end.strftime('%H:%M') }}
+                        </div>
+                        <div class="schedule-class-name">
+                            {{ s.class_obj.class_name }}
+                        </div>
+                        {% if s.location %}
+                        <div class="schedule-location">
+                            <i class="fas fa-map-marker-alt"></i>
+                            {{ s.location }}
+                        </div>
+                        {% endif %}
+                        <div class="schedule-instructor">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                            GV: {{ s.class_obj.instructor.full_name }}
+                        </div>
+                        {% if s.notes %}
+                        <small class="text-muted d-block mt-2">
+                            <i class="fas fa-sticky-note me-1"></i>{{ s.notes }}
+                        </small>
+                        {% endif %}
+                        <a href="{{ url_for('student.class_detail', class_id=s.class_id) }}" 
+                           class="btn btn-sm btn-outline-primary mt-2">
+                            <i class="fas fa-arrow-right me-1"></i>Chi tiết
+                        </a>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-day">
+                        <i class="fas fa-calendar-times"></i>
+                        <p class="mb-0">Không có lịch học</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Summary Card -->
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-body">
+            <div class="row text-center">
+                <div class="col-md-3">
+                    <i class="fas fa-calendar-check text-primary mb-2" style="font-size: 2rem;"></i>
+                    {% set total_sessions = (schedule_by_day.monday|length) + (schedule_by_day.tuesday|length) + 
+                                           (schedule_by_day.wednesday|length) + (schedule_by_day.thursday|length) + 
+                                           (schedule_by_day.friday|length) + (schedule_by_day.saturday|length) + 
+                                           (schedule_by_day.sunday|length) %}
+                    <h4 class="mb-0">{{ total_sessions }}</h4>
+                    <small class="text-muted">Tổng buổi học/tuần</small>
+                </div>
+                <div class="col-md-3">
+                    <i class="fas fa-fire text-warning mb-2" style="font-size: 2rem;"></i>
+                    {% set days_with_classes = 0 %}
+                    {% if schedule_by_day.monday|length > 0 %}{% set days_with_classes = days_with_classes + 1 %}{% endif %}
+                    {% if schedule_by_day.tuesday|length > 0 %}{% set days_with_classes = days_with_classes + 1 %}{% endif %}
+                    {% if schedule_by_day.wednesday|length > 0 %}{% set days_with_classes = days_with_classes + 1 %}{% endif %}
+                    {% if schedule_by_day.thursday|length > 0 %}{% set days_with_classes = days_with_classes + 1 %}{% endif %}
+                    {% if schedule_by_day.friday|length > 0 %}{% set days_with_classes = days_with_classes + 1 %}{% endif %}
+                    {% if schedule_by_day.saturday|length > 0 %}{% set days_with_classes = days_with_classes + 1 %}{% endif %}
+                    {% if schedule_by_day.sunday|length > 0 %}{% set days_with_classes = days_with_classes + 1 %}{% endif %}
+                    <h4 class="mb-0">{{ days_with_classes }}</h4>
+                    <small class="text-muted">Ngày có lịch</small>
+                </div>
+                <div class="col-md-3">
+                    <i class="fas fa-clock text-info mb-2" style="font-size: 2rem;"></i>
+                    <h4 class="mb-0">~{{ (total_sessions * 1.5)|round(0)|int }}h</h4>
+                    <small class="text-muted">Ước tính giờ học/tuần</small>
+                </div>
+                <div class="col-md-3">
+                    <i class="fas fa-users text-success mb-2" style="font-size: 2rem;"></i>
+                    {% set unique_classes = [] %}
+                    {% for day_schedules in schedule_by_day.values() %}
+                        {% for s in day_schedules %}
+                            {% if s.class_id not in unique_classes %}
+                                {% set _ = unique_classes.append(s.class_id) %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endfor %}
+                    <h4 class="mb-0">{{ unique_classes|length }}</h4>
+                    <small class="text-muted">Lớp đang học</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/student.js') }}"></script>
+<script>
+    // Highlight today's schedule
+    document.addEventListener('DOMContentLoaded', function() {
+        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        const today = days[new Date().getDay()];
+        
+        const todayColumn = document.querySelector('.day-' + today);
+        if (todayColumn) {
+            todayColumn.style.border = '2px solid #667eea';
+            todayColumn.style.boxShadow = '0 4px 20px rgba(102, 126, 234, 0.2)';
+            
+            // Add "Hôm nay" badge
+            const header = todayColumn.querySelector('.day-header');
+            if (header) {
+                const badge = document.createElement('span');
+                badge.className = 'badge bg-primary ms-2';
+                badge.textContent = 'Hôm nay';
+                badge.style.fontSize = '0.75rem';
+                header.appendChild(badge);
+            }
+        }
+    });
+</script>
+{% endblock %}

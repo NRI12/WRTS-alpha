@@ -1,0 +1,138 @@
+{% extends "base/instructor_base.html" %}
+
+{% block title %}Quản lý lớp học{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/instructor.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block instructor_content %}
+<!-- Modern Header -->
+<div class="page-header-modern">
+    <div class="page-header-content">
+        <div class="page-header-icon">
+            <i class="fas fa-chalkboard-teacher"></i>
+        </div>
+        <div class="page-header-text">
+            <h1 class="page-header-title">Quản lý lớp học</h1>
+            <p class="page-header-subtitle">Danh sách lớp học của bạn</p>
+        </div>
+    </div>
+    <div class="page-header-actions">
+        <a href="{{ url_for('instructor.propose_class') }}" class="btn btn-light btn-sm">
+            <i class="fas fa-plus me-2"></i>Đề xuất lớp mới
+        </a>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="filter-section">
+    <div class="row g-3">
+        <div class="col-md-3">
+            <label class="form-label">Trạng thái</label>
+            <select class="form-select" id="filterStatus">
+                <option value="">Tất cả</option>
+                <option value="active">Đang hoạt động</option>
+                <option value="inactive">Tạm dừng</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Cấp độ</label>
+            <select class="form-select" id="filterLevel">
+                <option value="">Tất cả</option>
+                <option value="beginner">Sơ cấp</option>
+                <option value="intermediate">Trung cấp</option>
+                <option value="advanced">Cao cấp</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Tìm kiếm</label>
+            <input type="text" class="form-control" id="searchClass" placeholder="Tìm theo tên, mã lớp...">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">&nbsp;</label>
+            <button class="btn btn-secondary w-100" onclick="resetFilters()">
+                <i class="fas fa-redo me-2"></i>Reset
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Classes Cards Grid -->
+<div class="row g-3">
+    {% if classes %}
+        {% for class in classes %}
+        <div class="col-md-6 col-lg-4">
+            <div class="compact-card">
+                <div class="compact-card-header">
+                    <div class="flex-grow-1">
+                        <h5 class="compact-card-title">{{ class.class_name }}</h5>
+                        <div class="compact-card-meta">
+                            <span class="badge bg-primary">{{ class.class_code }}</span>
+                            {% if class.level == 'beginner' %}
+                                <span class="badge bg-success">Sơ cấp</span>
+                            {% elif class.level == 'intermediate' %}
+                                <span class="badge bg-info">Trung cấp</span>
+                            {% elif class.level == 'advanced' %}
+                                <span class="badge bg-danger">Nâng cao</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ class.level }}</span>
+                            {% endif %}
+                            {% if class.is_active %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-check-circle me-1"></i>Hoạt động
+                            </span>
+                            {% else %}
+                            <span class="badge bg-warning">
+                                <i class="fas fa-pause-circle me-1"></i>Tạm dừng
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="compact-card-info">
+                    <div>
+                        <i class="fas fa-users"></i>
+                        <span>{{ class.actual_students_count }}/{{ class.max_students }} học viên</span>
+                    </div>
+                </div>
+                
+                {% if class.description %}
+                <p class="text-muted small mb-2">{{ class.description[:60] }}...</p>
+                {% endif %}
+                
+                <div class="compact-card-actions">
+                    <a href="{{ url_for('instructor.class_detail', class_id=class.class_id) }}" 
+                       class="btn btn-sm btn-primary flex-grow-1">
+                        <i class="fas fa-eye me-1"></i>Chi tiết
+                    </a>
+                    <a href="{{ url_for('instructor.edit_class', class_id=class.class_id) }}" 
+                       class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="col-12">
+        <div class="empty-state-compact">
+            <i class="fas fa-chalkboard"></i>
+            <p class="mb-0">Chưa có lớp học nào</p>
+            <a href="{{ url_for('instructor.propose_class') }}" class="btn btn-primary btn-sm mt-3">
+                <i class="fas fa-plus me-2"></i>Đề xuất lớp mới
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function resetFilters() {
+    document.getElementById('filterStatus').value = '';
+    document.getElementById('filterLevel').value = '';
+    document.getElementById('searchClass').value = '';
+}
+</script>
+{% endblock %}

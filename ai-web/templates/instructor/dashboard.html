@@ -1,0 +1,260 @@
+{% extends "base/instructor_base.html" %}
+
+{% block title %}Dashboard - Giảng viên{% endblock %}
+
+{% block page_title %}Dashboard Giảng viên{% endblock %}
+{% block breadcrumb_active %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/instructor.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<!-- Modern Header -->
+<div class="page-header-modern dashboard">
+    <div class="page-header-content">
+        <div class="page-header-icon">
+            <i class="fas fa-tachometer-alt"></i>
+        </div>
+        <div class="page-header-text">
+            <h1 class="page-header-title">Xin chào, <strong>{{ session.full_name }}</strong></h1>
+            <p class="page-header-subtitle">Dashboard quản lý lớp học và bài giảng</p>
+        </div>
+    </div>
+    <div class="page-header-actions">
+        <a href="{{ url_for('instructor.propose_class') }}" class="btn btn-light btn-sm">
+            <i class="fas fa-plus me-2"></i>Đề xuất lớp
+        </a>
+        <a href="{{ url_for('instructor.create_routine') }}" class="btn btn-light btn-sm">
+            <i class="fas fa-dumbbell me-2"></i>Tạo bài võ
+        </a>
+        <a href="{{ url_for('instructor.create_assignment') }}" class="btn btn-light btn-sm">
+            <i class="fas fa-tasks me-2"></i>Gán bài tập
+        </a>
+    </div>
+</div>
+
+<!-- Overview Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-chalkboard-teacher"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">{{ approved_classes|length }}</div>
+            <div class="stat-label">Lớp học</div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-user-graduate"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">
+                {% set total_students = approved_classes|sum(attribute='actual_students_count') %}
+                {{ total_students }}
+            </div>
+            <div class="stat-label">Học viên</div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-clipboard-list"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">0</div>
+            <div class="stat-label">Bài tập chờ chấm</div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">--</div>
+            <div class="stat-label">Điểm TB</div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Links Section -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-sm-6">
+        <a href="{{ url_for('instructor.routines') }}" class="quick-link-card">
+            <i class="fas fa-dumbbell"></i>
+            <span>Quản lý bài võ</span>
+        </a>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <a href="{{ url_for('instructor.assignments') }}" class="quick-link-card">
+            <i class="fas fa-tasks"></i>
+            <span>Quản lý bài tập</span>
+        </a>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <a href="{{ url_for('instructor.exams') }}" class="quick-link-card">
+            <i class="fas fa-file-alt"></i>
+            <span>Quản lý kiểm tra</span>
+        </a>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <a href="{{ url_for('instructor.pending_evaluations') }}" class="quick-link-card">
+            <i class="fas fa-video"></i>
+            <span>Chấm điểm video</span>
+        </a>
+    </div>
+</div>
+
+<!-- Classes Section -->
+<div class="data-table-wrapper mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">
+            <i class="fas fa-chalkboard text-primary me-2"></i>
+            Lớp học đã duyệt ({{ approved_classes|length }})
+        </h5>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('instructor.propose_class') }}" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-plus me-1"></i>Đề xuất lớp mới
+            </a>
+            <a href="{{ url_for('instructor.my_proposals') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-list me-1"></i>Đề xuất của tôi
+            </a>
+        </div>
+    </div>
+    {% if approved_classes %}
+    <div class="table-responsive">
+        <table class="table data-table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Mã lớp</th>
+                    <th>Tên lớp</th>
+                    <th>Cấp độ</th>
+                    <th>Học viên</th>
+                    <th>Trạng thái</th>
+                    <th class="text-end">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for class in approved_classes %}
+                <tr>
+                    <td>
+                        <span class="badge bg-primary">{{ class.class_code }}</span>
+                    </td>
+                    <td>
+                        <strong>{{ class.class_name }}</strong>
+                    </td>
+                    <td>
+                        <span class="badge bg-info">{{ class.level }}</span>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-users text-muted me-2"></i>
+                            <span>{{ class.actual_students_count }}/{{ class.max_students }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        {% if class.is_active %}
+                        <span class="badge bg-success">
+                            <i class="fas fa-check-circle me-1"></i>Hoạt động
+                        </span>
+                        {% else %}
+                        <span class="badge bg-warning">
+                            <i class="fas fa-pause-circle me-1"></i>Tạm dừng
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{{ url_for('instructor.class_detail', class_id=class.class_id) }}" 
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-eye me-1"></i>Chi tiết
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state-compact">
+        <i class="fas fa-chalkboard"></i>
+        <p class="mb-0">Chưa có lớp học nào được duyệt</p>
+        <a href="{{ url_for('instructor.propose_class') }}" class="btn btn-primary btn-sm mt-3">
+            <i class="fas fa-plus me-2"></i>Đề xuất lớp mới
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Recent Proposals Section -->
+<div class="data-table-wrapper">
+    <h5 class="mb-3">
+        <i class="fas fa-clock text-warning me-2"></i>
+        Đề xuất gần đây
+    </h5>
+    <div class="table-responsive">
+        <table class="table data-table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Tên lớp</th>
+                    <th>Cấp độ</th>
+                    <th>Ngày đề xuất</th>
+                    <th>Trạng thái</th>
+                    <th class="text-end">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if my_proposals and my_proposals|length > 0 %}
+                    {% for p in my_proposals[:5] %}
+                    <tr>
+                        <td class="fw-semibold">{{ p.class_name }}</td>
+                        <td>
+                            {% if p.level == 'beginner' %}
+                                <span class="badge bg-success">Sơ cấp</span>
+                            {% elif p.level == 'intermediate' %}
+                                <span class="badge bg-info">Trung cấp</span>
+                            {% elif p.level == 'advanced' %}
+                                <span class="badge bg-danger">Nâng cao</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ p.level }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ p.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td>
+                            {% if p.approval_status == 'approved' %}
+                                <span class="badge bg-success">{{ p.approval_status_display }}</span>
+                            {% elif p.approval_status == 'pending' %}
+                                <span class="badge bg-warning text-dark">{{ p.approval_status_display }}</span>
+                            {% elif p.approval_status == 'rejected' %}
+                                <span class="badge bg-danger">{{ p.approval_status_display }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ p.approval_status }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if p.approval_status == 'approved' %}
+                            <a href="{{ url_for('instructor.class_detail', class_id=p.class_id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye me-1"></i>Chi tiết
+                            </a>
+                            {% else %}
+                            <a href="{{ url_for('instructor.my_proposals') }}" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-list me-1"></i>Xem đề xuất
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">
+                            Chưa có đề xuất mới
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "base/adminlte_instructor_base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link href="{{ url_for('static', filename='css/instructor.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block role_specific_css %}
+<style>
+    /* Instructor-specific overrides */
+    .instructor-dashboard {
+        /* Add any instructor-specific styles here */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    {% block instructor_content %}{% endblock %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
+<script>
+    // Instructor-specific JavaScript
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize DataTables if present
+        if (typeof $.fn.DataTable !== 'undefined') {
+            $('.data-table').DataTable({
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/vi.json'
+                },
+                pageLength: 10,
+                order: [[0, 'desc']]
+            });
+        }
+        
+        // Score slider updates
+        const scoreSliders = document.querySelectorAll('.score-slider');
+        scoreSliders.forEach(slider => {
+            const display = slider.parentElement.querySelector('.score-display');
+            if (display) {
+                slider.addEventListener('input', function() {
+                    display.textContent = this.value;
+                });
+            }
+        });
+        
+        // Confirm delete actions
+        const deleteButtons = document.querySelectorAll('.btn-delete');
+        deleteButtons.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                if (!confirm('Bạn có chắc chắn muốn xóa?')) {
+                    e.preventDefault();
+                }
+            });
+        });
+        
+        // Auto-save draft
+        let autoSaveTimer;
+        const commentBoxes = document.querySelectorAll('.comment-box');
+        commentBoxes.forEach(box => {
+            box.addEventListener('input', function() {
+                clearTimeout(autoSaveTimer);
+                autoSaveTimer = setTimeout(() => {
+                    // Auto-save logic here
+                    console.log('Auto-saving draft...');
+                }, 2000);
+            });
+        });
+    });
+</script>
+{% endblock %}

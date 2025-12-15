@@ -1,0 +1,279 @@
+{% extends "base/instructor_base.html" %}
+
+{% block title %}Chi tiết lớp - {{ class_obj.class_name }}{% endblock %}
+
+{% block instructor_content %}
+<div class="page-header-modern">
+    <div class="page-header-content">
+        <div class="page-header-icon">
+            <i class="fas fa-chalkboard"></i>
+        </div>
+        <div class="page-header-text">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{{ url_for('instructor.classes') }}">Lớp học</a></li>
+                    <li class="breadcrumb-item active">{{ class_obj.class_name }}</li>
+                </ol>
+            </nav>
+            <h1 class="page-header-title">{{ class_obj.class_name }}</h1>
+            <p class="page-header-subtitle mb-0">
+                <span class="badge bg-primary me-2">{{ class_obj.class_code }}</span>
+                {% if class_obj.is_active %}
+                <span class="badge bg-success">Hoạt động</span>
+                {% else %}
+                <span class="badge bg-warning text-dark">Tạm dừng</span>
+                {% endif %}
+            </p>
+        </div>
+    </div>
+    <div class="page-header-actions">
+        <a href="{{ url_for('instructor.edit_class', class_id=class_obj.class_id) }}" class="btn btn-light btn-sm">
+            <i class="fas fa-edit me-2"></i>Chỉnh sửa
+        </a>
+        <a href="{{ url_for('instructor.class_schedules', class_id=class_obj.class_id) }}" class="btn btn-outline-info btn-sm">
+            <i class="fas fa-calendar-alt me-2"></i>Lịch học
+        </a>
+        <a href="{{ url_for('instructor.add_student', class_id=class_obj.class_id) }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-user-plus me-2"></i>Thêm học viên
+        </a>
+    </div>
+</div>
+
+<!-- Class Stats Cards -->
+<div class="class-stats-grid mb-4">
+    <div class="class-stat-item">
+        <i class="fas fa-users text-primary mb-2" style="font-size: 1.5rem;"></i>
+        <div class="class-stat-value">{{ enrollments|length }}/{{ class_obj.max_students }}</div>
+        <div class="class-stat-label">Học viên</div>
+    </div>
+    
+    <div class="class-stat-item">
+        <i class="fas fa-calendar-alt text-info mb-2" style="font-size: 1.5rem;"></i>
+        <div class="class-stat-value">{{ class_obj.schedules|length if class_obj.schedules else 0 }}</div>
+        <div class="class-stat-label">Buổi học/tuần</div>
+    </div>
+    
+    <div class="class-stat-item">
+        <i class="fas fa-tasks text-warning mb-2" style="font-size: 1.5rem;"></i>
+        <div class="class-stat-value">{{ class_obj.assignments|length if class_obj.assignments else 0 }}</div>
+        <div class="class-stat-label">Bài tập đã giao</div>
+    </div>
+    
+    <div class="class-stat-item">
+        <i class="fas fa-chart-line text-success mb-2" style="font-size: 1.5rem;"></i>
+        <div class="class-stat-value">{{ "%.1f"|format(class_overview.avg_score) if class_overview.avg_score > 0 else "--" }}</div>
+        <div class="class-stat-label">Điểm TB lớp</div>
+    </div>
+</div>
+
+<!-- Class Info & Progress -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle text-primary me-2"></i>
+                    Thông tin lớp
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="info-item mb-3">
+                    <label class="text-muted mb-1">Cấp độ</label>
+                    <div>
+                        <span class="badge bg-info">{{ class_obj.level }}</span>
+                    </div>
+                </div>
+                
+                <div class="info-item mb-3">
+                    <label class="text-muted mb-1">Mô tả</label>
+                    <p class="mb-0">{{ class_obj.description or 'Chưa có mô tả' }}</p>
+                </div>
+                
+                <div class="info-item mb-3">
+                    <label class="text-muted mb-1">Số học viên</label>
+                    <div class="progress" style="height: 25px;">
+                        {% set percent = (class_obj.current_students / class_obj.max_students * 100) if class_obj.max_students > 0 else 0 %}
+                        <div class="progress-bar" style="width: {{ percent }}%">
+                            {{ class_obj.current_students }}/{{ class_obj.max_students }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="info-item">
+                    <label class="text-muted mb-1">Trạng thái</label>
+                    <div>
+                        {% if class_obj.is_active %}
+                        <span class="badge bg-success">
+                            <i class="fas fa-check-circle me-1"></i>Đang hoạt động
+                        </span>
+                        {% else %}
+                        <span class="badge bg-warning">
+                            <i class="fas fa-pause-circle me-1"></i>Tạm dừng
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-area text-success me-2"></i>
+                    Tiến độ học viên (30 ngày)
+                </h5>
+            </div>
+            <div class="card-body">
+                <div style="height: 250px; position: relative;">
+                    <canvas id="studentProgressChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Students List -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0 py-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-users text-primary me-2"></i>
+                Danh sách học viên ({{ class_obj.current_students }})
+            </h5>
+            <a href="{{ url_for('instructor.add_student', class_id=class_obj.class_id) }}" 
+               class="btn btn-sm btn-primary">
+                <i class="fas fa-user-plus me-1"></i>Thêm học viên
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table data-table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Mã HV</th>
+                        <th>Họ tên</th>
+                        <th>Email</th>
+                        <th>Ngày tham gia</th>
+                        <th>Điểm TB</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if enrollments %}
+                        {% for enrollment in enrollments %}
+                        <tr>
+                            <td>{{ enrollment.student.username }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle me-2">
+                                        {{ enrollment.student.full_name[0] }}
+                                    </div>
+                                    <strong>{{ enrollment.student.full_name }}</strong>
+                                </div>
+                            </td>
+                            <td>{{ enrollment.student.email }}</td>
+                            <td>{{ enrollment.enrolled_at.strftime('%d/%m/%Y') }}</td>
+                            <td>
+                                {% set avg_score = student_scores.get(enrollment.student_id, 0) %}
+                                {% if avg_score > 0 %}
+                                    <span class="badge bg-primary">{{ "%.1f"|format(avg_score) }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">--</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if enrollment.enrollment_status == 'active' %}
+                                <span class="badge bg-success">Đang học</span>
+                                {% elif enrollment.enrollment_status == 'completed' %}
+                                <span class="badge bg-info">Hoàn thành</span>
+                                {% else %}
+                                <span class="badge bg-warning">{{ enrollment.enrollment_status }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <form method="POST" action="{{ url_for('instructor.remove_student', enrollment_id=enrollment.enrollment_id) }}" style="display:inline;">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Xóa học viên khỏi lớp?')">
+                                        <i class="fas fa-user-minus"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            Chưa có học viên nào trong lớp
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Student Progress Chart
+    const ctx = document.getElementById('studentProgressChart');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Tuần 1', 'Tuần 2', 'Tuần 3', 'Tuần 4'],
+                datasets: [{
+                    label: 'Điểm trung bình',
+                    data: [65, 70, 75, 78],
+                    borderColor: '#f5576c',
+                    backgroundColor: 'rgba(245, 87, 108, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+
+
+<style>
+.avatar-circle {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+/* Chart container styles */
+#studentProgressChart {
+    max-width: 100%;
+    max-height: 100%;
+}
+</style>
+{% endblock %}

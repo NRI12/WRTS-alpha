@@ -1,0 +1,189 @@
+{% extends "base/adminlte_base.html" %}
+
+{% block sidebar_menu %}
+    <li class="nav-item">
+        <a href="{{ url_for('instructor.dashboard') }}" class="nav-link {% if request.endpoint == 'instructor.dashboard' %}active{% endif %}">
+            <i class="nav-icon fas fa-tachometer-alt"></i>
+            <p>Dashboard</p>
+        </a>
+    </li>
+    <li class="nav-item has-treeview {% if
+            request.endpoint.startswith('instructor.class') or
+            request.endpoint in ['instructor.propose_class', 'instructor.my_proposals'] or
+            request.endpoint.startswith('instructor.class_schedules') or
+            request.endpoint.startswith('instructor.add_schedule') or
+            request.endpoint.startswith('instructor.edit_schedule') or
+            request.endpoint.startswith('instructor.delete_schedule') or
+            request.endpoint.startswith('instructor.add_student') or
+            request.endpoint.startswith('instructor.remove_student')
+        %}menu-open{% endif %}">
+        <a href="#" class="nav-link {% if
+            request.endpoint.startswith('instructor.class') or
+            request.endpoint in ['instructor.propose_class', 'instructor.my_proposals'] or
+            request.endpoint.startswith('instructor.class_schedules') or
+            request.endpoint.startswith('instructor.add_schedule') or
+            request.endpoint.startswith('instructor.edit_schedule') or
+            request.endpoint.startswith('instructor.delete_schedule') or
+            request.endpoint.startswith('instructor.add_student') or
+            request.endpoint.startswith('instructor.remove_student')
+        %}active{% endif %}">
+            <i class="nav-icon fas fa-chalkboard-teacher"></i>
+            <p>
+                Lớp học
+                <i class="fas fa-angle-left right"></i>
+            </p>
+        </a>
+        <ul class="nav nav-treeview">
+            <li class="nav-item">
+                <a href="{{ url_for('instructor.classes') }}" class="nav-link {% if request.endpoint == 'instructor.classes' %}active{% endif %}">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>Danh sách lớp</p>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('instructor.propose_class') }}" class="nav-link {% if request.endpoint == 'instructor.propose_class' %}active{% endif %}">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>Đề xuất lớp mới</p>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('instructor.my_proposals') }}" class="nav-link {% if request.endpoint == 'instructor.my_proposals' %}active{% endif %}">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>Đề xuất của tôi</p>
+                </a>
+            </li>
+        </ul>
+    </li>
+    <li class="nav-item has-treeview {% if
+            request.endpoint.startswith('instructor.routine') or
+            request.endpoint == 'instructor.create_routine'
+        %}menu-open{% endif %}">
+        <a href="#" class="nav-link {% if
+            request.endpoint.startswith('instructor.routine') or
+            request.endpoint == 'instructor.create_routine'
+        %}active{% endif %}">
+            <i class="nav-icon fas fa-book"></i>
+            <p>
+                Bài võ
+                <i class="fas fa-angle-left right"></i>
+            </p>
+        </a>
+        <ul class="nav nav-treeview">
+            <li class="nav-item">
+                <a href="{{ url_for('instructor.routines') }}" class="nav-link {% if request.endpoint == 'instructor.routines' %}active{% endif %}">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>Danh sách bài võ</p>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('instructor.create_routine') }}" class="nav-link {% if request.endpoint == 'instructor.create_routine' %}active{% endif %}">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>Tạo bài võ mới</p>
+                </a>
+            </li>
+        </ul>
+    </li>
+    <li class="nav-item has-treeview {% if
+            request.endpoint.startswith('instructor.assign') or
+            request.endpoint == 'instructor.create_assignment'
+        %}menu-open{% endif %}">
+        <a href="#" class="nav-link {% if
+            request.endpoint.startswith('instructor.assign') or
+            request.endpoint == 'instructor.create_assignment'
+        %}active{% endif %}">
+            <i class="nav-icon fas fa-clipboard-list"></i>
+            <p>
+                Bài tập
+                <i class="fas fa-angle-left right"></i>
+            </p>
+        </a>
+        <ul class="nav nav-treeview">
+            <li class="nav-item">
+                <a href="{{ url_for('instructor.assignments') }}" class="nav-link {% if request.endpoint == 'instructor.assignments' %}active{% endif %}">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>Danh sách bài tập</p>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('instructor.create_assignment') }}" class="nav-link {% if request.endpoint == 'instructor.create_assignment' %}active{% endif %}">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>Tạo bài tập mới</p>
+                </a>
+            </li>
+        </ul>
+    </li>
+    <li class="nav-item has-treeview {% if
+            request.endpoint.startswith('instructor.exam') or
+            request.endpoint == 'instructor.create_exam'
+        %}menu-open{% endif %}">
+        <a href="#" class="nav-link {% if
+            request.endpoint.startswith('instructor.exam') or
+            request.endpoint == 'instructor.create_exam'
+        %}active{% endif %}">
+            <i class="nav-icon fas fa-file-alt"></i>
+            <p>
+                Kiểm tra
+                <i class="fas fa-angle-left right"></i>
+            </p>
+        </a>
+        <ul class="nav nav-treeview">
+            <li class="nav-item">
+                <a href="{{ url_for('instructor.exams') }}" class="nav-link {% if request.endpoint == 'instructor.exams' %}active{% endif %}">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>Danh sách kiểm tra</p>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('instructor.create_exam') }}" class="nav-link {% if request.endpoint == 'instructor.create_exam' %}active{% endif %}">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>Tạo kiểm tra mới</p>
+                </a>
+            </li>
+        </ul>
+    </li>
+    <li class="nav-item">
+        <a href="{{ url_for('instructor.pending_evaluations') }}" class="nav-link {% if
+            request.endpoint.startswith('instructor.pending_evaluations') or
+            request.endpoint.startswith('instructor.evaluate_video')
+        %}active{% endif %}">
+            <i class="nav-icon fas fa-star"></i>
+            <p>Đánh giá</p>
+        </a>
+    </li>
+    <li class="nav-item has-treeview {% if
+            request.endpoint.startswith('instructor.analytics') or
+            request.endpoint.startswith('instructor.class_analytics') or
+            request.endpoint.startswith('instructor.report')
+        %}menu-open{% endif %}">
+        <a href="#" class="nav-link {% if
+            request.endpoint.startswith('instructor.analytics') or
+            request.endpoint.startswith('instructor.class_analytics') or
+            request.endpoint.startswith('instructor.report')
+        %}active{% endif %}">
+            <i class="nav-icon fas fa-chart-bar"></i>
+            <p>
+                Báo cáo
+                <i class="fas fa-angle-left right"></i>
+            </p>
+        </a>
+        <ul class="nav nav-treeview">
+            <li class="nav-item">
+                <a href="{{ url_for('instructor.analytics') }}" class="nav-link {% if request.endpoint == 'instructor.analytics' %}active{% endif %}">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>Phân tích tổng quan</p>
+                </a>
+            </li>
+        </ul>
+    </li>
+    <li class="nav-item">
+        <a href="{{ url_for('auth.profile') }}" class="nav-link {% if
+            request.endpoint.startswith('auth.profile') or
+            request.endpoint.startswith('auth.edit_profile') or
+            request.endpoint.startswith('auth.change_password')
+        %}active{% endif %}">
+            <i class="nav-icon fas fa-user"></i>
+            <p>Hồ sơ cá nhân</p>
+        </a>
+    </li>
+{% endblock %}
+

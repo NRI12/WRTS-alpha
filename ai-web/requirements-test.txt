@@ -1,0 +1,20 @@
+# Testing dependencies for AI-WRTS
+
+# Core testing framework
+pytest==7.4.3
+pytest-cov==4.1.0
+pytest-flask==1.3.0
+pytest-mock==3.12.0
+
+# Test data generation
+faker==20.1.0
+
+# Code quality (optional but recommended)
+pytest-xdist==3.5.0  # Parallel test execution
+pytest-timeout==2.2.0  # Test timeout management
+
+# Note: Install base requirements first:
+# pip install -r requirements.txt
+# Then install test requirements:
+# pip install -r requirements-test.txt
+

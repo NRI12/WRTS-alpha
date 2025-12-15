@@ -1,0 +1,33 @@
+{% extends "base/adminlte_base.html" %}
+
+{% block sidebar_menu %}
+    <li class="nav-item">
+        <a href="{{ url_for('manager.dashboard') }}" class="nav-link {% if request.endpoint == 'manager.dashboard' %}active{% endif %}">
+            <i class="nav-icon fas fa-tachometer-alt"></i>
+            <p>Dashboard</p>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ url_for('manager.analytics') }}" class="nav-link {% if 'analytics' in request.endpoint %}active{% endif %}">
+            <i class="nav-icon fas fa-chart-bar"></i>
+            <p>Báo cáo & Phân tích</p>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ url_for('manager.pending_classes') }}" class="nav-link {% if 'pending_classes' in request.endpoint %}active{% endif %}">
+            <i class="nav-icon fas fa-clock"></i>
+            <p>Duyệt lớp học</p>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ url_for('auth.profile') }}" class="nav-link {% if
+            request.endpoint.startswith('auth.profile') or
+            request.endpoint.startswith('auth.edit_profile') or
+            request.endpoint.startswith('auth.change_password')
+        %}active{% endif %}">
+            <i class="nav-icon fas fa-user"></i>
+            <p>Hồ sơ cá nhân</p>
+        </a>
+    </li>
+{% endblock %}
+

@@ -1,0 +1,74 @@
+{% extends "base/adminlte_base.html" %}
+
+{% block sidebar_menu %}
+    <li class="nav-item">
+        <a href="{{ url_for('student.dashboard') }}" class="nav-link {% if request.endpoint == 'student.dashboard' %}active{% endif %}">
+            <i class="nav-icon fas fa-tachometer-alt"></i>
+            <p>Dashboard</p>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ url_for('student.classes') }}" class="nav-link {% if request.endpoint.startswith('student.class') %}active{% endif %}">
+            <i class="nav-icon fas fa-users"></i>
+            <p>Lớp học</p>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ url_for('student.all_schedules') }}" class="nav-link {% if request.endpoint == 'student.all_schedules' %}active{% endif %}">
+            <i class="nav-icon fas fa-calendar-week"></i>
+            <p>Lịch học</p>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ url_for('student.routines') }}" class="nav-link {% if request.endpoint.startswith('student.routine') %}active{% endif %}">
+            <i class="nav-icon fas fa-book-open"></i>
+            <p>Bài võ</p>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ url_for('student.my_assignments') }}" class="nav-link {% if request.endpoint.startswith('student.my_assignments') or request.endpoint.startswith('student.submit_assignment') %}active{% endif %}">
+            <i class="nav-icon fas fa-tasks"></i>
+            <p>Bài tập</p>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ url_for('student.my_exams') }}" class="nav-link {% if request.endpoint.startswith('student.my_exams') or request.endpoint.startswith('student.take_exam') %}active{% endif %}">
+            <i class="nav-icon fas fa-file-alt"></i>
+            <p>Kiểm tra</p>
+        </a>
+    </li>
+    <li class="nav-item has-treeview {% if 'student_videos' in request.endpoint %}menu-open{% endif %}">
+        <a href="#" class="nav-link {% if 'student_videos' in request.endpoint %}active{% endif %}">
+            <i class="nav-icon fas fa-video"></i>
+            <p>
+                Video của tôi
+                <i class="fas fa-angle-left right"></i>
+            </p>
+        </a>
+        <ul class="nav nav-treeview">
+            <li class="nav-item">
+                <a href="{{ url_for('student_videos.history') }}" class="nav-link {% if request.endpoint == 'student_videos.history' %}active{% endif %}">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>Lịch sử video</p>
+                </a>
+            </li>
+        </ul>
+    </li>
+    <li class="nav-item">
+        <a href="{{ url_for('student.analytics') }}" class="nav-link {% if request.endpoint == 'student.analytics' %}active{% endif %}">
+            <i class="nav-icon fas fa-chart-line"></i>
+            <p>Phân tích</p>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ url_for('auth.profile') }}" class="nav-link {% if
+            request.endpoint.startswith('auth.profile') or
+            request.endpoint.startswith('auth.edit_profile') or
+            request.endpoint.startswith('auth.change_password')
+        %}active{% endif %}">
+            <i class="nav-icon fas fa-user"></i>
+            <p>Hồ sơ cá nhân</p>
+        </a>
+    </li>
+{% endblock %}
+

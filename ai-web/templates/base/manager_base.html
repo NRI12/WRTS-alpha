@@ -1,0 +1,434 @@
+{% extends "base/adminlte_manager_base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    .page-header { margin-bottom: 1.5rem; }
+    .manager-dashboard .stat-card::before {
+        background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+    }
+    
+    .manager-dashboard .stat-icon {
+        background: linear-gradient(135deg, rgba(235, 51, 73, 0.1) 0%, rgba(244, 92, 67, 0.1) 100%);
+        color: #eb3349;
+    }
+    
+    .analytics-panel {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        box-shadow: var(--box-shadow);
+        margin-bottom: 1.5rem;
+    }
+    
+    .analytics-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    
+    .analytics-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .analytics-title i {
+        color: #eb3349;
+    }
+    
+    .date-range-picker {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+    }
+    
+    .date-range-picker input {
+        padding: 0.5rem 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: var(--border-radius-sm);
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 350px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .kpi-card {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        box-shadow: var(--box-shadow);
+        position: relative;
+        overflow: hidden;
+        transition: var(--transition);
+    }
+    
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+    }
+    
+    .kpi-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--box-shadow-lg);
+    }
+    
+    .kpi-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(235, 51, 73, 0.1) 0%, rgba(244, 92, 67, 0.1) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: #eb3349;
+        margin-bottom: 1rem;
+    }
+    
+    .kpi-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+    }
+    
+    .kpi-change {
+        font-size: 0.875rem;
+        font-weight: 600;
+        padding: 0.25rem 0.5rem;
+        border-radius: var(--border-radius-sm);
+    }
+    
+    .kpi-change.positive {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .kpi-change.negative {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .kpi-label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+    
+    .comparison-table {
+        background: white;
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        box-shadow: var(--box-shadow);
+    }
+    
+    .comparison-header {
+        background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+        color: white;
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+    }
+    
+    .comparison-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        transition: var(--transition);
+    }
+    
+    .comparison-row:last-child {
+        border-bottom: none;
+    }
+    
+    .comparison-row:hover {
+        background: var(--light-bg);
+    }
+    
+    .comparison-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex: 1;
+    }
+    
+    .comparison-rank {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(235, 51, 73, 0.1) 0%, rgba(244, 92, 67, 0.1) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        color: #eb3349;
+    }
+    
+    .comparison-bar {
+        flex: 1;
+        height: 30px;
+        background: var(--light-bg);
+        border-radius: var(--border-radius-sm);
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .comparison-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #eb3349 0%, #f45c43 100%);
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding-right: 0.75rem;
+        color: white;
+        font-weight: 600;
+        font-size: 0.875rem;
+        transition: width 0.6s ease;
+    }
+    
+    .report-section {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        box-shadow: var(--box-shadow);
+        margin-bottom: 1.5rem;
+    }
+    
+    .report-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    
+    .report-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    .export-buttons {
+        display: flex;
+        gap: 0.75rem;
+    }
+    
+    .btn-export {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.625rem 1.25rem;
+        border-radius: var(--border-radius-sm);
+        font-weight: 500;
+        transition: var(--transition);
+        border: 2px solid var(--border-color);
+        background: white;
+        color: var(--text-primary);
+    }
+    
+    .btn-export:hover {
+        border-color: #eb3349;
+        background: linear-gradient(135deg, rgba(235, 51, 73, 0.05) 0%, rgba(244, 92, 67, 0.05) 100%);
+        transform: translateY(-2px);
+    }
+    
+    .insights-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .insight-card {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        box-shadow: var(--box-shadow);
+        border-left: 4px solid #eb3349;
+    }
+    
+    .insight-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(235, 51, 73, 0.1) 0%, rgba(244, 92, 67, 0.1) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: #eb3349;
+        margin-bottom: 1rem;
+    }
+    
+    .insight-title {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.75rem;
+    }
+    
+    .insight-description {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+    
+    .performance-matrix {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .matrix-cell {
+        background: var(--light-bg);
+        border-radius: var(--border-radius-sm);
+        padding: 1rem;
+        text-align: center;
+    }
+    
+    .matrix-label {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .matrix-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #eb3349;
+    }
+    
+    .filter-panel {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        box-shadow: var(--box-shadow);
+        margin-bottom: 1.5rem;
+    }
+    
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+    
+    @media (max-width: 768px) {
+        .kpi-grid,
+        .insights-grid,
+        .performance-matrix {
+            grid-template-columns: 1fr;
+        }
+        
+        .analytics-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .date-range-picker {
+            flex-direction: column;
+        }
+        
+        .export-buttons {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block role_specific_css %}
+<style>
+    /* Manager-specific overrides */
+    .manager-dashboard {
+        /* Add any manager-specific styles here */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    {% block manager_content %}{% endblock %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
+<script>
+    // Manager-specific JavaScript
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize charts if Chart.js is available
+        if (typeof Chart !== 'undefined') {
+            initializeCharts();
+        }
+        
+        // Date range picker handler
+        const dateRangeInputs = document.querySelectorAll('.date-range-picker input');
+        dateRangeInputs.forEach(input => {
+            input.addEventListener('change', function() {
+                // Reload data with new date range
+                console.log('Date range changed:', this.value);
+            });
+        });
+        
+        // Export report handlers
+        const exportButtons = document.querySelectorAll('.btn-export');
+        exportButtons.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const format = this.dataset.format;
+                exportReport(format);
+            });
+        });
+        
+        // Animate comparison bars
+        const comparisonBars = document.querySelectorAll('.comparison-bar-fill');
+        setTimeout(() => {
+            comparisonBars.forEach(bar => {
+                const width = bar.dataset.percentage + '%';
+                bar.style.width = width;
+            });
+        }, 100);
+        
+        // Auto-refresh data every 5 minutes
+        setInterval(() => {
+            refreshDashboardData();
+        }, 300000);
+    });
+    
+    function initializeCharts() {
+        // Sample chart initialization - customize based on actual data
+        console.log('Initializing manager dashboard charts...');
+    }
+    
+    function exportReport(format) {
+        console.log('Exporting report as:', format);
+        // Implement export logic
+    }
+    
+    function refreshDashboardData() {
+        console.log('Refreshing dashboard data...');
+        // Implement data refresh logic
+    }
+</script>
+{% endblock %}

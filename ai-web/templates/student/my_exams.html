@@ -1,0 +1,224 @@
+{% extends 'base/student_base.html' %}
+
+{% block title %}Bài Kiểm Tra Của Tôi{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/student.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Modern Header -->
+    <div class="page-header-modern mb-4">
+        <div class="page-header-content">
+            <div class="page-header-icon">
+                <i class="fas fa-file-alt"></i>
+            </div>
+            <div class="page-header-text">
+                <h1 class="page-header-title">Bài Kiểm Tra</h1>
+                <p class="page-header-subtitle">Quản lý lịch thi và kết quả</p>
+            </div>
+        </div>
+        <div class="page-header-actions">
+            <a href="{{ url_for('student.dashboard') }}" class="btn btn-light btn-sm">
+                <i class="fas fa-arrow-left me-2"></i>Quay lại
+            </a>
+        </div>
+    </div>
+    
+    <!-- Tabs Navigation -->
+    <ul class="nav exam-tabs" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#upcoming" role="tab">
+                <i class="fas fa-clock"></i> Sắp tới
+                <span class="badge bg-primary ms-2">{{ upcoming|length }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#active" role="tab">
+                <i class="fas fa-play-circle"></i> Đang diễn ra
+                <span class="badge bg-success ms-2">{{ active|length }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#past" role="tab">
+                <i class="fas fa-history"></i> Đã qua
+                <span class="badge bg-secondary ms-2">{{ past|length }}</span>
+            </a>
+        </li>
+    </ul>
+    
+    <!-- Tab Content -->
+    <div class="tab-content">
+        <!-- Upcoming Exams -->
+        <div class="tab-pane fade show active" id="upcoming" role="tabpanel">
+            {% if upcoming %}
+                {% for item in upcoming %}
+                <div class="exam-card-compact">
+                    <div class="exam-header-compact">
+                        <div class="flex-grow-1">
+                            <h5 class="exam-title-compact">{{ item.exam.exam_name }}</h5>
+                            <div class="exam-meta-compact">
+                                <span class="student-exam-type-badge">{{ item.exam.exam_type }}</span>
+                                <span class="badge bg-secondary">{{ item.exam.exam_code }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="exam-info-inline">
+                        <div>
+                            <i class="fas fa-book-open"></i>
+                            <span>{{ item.exam.routine.routine_name if item.exam.routine else 'Tự do' }}</span>
+                        </div>
+                        <div>
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>{{ item.exam.start_time.strftime('%d/%m %H:%M') }} - {{ item.exam.end_time.strftime('%d/%m %H:%M') }}</span>
+                        </div>
+                        <div>
+                            <i class="fas fa-percentage"></i>
+                            <span>Đạt: {{ item.exam.pass_score }}%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="exam-action-compact">
+                        {% if item.can_attempt %}
+                            <a href="{{ url_for('student.take_exam', exam_id=item.exam.exam_id) }}" 
+                               class="btn btn-sm btn-success">
+                                <i class="fas fa-play-circle"></i> Vào thi
+                            </a>
+                        {% elif now < item.exam.start_time %}
+                            <button class="btn btn-sm btn-outline-secondary" disabled>
+                                <i class="fas fa-clock"></i> Chưa đến giờ
+                            </button>
+                            <small class="text-muted">Bắt đầu: {{ item.exam.start_time.strftime('%H:%M %d/%m') }}</small>
+                        {% else %}
+                            <button class="btn btn-sm btn-outline-secondary" disabled>
+                                <i class="fas fa-ban"></i> Hết lượt
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state-compact">
+                    <i class="fas fa-calendar-check"></i>
+                    <p class="mb-0">Không có bài kiểm tra sắp tới</p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Active Exams -->
+        <div class="tab-pane fade" id="active" role="tabpanel">
+            {% if active %}
+                {% for item in active %}
+                <div class="exam-card-compact active">
+                    <div class="exam-header-compact">
+                        <div class="flex-grow-1">
+                            <h5 class="exam-title-compact">{{ item.exam.exam_name }}</h5>
+                            <div class="exam-meta-compact">
+                                <span class="student-exam-type-badge">{{ item.exam.exam_type }}</span>
+                                <span class="badge bg-secondary">{{ item.exam.exam_code }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="exam-info-inline">
+                        <div>
+                            <i class="fas fa-book-open"></i>
+                            <span>{{ item.exam.routine.routine_name if item.exam.routine else 'Tự do' }}</span>
+                        </div>
+                        <div>
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>{{ item.exam.start_time.strftime('%d/%m %H:%M') }} - {{ item.exam.end_time.strftime('%d/%m %H:%M') }}</span>
+                        </div>
+                        <div>
+                            <i class="fas fa-percentage"></i>
+                            <span>Đạt: {{ item.exam.pass_score }}%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="exam-action-compact">
+                        {% if item.can_attempt %}
+                            <a href="{{ url_for('student.take_exam', exam_id=item.exam.exam_id) }}" 
+                               class="btn btn-sm btn-success">
+                                <i class="fas fa-play-circle"></i> Vào thi ngay
+                            </a>
+                        {% else %}
+                            <button class="btn btn-sm btn-outline-secondary" disabled>
+                                <i class="fas fa-ban"></i> Hết lượt
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state-compact">
+                    <i class="fas fa-play-circle"></i>
+                    <p class="mb-0">Không có bài kiểm tra đang diễn ra</p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Past Exams -->
+        <div class="tab-pane fade" id="past" role="tabpanel">
+            {% if past %}
+                {% for item in past %}
+                <div class="exam-card-compact past">
+                    <div class="exam-header-compact">
+                        <div class="flex-grow-1">
+                            <h5 class="exam-title-compact">{{ item.exam.exam_name }}</h5>
+                            <div class="exam-meta-compact">
+                                <span class="student-exam-type-badge">{{ item.exam.exam_type }}</span>
+                                <span class="text-muted">{{ item.exam.start_time.strftime('%d/%m/%Y') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if item.results %}
+                        <div class="mt-2">
+                            {% for result in item.results %}
+                            <div class="result-item-compact">
+                                <div>
+                                    <strong>Lần {{ result.attempt_number }}</strong>
+                                    <small class="d-block text-muted">
+                                        {{ result.submitted_at.strftime('%d/%m/%Y %H:%M') if result.submitted_at else 'N/A' }}
+                                    </small>
+                                </div>
+                                {% if result.score is not none %}
+                                    <div>
+                                        <span class="score-badge-compact {{ 'pass' if result.score >= item.exam.pass_score else 'fail' }}">
+                                            {{ result.score }}%
+                                        </span>
+                                        <span class="badge {{ 'bg-success' if result.score >= item.exam.pass_score else 'bg-danger' }} ms-2">
+                                            {{ 'ĐẠT' if result.score >= item.exam.pass_score else 'KHÔNG ĐẠT' }}
+                                        </span>
+                                    </div>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="fas fa-clock me-1"></i>Chờ chấm
+                                    </span>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info mb-0 mt-2 py-2">
+                            <i class="fas fa-info-circle me-2"></i>Chưa có kết quả thi
+                        </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state-compact">
+                    <i class="fas fa-inbox"></i>
+                    <p class="mb-0">Chưa có bài kiểm tra nào</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/student.js') }}"></script>
+{% endblock %}

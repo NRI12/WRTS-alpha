@@ -1,0 +1,180 @@
+{% extends "base/instructor_base.html" %}
+
+{% block title %}Quản lý bài võ{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/instructor.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block instructor_content %}
+<!-- Modern Header -->
+<div class="page-header-modern">
+    <div class="page-header-content">
+        <div class="page-header-icon">
+            <i class="fas fa-fist-raised"></i>
+        </div>
+        <div class="page-header-text">
+            <h1 class="page-header-title">Quản lý bài võ</h1>
+            <p class="page-header-subtitle">Danh sách bài võ đã tạo</p>
+        </div>
+    </div>
+    <div class="page-header-actions">
+        <a href="{{ url_for('instructor.create_routine') }}" class="btn btn-light btn-sm">
+            <i class="fas fa-plus me-2"></i>Tạo bài võ mới
+        </a>
+    </div>
+</div>
+
+<!-- Stats Overview -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-fist-raised"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">{{ routines|length }}</div>
+            <div class="stat-label">Tổng bài võ</div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-globe"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">
+                {{ routines|selectattr('is_published', 'equalto', true)|list|length }}
+            </div>
+            <div class="stat-label">Đã xuất bản</div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-file-alt"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">
+                {{ routines|selectattr('is_published', 'equalto', false)|list|length }}
+            </div>
+            <div class="stat-label">Bản nháp</div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-user-graduate"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">0</div>
+            <div class="stat-label">Đang được giao</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="filter-section">
+    <form method="get" action="{{ url_for('instructor.routines') }}">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Cấp độ</label>
+                <select class="form-select" name="level">
+                    <option value="" {{ 'selected' if (level_filter == '' or not level_filter) else '' }}>Tất cả</option>
+                    <option value="beginner" {{ 'selected' if level_filter == 'beginner' else '' }}>Sơ cấp</option>
+                    <option value="intermediate" {{ 'selected' if level_filter == 'intermediate' else '' }}>Trung cấp</option>
+                    <option value="advanced" {{ 'selected' if level_filter == 'advanced' else '' }}>Cao cấp</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Vũ khí</label>
+                <select class="form-select" name="weapon_id">
+                    <option value="" {{ 'selected' if (weapon_filter == '' or not weapon_filter) else '' }}>Tất cả</option>
+                    {% for w in weapons %}
+                    <option value="{{ w.weapon_id }}" {{ 'selected' if weapon_filter == w.weapon_id else '' }}>
+                        {{ w.weapon_name_vi or w.weapon_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Trạng thái</label>
+                <select class="form-select" name="status">
+                    <option value="" {{ 'selected' if (status_filter == '' or not status_filter) else '' }}>Tất cả</option>
+                    <option value="published" {{ 'selected' if status_filter == 'published' else '' }}>Đã xuất bản</option>
+                    <option value="draft" {{ 'selected' if status_filter == 'draft' else '' }}>Bản nháp</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1"><i class="fas fa-filter me-1"></i>Lọc</button>
+                <a href="{{ url_for('instructor.routines') }}" class="btn btn-outline-secondary">Đặt lại</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Routines Grid -->
+<div class="row g-3">
+    {% if routines %}
+        {% for routine in routines %}
+        <div class="col-md-6 col-lg-4">
+            <div class="compact-card">
+                <div class="compact-card-header">
+                    <div class="flex-grow-1">
+                        <h5 class="compact-card-title">{{ routine.routine_name }}</h5>
+                        <div class="compact-card-meta">
+                            <span class="badge bg-primary me-1">{{ routine.level }}</span>
+                            <span class="badge bg-info">{{ routine.weapon.weapon_name if routine.weapon else 'N/A' }}</span>
+                            {% if routine.is_published %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-globe me-1"></i>Published
+                            </span>
+                            {% else %}
+                            <span class="badge bg-warning">
+                                <i class="fas fa-file-alt me-1"></i>Draft
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="compact-card-info">
+                    <div>
+                        <i class="fas fa-stopwatch"></i>
+                        <span>{{ routine.duration_seconds // 60 }}:{{ '%02d' % (routine.duration_seconds % 60) }}</span>
+                    </div>
+                    <div>
+                        <i class="fas fa-clipboard-check"></i>
+                        <span>0 tiêu chí</span>
+                    </div>
+                </div>
+                
+                {% if routine.description %}
+                <p class="text-muted small mb-2">{{ routine.description[:60] }}...</p>
+                {% endif %}
+                
+                <div class="compact-card-actions">
+                    <a href="{{ url_for('instructor.routine_detail', routine_id=routine.routine_id) }}" 
+                       class="btn btn-sm btn-primary flex-grow-1">
+                        <i class="fas fa-eye me-1"></i>Chi tiết
+                    </a>
+                    <a href="{{ url_for('instructor.edit_routine', routine_id=routine.routine_id) }}" 
+                       class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-pencil-alt"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="col-12">
+        <div class="empty-state-compact">
+            <i class="fas fa-fist-raised"></i>
+            <p class="mb-0">Chưa có bài võ nào</p>
+            <a href="{{ url_for('instructor.create_routine') }}" class="btn btn-primary btn-sm mt-3">
+                <i class="fas fa-plus me-2"></i>Tạo bài võ mới
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

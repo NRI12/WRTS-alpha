@@ -1,0 +1,143 @@
+{% extends "base/instructor_base.html" %}
+
+{% block title %}Chấm điểm video - {{ video.routine.routine_name }}{% endblock %}
+
+{% block instructor_content %}
+<div class="page-header-modern">
+    <div class="page-header-content">
+        <div class="page-header-icon">
+            <i class="fas fa-star"></i>
+        </div>
+        <div class="page-header-text">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{{ url_for('instructor.pending_evaluations') }}">Chấm điểm</a></li>
+                    <li class="breadcrumb-item active">{{ video.student.full_name }}</li>
+                </ol>
+            </nav>
+            <h1 class="page-header-title">Chấm điểm: {{ video.routine.routine_name }}</h1>
+            <p class="page-header-subtitle">
+                Học viên: {{ video.student.full_name }} • Nộp: {{ video.uploaded_at.strftime('%d/%m/%Y %H:%M') }}
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0"><i class="fas fa-user text-primary me-2"></i>Video học viên</h5>
+            </div>
+            <div class="card-body">
+                <div class="ratio ratio-16x9 bg-black rounded">
+                    <video controls class="w-100 h-100">
+                        <source src="/{{ video.video_url }}" type="video/mp4">
+                        <p class="text-white text-center p-3">Trình duyệt không hỗ trợ video hoặc file không tồn tại</p>
+                    </video>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-graduation-cap text-success me-2"></i>Video demo chuẩn</h5>
+            </div>
+            <div class="card-body">
+                {% if reference_video_url %}
+                <div class="alert alert-info mb-3">
+                    <i class="fas fa-info-circle me-2"></i>{{ video_source }}
+                </div>
+                <div class="ratio ratio-16x9 bg-black rounded">
+                    <video controls class="w-100 h-100">
+                        <source src="{{ reference_video_url }}" type="video/mp4">
+                    </video>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-video-slash fa-2x text-muted mb-2"></i>
+                    <p class="text-muted mb-0">Chưa có video demo</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-clipboard-check text-primary me-2"></i>Chấm điểm</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            
+            <!-- Hiển thị form errors -->
+            {% if form.errors %}
+            <div class="alert alert-danger mb-3">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Có lỗi trong form:</strong>
+                <ul class="mb-0 mt-2">
+                    {% for field, errors in form.errors.items() %}
+                        {% for error in errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">{{ form.overall_score.label }}</label>
+                    {{ form.overall_score(class="form-control", placeholder="0-100") }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">{{ form.technique_score.label }}</label>
+                    {{ form.technique_score(class="form-control", placeholder="0-100") }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">{{ form.posture_score.label }}</label>
+                    {{ form.posture_score(class="form-control", placeholder="0-100") }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">{{ form.spirit_score.label }}</label>
+                    {{ form.spirit_score(class="form-control", placeholder="0-100") }}
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <label class="form-label fw-semibold">{{ form.strengths.label }}</label>
+                {{ form.strengths(class="form-control", rows=3, placeholder="Những điểm học viên làm tốt...") }}
+            </div>
+
+            <div class="mt-3">
+                <label class="form-label fw-semibold">{{ form.improvements_needed.label }}</label>
+                {{ form.improvements_needed(class="form-control", rows=3, placeholder="Những điểm cần luyện tập thêm...") }}
+            </div>
+
+            <div class="mt-3">
+                <label class="form-label fw-semibold">{{ form.comments.label }}</label>
+                {{ form.comments(class="form-control", rows=3, placeholder="Nhận xét tổng quan...") }}
+            </div>
+
+            <div class="form-check mt-3">
+                {{ form.is_passed(class="form-check-input", id="isPassed") }}
+                <label class="form-check-label fw-semibold" for="isPassed">{{ form.is_passed.label }}</label>
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+                <a href="{{ url_for('instructor.pending_evaluations') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Quay lại
+                </a>
+                {{ form.submit(class="btn btn-success") }}
+            </div>
+        </form>
+    </div>
+</div>
+
+
+{% endblock %}

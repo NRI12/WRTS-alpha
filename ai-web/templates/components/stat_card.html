@@ -1,0 +1,17 @@
+<!-- Unified Stat Card Component -->
+<div class="stat-card">
+    <div class="stat-icon">
+        <i class="{{ icon }}"></i>
+    </div>
+    <div class="stat-content">
+        <div class="stat-value">{{ value }}</div>
+        <div class="stat-label">{{ label }}</div>
+        {% if change is defined %}
+        <div class="stat-change {{ 'text-success' if change >= 0 else 'text-danger' }}">
+            <i class="fas fa-arrow-{{ 'up' if change >= 0 else 'down' }}"></i>
+            {{ '+' if change >= 0 else '' }}{{ change }}%
+        </div>
+        {% endif %}
+    </div>
+</div>
+

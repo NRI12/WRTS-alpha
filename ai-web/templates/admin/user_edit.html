@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chỉnh sửa tài khoản</title>
+</head>
+<body>
+    <h1>CHỈNH SỬA TÀI KHOẢN</h1>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <p><strong>[{{ category }}]</strong> {{ message }}</p>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <p><strong>Username:</strong> {{ user.username }} (không thể đổi)</p>
+    
+    <form method="POST">
+        <p>
+            <label>Email:</label><br>
+            <input type="email" name="email" value="{{ user.email }}" required>
+        </p>
+        <p>
+            <label>Họ và tên:</label><br>
+            <input type="text" name="full_name" value="{{ user.full_name }}" required>
+        </p>
+        <p>
+            <label>Số điện thoại:</label><br>
+            <input type="text" name="phone" value="{{ user.phone or '' }}">
+        </p>
+        <p>
+            <label>Ngày sinh:</label><br>
+            <input type="date" name="date_of_birth" value="{{ user.date_of_birth or '' }}">
+        </p>
+        <p>
+            <label>Giới tính:</label><br>
+            <select name="gender">
+                <option value="">-- Chọn --</option>
+                <option value="male" {% if user.gender == 'male' %}selected{% endif %}>Nam</option>
+                <option value="female" {% if user.gender == 'female' %}selected{% endif %}>Nữ</option>
+                <option value="other" {% if user.gender == 'other' %}selected{% endif %}>Khác</option>
+            </select>
+        </p>
+        <p>
+            <label>Địa chỉ:</label><br>
+            <textarea name="address" rows="3">{{ user.address or '' }}</textarea>
+        </p>
+        <p>
+            {{ form.role_id.label }}<br>
+            {{ form.role_id() }}
+            {{ form.hidden_tag() }} 
+            {% if form.role_id.errors %}
+                {% for error in form.role_id.errors %}
+                    <br><span style="color:red;">{{ error }}</span>
+                {% endfor %}
+            {% endif %}
+        </p>
+        <p>
+            <label>
+                <input type="checkbox" name="is_active" {% if user.is_active %}checked{% endif %}>
+                Kích hoạt tài khoản
+            </label>
+        </p>
+        <p>
+            <button type="submit">Lưu thay đổi</button>
+        </p>
+    </form>
+    
+    <p>
+        <a href="{{ url_for('admin.users') }}">Quay lại</a>
+    </p>
+</body>
+</html>

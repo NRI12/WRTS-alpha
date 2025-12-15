@@ -1,0 +1,279 @@
+{% extends "base/admin_base.html" %}
+
+{% block title %}Quản lý Phản hồi - AI-WRTS System{% endblock %}
+
+{% block admin_content %}
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1 gradient-text">
+            <i class="fas fa-comments me-2"></i>
+            Quản lý Phản hồi
+        </h1>
+        <p class="text-muted mb-0">Xem và xử lý phản hồi từ người dùng hệ thống</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-primary" onclick="refreshFeedback()">
+            <i class="fas fa-sync-alt"></i>
+            Làm mới
+        </button>
+        <button class="btn btn-outline-success" onclick="exportFeedback()">
+            <i class="fas fa-download"></i>
+            Xuất báo cáo
+        </button>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, rgba(17, 153, 142, 0.1) 0%, rgba(56, 239, 125, 0.1) 100%); color: #11998e;">
+                <i class="fas fa-comments"></i>
+            </div>
+            <div class="stat-value" style="color: #11998e;">{{ feedbacks|length }}</div>
+            <div class="stat-label">Tổng phản hồi</div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 152, 0, 0.1) 100%); color: #ff9800;">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-value" style="color: #ff9800;">{{ feedbacks|selectattr('feedback_status', 'equalto', 'pending')|list|length }}</div>
+            <div class="stat-label">Chờ xử lý</div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(25, 135, 84, 0.1) 100%); color: #28a745;">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-value" style="color: #28a745;">{{ feedbacks|selectattr('feedback_status', 'equalto', 'resolved')|list|length }}</div>
+            <div class="stat-label">Đã giải quyết</div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, rgba(220, 53, 69, 0.1) 0%, rgba(200, 35, 51, 0.1) 100%); color: #dc3545;">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-value" style="color: #dc3545;">{{ feedbacks|selectattr('priority', 'equalto', 'high')|list|length }}</div>
+            <div class="stat-label">Ưu tiên cao</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="admin-panel mb-4">
+    <div class="admin-panel-header">
+        <h3 class="admin-panel-title">
+            <i class="fas fa-filter"></i>
+            Bộ lọc
+        </h3>
+    </div>
+    
+    <div class="row g-3">
+        <div class="col-md-3">
+            <label class="form-label">Trạng thái</label>
+            <select class="form-select" id="statusFilter">
+                <option value="">Tất cả trạng thái</option>
+                <option value="pending" {{ 'selected' if request.args.get('status') == 'pending' }}>Chờ xử lý</option>
+                <option value="in_progress" {{ 'selected' if request.args.get('status') == 'in_progress' }}>Đang xử lý</option>
+                <option value="resolved" {{ 'selected' if request.args.get('status') == 'resolved' }}>Đã giải quyết</option>
+                <option value="closed" {{ 'selected' if request.args.get('status') == 'closed' }}>Đã đóng</option>
+            </select>
+        </div>
+        
+        <div class="col-md-3">
+            <label class="form-label">Loại phản hồi</label>
+            <select class="form-select" id="typeFilter">
+                <option value="">Tất cả loại</option>
+                <option value="bug" {{ 'selected' if request.args.get('type') == 'bug' }}>Báo lỗi</option>
+                <option value="feature" {{ 'selected' if request.args.get('type') == 'feature' }}>Đề xuất tính năng</option>
+                <option value="complaint" {{ 'selected' if request.args.get('type') == 'complaint' }}>Khiếu nại</option>
+                <option value="praise" {{ 'selected' if request.args.get('type') == 'praise' }}>Khen ngợi</option>
+            </select>
+        </div>
+        
+        <div class="col-md-3">
+            <label class="form-label">Mức độ ưu tiên</label>
+            <select class="form-select" id="priorityFilter">
+                <option value="">Tất cả mức độ</option>
+                <option value="high">Cao</option>
+                <option value="medium">Trung bình</option>
+                <option value="low">Thấp</option>
+            </select>
+        </div>
+        
+        <div class="col-md-3 d-flex align-items-end">
+            <div class="btn-group w-100" role="group">
+                <button class="btn btn-primary" onclick="applyFilters()">
+                    <i class="fas fa-search"></i>
+                    Lọc
+                </button>
+                <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                    <i class="fas fa-times"></i>
+                    Xóa
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Feedback List -->
+<div class="admin-panel">
+    <div class="admin-panel-header">
+        <h3 class="admin-panel-title">
+            <i class="fas fa-list"></i>
+            Danh sách phản hồi
+        </h3>
+        <div class="text-muted">
+            Hiển thị {{ feedbacks|length }} phản hồi
+        </div>
+    </div>
+    
+    {% if feedbacks %}
+        <div class="feedback-list">
+            {% for fb in feedbacks %}
+            <div class="feedback-item">
+                <div class="feedback-header">
+                    <div class="feedback-user">
+                        <div class="user-avatar-admin">
+                            {{ fb.user.full_name[0].upper() if fb.user.full_name else fb.user.username[0].upper() }}
+                        </div>
+                        <div class="user-details">
+                            <div class="user-name">{{ fb.user.full_name or fb.user.username }}</div>
+                            <div class="user-email">{{ fb.user.email }}</div>
+                        </div>
+                    </div>
+                    <div class="feedback-meta">
+                        <span class="priority-badge priority-{{ fb.priority or 'medium' }}">
+                            {{ (fb.priority or 'medium').title() }}
+                        </span>
+                        <span class="status-badge status-{{ fb.feedback_status or 'pending' }}">
+                            {% if fb.feedback_status == 'pending' %}
+                                <i class="fas fa-clock"></i> Chờ xử lý
+                            {% elif fb.feedback_status == 'in_progress' %}
+                                <i class="fas fa-spinner"></i> Đang xử lý
+                            {% elif fb.feedback_status == 'resolved' %}
+                                <i class="fas fa-check-circle"></i> Đã giải quyết
+                            {% elif fb.feedback_status == 'closed' %}
+                                <i class="fas fa-times-circle"></i> Đã đóng
+                            {% else %}
+                                <i class="fas fa-question-circle"></i> Chưa xác định
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="feedback-content">
+                    <div class="feedback-type">
+                        <span class="badge bg-secondary">
+                            {% if fb.feedback_type == 'bug' %}
+                                <i class="fas fa-bug"></i> Báo lỗi
+                            {% elif fb.feedback_type == 'feature' %}
+                                <i class="fas fa-lightbulb"></i> Đề xuất
+                            {% elif fb.feedback_type == 'complaint' %}
+                                <i class="fas fa-exclamation-triangle"></i> Khiếu nại
+                            {% elif fb.feedback_type == 'praise' %}
+                                <i class="fas fa-heart"></i> Khen ngợi
+                            {% else %}
+                                <i class="fas fa-comment"></i> {{ fb.feedback_type or 'Khác' }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    <h5 class="feedback-subject">{{ fb.subject or 'Không có tiêu đề' }}</h5>
+                    
+                    {% if fb.message %}
+                    <p class="feedback-message">{{ fb.message[:200] }}{% if fb.message|length > 200 %}...{% endif %}</p>
+                    {% endif %}
+                    
+                    <div class="feedback-footer">
+                        <div class="feedback-dates">
+                            <small class="text-muted">
+                                <i class="fas fa-calendar"></i>
+                                Gửi: {{ fb.created_at.strftime('%d/%m/%Y %H:%M') if fb.created_at else 'N/A' }}
+                            </small>
+                            {% if fb.updated_at and fb.updated_at != fb.created_at %}
+                            <small class="text-muted ms-3">
+                                <i class="fas fa-edit"></i>
+                                Cập nhật: {{ fb.updated_at.strftime('%d/%m/%Y %H:%M') }}
+                            </small>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="feedback-actions">
+                            <a href="{{ url_for('admin.feedback_detail', feedback_id=fb.feedback_id) }}" 
+                               class="btn btn-sm btn-primary">
+                                <i class="fas fa-eye"></i>
+                                Xem chi tiết
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- Empty State -->
+        <div class="text-center py-5">
+            <div class="empty-state">
+                <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">Chưa có phản hồi nào</h4>
+                <p class="text-muted mb-4">Khi người dùng gửi phản hồi, chúng sẽ xuất hiện ở đây</p>
+                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i>
+                    Về Dashboard
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function refreshFeedback() {
+        location.reload();
+    }
+    
+    function exportFeedback() {
+        // TODO: Implement feedback export
+        alert('Tính năng xuất báo cáo đang được phát triển');
+    }
+    
+    function applyFilters() {
+        const status = document.getElementById('statusFilter').value;
+        const type = document.getElementById('typeFilter').value;
+        const priority = document.getElementById('priorityFilter').value;
+        
+        const params = new URLSearchParams();
+        if (status) params.append('status', status);
+        if (type) params.append('type', type);
+        if (priority) params.append('priority', priority);
+        
+        window.location.href = '{{ url_for("admin.feedback_list") }}?' + params.toString();
+    }
+    
+    function clearFilters() {
+        document.getElementById('statusFilter').value = '';
+        document.getElementById('typeFilter').value = '';
+        document.getElementById('priorityFilter').value = '';
+        window.location.href = '{{ url_for("admin.feedback_list") }}';
+    }
+    
+    // Auto-refresh every 30 seconds for pending feedback
+    setInterval(function() {
+        const pendingCount = {{ feedbacks|selectattr('feedback_status', 'equalto', 'pending')|list|length }};
+        if (pendingCount > 0) {
+            console.log('Auto-refreshing for pending feedback...');
+            // Optionally implement AJAX refresh
+        }
+    }, 30000);
+</script>
+{% endblock %}

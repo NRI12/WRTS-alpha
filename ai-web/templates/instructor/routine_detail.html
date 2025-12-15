@@ -1,0 +1,246 @@
+{% extends "base/instructor_base.html" %}
+
+{% block title %}Chi tiết bài võ - {{ routine.routine_name }}{% endblock %}
+
+{% block instructor_content %}
+<div class="page-header-modern">
+    <div class="page-header-content">
+        <div class="page-header-icon">
+            <i class="fas fa-dumbbell"></i>
+        </div>
+        <div class="page-header-text">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{{ url_for('instructor.routines') }}">Bài võ</a></li>
+                    <li class="breadcrumb-item active">{{ routine.routine_name }}</li>
+                </ol>
+            </nav>
+            <h1 class="page-header-title">{{ routine.routine_name }}</h1>
+            <p class="page-header-subtitle">
+                <span class="badge bg-primary me-1">{{ routine.level }}</span>
+                <span class="badge bg-info me-1">{{ routine.weapon.weapon_name if routine.weapon else 'N/A' }}</span>
+                {% if routine.is_published %}
+                    <span class="badge bg-success">
+                        <i class="fas fa-check-circle me-1"></i>Đã xuất bản
+                    </span>
+                {% else %}
+                    <span class="badge bg-warning text-dark">
+                        <i class="fas fa-edit me-1"></i>Bản nháp
+                    </span>
+                {% endif %}
+            </p>
+        </div>
+    </div>
+    <div class="page-header-actions">
+        <a href="{{ url_for('instructor.edit_routine', routine_id=routine.routine_id) }}" 
+           class="btn btn-light btn-sm">
+            <i class="fas fa-edit me-2"></i>Chỉnh sửa
+        </a>
+        {% if not routine.is_published %}
+        <form method="POST" action="{{ url_for('instructor.publish_routine', routine_id=routine.routine_id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-success btn-sm" type="submit" onclick="return confirm('Bạn có chắc muốn xuất bản bài võ này?')">
+                <i class="fas fa-paper-plane me-2"></i>Xuất bản
+            </button>
+        </form>
+        {% else %}
+        <form method="POST" action="{{ url_for('instructor.unpublish_routine', routine_id=routine.routine_id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-warning btn-sm" type="submit" onclick="return confirm('Gỡ xuất bản bài võ này?')">
+                <i class="fas fa-eye-slash me-2"></i>Gỡ xuất bản
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Routine Stats -->
+<div class="stats-grid mb-4">
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-clock"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">
+                {{ routine.duration_seconds // 60 }}:{{ '%02d' % (routine.duration_seconds % 60) }}
+            </div>
+            <div class="stat-label">Thời lượng</div>
+        </div>
+    </div>
+    
+    
+    
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">{{ routine.videos|length if routine.videos else 0 }}</div>
+            <div class="stat-label">Video đã nộp</div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-tasks"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">{{ routine.assignments|length if routine.assignments else 0 }}</div>
+            <div class="stat-label">Bài tập đã giao</div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="row g-4">
+    <!-- Video & Info -->
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0">
+                    <i class="fas fa-video text-danger me-2"></i>
+                    Video demo
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% if routine.reference_video_url %}
+                <div class="video-container">
+                    <video controls class="w-100">
+                        <source src="{{ routine.reference_video_url }}" type="video/mp4">
+                        Trình duyệt không hỗ trợ video
+                    </video>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-video-slash fa-3x text-muted mb-3"></i>
+                    <p class="text-muted mb-3">Chưa có video demo</p>
+                    <a href="{{ url_for('instructor.edit_routine', routine_id=routine.routine_id) }}" 
+                       class="btn btn-primary">
+                        <i class="fas fa-upload me-2"></i>Tải video lên
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Description -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0">
+                    <i class="fas fa-align-left text-primary me-2"></i>
+                    Mô tả bài võ
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if routine.description %}
+                <p class="mb-0">{{ routine.description }}</p>
+                {% else %}
+                <p class="text-muted mb-0">Chưa có mô tả</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-md-4">
+        <!-- Quick Actions -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt text-warning me-2"></i>
+                    Thao tác nhanh
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('instructor.create_assignment') }}?routine_id={{ routine.routine_id }}" 
+                       class="btn btn-outline-primary">
+                        <i class="fas fa-tasks me-2"></i>Giao bài tập
+                    </a>
+                    <a href="{{ url_for('instructor.create_exam') }}?routine_id={{ routine.routine_id }}" 
+                       class="btn btn-outline-info">
+                        <i class="fas fa-file-alt me-2"></i>Tạo bài kiểm tra
+                    </a>
+                    <button class="btn btn-outline-secondary" onclick="duplicateRoutine()">
+                        <i class="fas fa-copy me-2"></i>Nhân bản
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Routine Info -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle text-info me-2"></i>
+                    Thông tin
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="info-item mb-3">
+                    <label class="text-muted small mb-1">Người tạo</label>
+                    <div class="fw-semibold">{{ routine.creator.full_name }}</div>
+                </div>
+                
+                <div class="info-item mb-3">
+                    <label class="text-muted small mb-1">Ngày tạo</label>
+                    <div>{{ routine.created_at.strftime('%d/%m/%Y') }}</div>
+                </div>
+                
+                <div class="info-item">
+                    <label class="text-muted small mb-1">Cập nhật lần cuối</label>
+                    <div>{{ routine.updated_at.strftime('%d/%m/%Y %H:%M') if routine.updated_at else 'N/A' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.criteria-item {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    padding: 1.25rem;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    border-left: 4px solid #f5576c;
+    transition: all 0.3s ease;
+}
+
+.criteria-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 5px 15px rgba(245, 87, 108, 0.1);
+}
+
+.video-container {
+    position: relative;
+    background: #000;
+}
+
+.video-container video {
+    display: block;
+    max-height: 500px;
+}
+
+.info-item label {
+    font-weight: 500;
+}
+</style>
+
+<script>
+function duplicateRoutine() {
+    alert('Chức năng đang phát triển');
+}
+
+function editCriterion(id) {
+    alert('Chỉnh sửa tiêu chí #' + id);
+}
+
+function deleteCriterion(id) {
+    if (confirm('Bạn có chắc muốn xóa tiêu chí này?')) {
+        alert('Chức năng đang phát triển');
+    }
+}
+</script>
+{% endblock %}

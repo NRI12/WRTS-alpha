@@ -1,0 +1,62 @@
+{% extends "base/base.html" %}
+
+{% block title %}Phản hồi của tôi{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    {% include 'components/alerts.html' %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0"><i class="fas fa-comments text-primary me-2"></i>Phản hồi của tôi</h5>
+        <a href="{{ url_for('shared.submit_feedback') }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus me-1"></i>Gửi phản hồi mới
+        </a>
+    </div>
+
+    {% if feedbacks %}
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Loại</th>
+                        <th>Tiêu đề</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày gửi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fb in feedbacks %}
+                    <tr>
+                        <td>
+                            <span class="badge bg-secondary">{{ fb.feedback_type }}</span>
+                        </td>
+                        <td class="fw-500">{{ fb.subject }}</td>
+                        <td>
+                            {% if fb.feedback_status == 'resolved' %}
+                                <span class="badge bg-success">Đã xử lý</span>
+                            {% elif fb.feedback_status == 'in_progress' %}
+                                <span class="badge bg-warning text-dark">Đang xử lý</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ fb.feedback_status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ fb.created_at.strftime('%d/%m/%Y') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center text-muted py-5">
+            <p class="mb-2"><i class="fas fa-inbox fa-2x"></i></p>
+            <p class="mb-3">Chưa có phản hồi nào</p>
+            <a href="{{ url_for('shared.submit_feedback') }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i>Gửi phản hồi đầu tiên
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

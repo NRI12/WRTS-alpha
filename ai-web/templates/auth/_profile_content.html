@@ -1,0 +1,231 @@
+<div class="page-header-modern">
+    <div class="page-header-content">
+        <div class="page-header-icon">
+            <i class="fas fa-user"></i>
+        </div>
+        <div class="page-header-text">
+            <h1 class="page-header-title">Hồ sơ cá nhân</h1>
+            <p class="page-header-subtitle mb-0">Xem và cập nhật thông tin tài khoản của bạn</p>
+        </div>
+    </div>
+    <div class="page-header-actions">
+        <a href="{{ url_for('auth.edit_profile') }}" class="btn btn-light btn-sm">
+            <i class="fas fa-edit me-2"></i>Chỉnh sửa thông tin
+        </a>
+        <a href="{{ url_for('auth.change_password') }}" class="btn btn-light btn-sm">
+            <i class="fas fa-key me-2"></i>Đổi mật khẩu
+        </a>
+    </div>
+</div>
+
+<div class="container-fluid mt-3">
+    <!-- Stats overview (giống dạng cards ở trang classes) -->
+    <div class="row g-3 mb-3">
+        <div class="col-6 col-md-3">
+            <div class="stat-card-compact">
+                <div class="stat-icon-compact">
+                    <i class="fas fa-id-badge"></i>
+                </div>
+                <div class="stat-content-compact">
+                    <div class="stat-value-compact">{{ user.username }}</div>
+                    <div class="stat-label-compact">Username</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card-compact">
+                <div class="stat-icon-compact">
+                    <i class="fas fa-user-tag"></i>
+                </div>
+                <div class="stat-content-compact">
+                    <div class="stat-value-compact">{{ user.role.role_name }}</div>
+                    <div class="stat-label-compact">Vai trò</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card-compact">
+                <div class="stat-icon-compact">
+                    <i class="fas fa-signal"></i>
+                </div>
+                <div class="stat-content-compact">
+                    <div class="stat-value-compact">
+                        {% if user.is_active %}Hoạt động{% else %}Tạm dừng{% endif %}
+                    </div>
+                    <div class="stat-label-compact">Trạng thái</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card-compact">
+                <div class="stat-icon-compact">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content-compact">
+                    <div class="stat-value-compact">
+                        {{ user.last_login_at.strftime('%d/%m/%Y') if user.last_login_at else '--' }}
+                    </div>
+                    <div class="stat-label-compact">Đăng nhập gần nhất</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Thông tin cá nhân + tài khoản -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="profile-avatar-wrapper me-3">
+                            <div class="profile-avatar">
+                                {% set display_name = user.full_name or user.username %}
+                                {% if user.avatar_url %}
+                                    <img src="{{ user.avatar_url }}" alt="{{ display_name }}">
+                                {% else %}
+                                    {{ (display_name|default('U'))[0]|upper }}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div>
+                            <h2 class="mb-1" style="font-size:1.4rem; font-weight:600;">{{ display_name }}</h2>
+                            <div class="profile-role">
+                                {% if user.role.role_code == 'STUDENT' %}
+                                    <i class="fas fa-user-graduate"></i>
+                                    <span>Học viên</span>
+                                {% elif user.role.role_code == 'INSTRUCTOR' %}
+                                    <i class="fas fa-chalkboard-teacher"></i>
+                                    <span>Huấn luyện viên</span>
+                                {% elif user.role.role_code == 'ADMIN' %}
+                                    <i class="fas fa-user-shield"></i>
+                                    <span>Quản trị viên</span>
+                                {% elif user.role.role_code == 'MANAGER' %}
+                                    <i class="fas fa-user-tie"></i>
+                                    <span>Ban quản lý</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-section mb-3">
+                        <h3 class="profile-section-title">
+                            <i class="fas fa-user"></i>
+                            Thông tin cá nhân
+                        </h3>
+                        <div class="profile-info-grid">
+                            <div class="profile-info-item">
+                                <span class="profile-info-label">Email</span>
+                                <span class="profile-info-value">{{ user.email }}</span>
+                            </div>
+                            <div class="profile-info-item">
+                                <span class="profile-info-label">Số điện thoại</span>
+                                <span class="profile-info-value {% if not user.phone %}empty{% endif %}">
+                                    {{ user.phone if user.phone else 'Chưa cập nhật' }}
+                                </span>
+                            </div>
+                            <div class="profile-info-item">
+                                <span class="profile-info-label">Ngày sinh</span>
+                                <span class="profile-info-value {% if not user.date_of_birth %}empty{% endif %}">
+                                    {{ user.date_of_birth.strftime('%d/%m/%Y') if user.date_of_birth else 'Chưa cập nhật' }}
+                                </span>
+                            </div>
+                            <div class="profile-info-item">
+                                <span class="profile-info-label">Giới tính</span>
+                                <span class="profile-info-value {% if not user.gender %}empty{% endif %}">
+                                    {% if user.gender == 'male' %}
+                                        Nam
+                                    {% elif user.gender == 'female' %}
+                                        Nữ
+                                    {% elif user.gender == 'other' %}
+                                        Khác
+                                    {% else %}
+                                        Chưa cập nhật
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="profile-info-item">
+                                <span class="profile-info-label">Địa chỉ</span>
+                                <span class="profile-info-value {% if not user.address %}empty{% endif %}">
+                                    {{ user.address if user.address else 'Chưa cập nhật' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-section mb-0">
+                        <h3 class="profile-section-title">
+                            <i class="fas fa-info-circle"></i>
+                            Thông tin tài khoản
+                        </h3>
+                        <div class="profile-info-grid">
+                            <div class="profile-info-item">
+                                <span class="profile-info-label">Trạng thái</span>
+                                <span class="profile-info-value">
+                                    {% if user.is_active %}
+                                        <span class="badge bg-success">Hoạt động</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Tạm dừng</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="profile-info-item">
+                                <span class="profile-info-label">Email đã xác thực</span>
+                                <span class="profile-info-value">
+                                    {% if user.is_email_verified %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check"></i> Đã xác thực
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-exclamation"></i> Chưa xác thực
+                                        </span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="profile-info-item">
+                                <span class="profile-info-label">Ngày tạo tài khoản</span>
+                                <span class="profile-info-value">
+                                    {{ user.created_at.strftime('%d/%m/%Y %H:%M') }}
+                                </span>
+                            </div>
+                            <div class="profile-info-item">
+                                <span class="profile-info-label">Cập nhật lần cuối</span>
+                                <span class="profile-info-value">
+                                    {{ user.updated_at.strftime('%d/%m/%Y %H:%M') }}
+                                </span>
+                            </div>
+                            <div class="profile-info-item">
+                                <span class="profile-info-label">Đăng nhập lần cuối</span>
+                                <span class="profile-info-value">
+                                    {{ user.last_login_at.strftime('%d/%m/%Y %H:%M') if user.last_login_at else 'Chưa có dữ liệu' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cột hành động nhanh -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <h6 class="mb-3 fw-bold">
+                        <i class="fas fa-cog text-primary me-2"></i>
+                        Hành động nhanh
+                    </h6>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('auth.edit_profile') }}" class="btn btn-primary">
+                            <i class="fas fa-edit me-2"></i>Chỉnh sửa thông tin
+                        </a>
+                        <a href="{{ url_for('auth.change_password') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-key me-2"></i>Đổi mật khẩu
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+

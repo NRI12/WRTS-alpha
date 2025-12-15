@@ -1,0 +1,427 @@
+{% extends "base/instructor_base.html" %}
+
+{% block title %}Chấm điểm video{% endblock %}
+
+{% block instructor_content %}
+<div class="page-header-modern">
+    <div class="page-header-content">
+        <div class="page-header-icon">
+            <i class="fas fa-video"></i>
+        </div>
+        <div class="page-header-text">
+            <h1 class="page-header-title">Chấm điểm video</h1>
+            <p class="page-header-subtitle">Danh sách video chờ đánh giá và đã chấm của bạn</p>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Overview -->
+<div class="stats-grid mb-4">
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-hourglass-half"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">{{ stats.pending_count }}</div>
+            <div class="stat-label">Chờ chấm</div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">{{ stats.evaluated_today }}</div>
+            <div class="stat-label">Đã chấm hôm nay</div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-calendar-week"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">{{ stats.evaluated_this_week }}</div>
+            <div class="stat-label">Đã chấm tuần này</div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">
+                {% if stats.average_score %}
+                    {{ stats.average_score }}
+                {% else %}
+                    --
+                {% endif %}
+            </div>
+            <div class="stat-label">Điểm TB</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Trạng thái</label>
+                <div class="btn-group w-100" role="group">
+                    <a href="{{ url_for('instructor.pending_evaluations') }}" 
+                       class="btn {% if not show_all %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                        Chờ chấm
+                    </a>
+                    <a href="{{ url_for('instructor.pending_evaluations', show_all='true') }}" 
+                       class="btn {% if show_all %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                        Tất cả
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Bài võ</label>
+                <select class="form-select">
+                    <option value="">Tất cả</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Lớp học</label>
+                <select class="form-select">
+                    <option value="">Tất cả</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Tìm kiếm</label>
+                <input type="text" class="form-control" placeholder="Tìm theo học viên...">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pending Videos List -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        {% if videos %}
+        <div class="table-responsive">
+            <table class="table data-table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Học viên</th>
+                        <th>Bài võ</th>
+                        <th>Ngày nộp</th>
+                        <th>Trạng thái</th>
+                        <th>Thời lượng</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for video in videos %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-circle me-2">
+                                    {{ video.student.full_name[0] }}
+                                </div>
+                                <div>
+                                    <strong>{{ video.student.full_name }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ video.student.email }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-fist-raised text-primary me-2"></i>
+                                <div>
+                                    <strong>{{ video.routine.routine_name }}</strong>
+                                    <br>
+                                    <span class="badge bg-info small">{{ video.routine.level }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="small">
+                                <div>
+                                    <i class="fas fa-calendar-alt text-muted me-1"></i>
+                                    {{ video.uploaded_at.strftime('%d/%m/%Y') }}
+                                </div>
+                                <div class="text-muted">
+                                    {{ video.uploaded_at.strftime('%H:%M') }}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if video.manual_evaluations %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-check-circle me-1"></i>
+                                Đã chấm
+                            </span>
+                            <br>
+                            <small class="text-muted">
+                                {{ video.manual_evaluations[0].overall_score }}/100
+                            </small>
+                            {% else %}
+                            <span class="badge bg-warning">
+                                <i class="fas fa-clock me-1"></i>
+                                Chờ chấm
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">
+                                <i class="fas fa-stopwatch me-1"></i>
+                                {{ video.duration // 60 if video.duration else 0 }}:{{ '%02d' % ((video.duration % 60) if video.duration else 0) }}
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            {% if video.manual_evaluations %}
+                            <a class="btn btn-sm btn-outline-primary" href="{{ url_for('instructor.evaluate_video', video_id=video.video_id) }}">
+                                <i class="fas fa-eye me-1"></i>Xem kết quả
+                            </a>
+                            {% else %}
+                            <a class="btn btn-sm btn-primary" href="{{ url_for('instructor.evaluate_video', video_id=video.video_id) }}">
+                                <i class="fas fa-star me-1"></i>Chấm điểm
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+            <h5 class="text-muted">Không có video nào chờ chấm</h5>
+            <p class="text-muted mb-0">Tuyệt vời! Bạn đã hoàn thành hết công việc</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Video Comparison Modal -->
+<div class="modal fade" id="evaluationModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title">
+                        <i class="fas fa-video me-2"></i>
+                        Chấm điểm video
+                    </h5>
+                    <p class="text-muted small mb-0" id="modalSubtitle">
+                        Học viên: <strong id="studentName"></strong> | Bài võ: <strong id="routineName"></strong>
+                    </p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Video Comparison Section -->
+                <div class="video-comparison mb-4">
+                    <div class="comparison-video">
+                        <div class="video-label">Video chuẩn (Giảng viên)</div>
+                        <div class="video-wrapper">
+                            <video id="demoVideo" controls class="w-100">
+                                <source id="demoVideoSource" src="" type="video/mp4">
+                                Trình duyệt không hỗ trợ video
+                            </video>
+                        </div>
+                        <div class="video-controls mt-2">
+                            <button class="btn btn-sm btn-outline-primary" onclick="syncVideos()">
+                                <i class="fas fa-sync me-1"></i>Đồng bộ
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="comparison-video">
+                        <div class="video-label">Video học viên</div>
+                        <div class="video-wrapper">
+                            <video id="studentVideo" controls class="w-100">
+                                <source id="studentVideoSource" src="" type="video/mp4">
+                                Trình duyệt không hỗ trợ video
+                            </video>
+                        </div>
+                        <div class="video-controls mt-2">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="slowMotion()">
+                                <i class="fas fa-forward me-1"></i>Chậm 0.5x
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Evaluation Form -->
+                <form method="POST" id="evaluationForm">
+                    <input type="hidden" name="video_id" id="videoIdInput">
+                    
+                    <div class="criteria-scoring">
+                        <h6 class="mb-3">
+                            <i class="fas fa-clipboard-check me-2"></i>
+                            Đánh giá theo tiêu chí
+                        </h6>
+                        
+                        <div class="criteria-item">
+                            <div class="criteria-header">
+                                <div class="criteria-name">Kỹ thuật</div>
+                                <div class="criteria-weight">0-100 điểm</div>
+                            </div>
+                            <div class="score-input-group">
+                                <input type="range" class="form-range score-slider" name="technique_score" min="0" max="100" value="0">
+                                <div class="score-display">0</div>
+                            </div>
+                        </div>
+                        
+                        <div class="criteria-item">
+                            <div class="criteria-header">
+                                <div class="criteria-name">Tư thế</div>
+                                <div class="criteria-weight">0-100 điểm</div>
+                            </div>
+                            <div class="score-input-group">
+                                <input type="range" class="form-range score-slider" name="posture_score" min="0" max="100" value="0">
+                                <div class="score-display">0</div>
+                            </div>
+                        </div>
+                        
+                        <div class="criteria-item">
+                            <div class="criteria-header">
+                                <div class="criteria-name">Tinh thần</div>
+                                <div class="criteria-weight">0-100 điểm</div>
+                            </div>
+                            <div class="score-input-group">
+                                <input type="range" class="form-range score-slider" name="spirit_score" min="0" max="100" value="0">
+                                <div class="score-display">0</div>
+                            </div>
+                        </div>
+                        
+                        <div class="criteria-item">
+                            <div class="criteria-header">
+                                <div class="criteria-name">Điểm tổng</div>
+                                <div class="criteria-weight">0-100 điểm</div>
+                            </div>
+                            <div class="score-input-group">
+                                <input type="range" class="form-range score-slider" name="overall_score" min="0" max="100" value="0">
+                                <div class="score-display">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Comments -->
+                    <div class="mt-4">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-plus-circle text-success me-2"></i>
+                            Điểm mạnh
+                        </label>
+                        <textarea class="comment-box" name="strengths" placeholder="Những điểm học viên làm tốt..."></textarea>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                            Cần cải thiện
+                        </label>
+                        <textarea class="comment-box" name="improvements_needed" placeholder="Những điểm cần luyện tập thêm..."></textarea>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-comment-alt me-2"></i>
+                            Nhận xét chung
+                        </label>
+                        <textarea class="comment-box" name="comments" placeholder="Nhận xét tổng quan..."></textarea>
+                    </div>
+                    
+                    <div class="form-check mt-3">
+                        <input class="form-check-input" type="checkbox" name="is_passed" id="isPassed">
+                        <label class="form-check-label fw-semibold" for="isPassed">
+                            <i class="fas fa-check-circle text-success me-1"></i>
+                            Đạt yêu cầu
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Hủy
+                </button>
+                <button type="button" class="btn btn-success" onclick="submitEvaluation()">
+                    <i class="fas fa-save me-2"></i>Lưu đánh giá
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.video-comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.comparison-video {
+    background: var(--light-bg);
+    border-radius: 12px;
+    padding: 1rem;
+}
+
+.video-label {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+    padding: 0.5rem 1rem;
+    background: white;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.video-wrapper {
+    border-radius: 8px;
+    overflow: hidden;
+    background: #000;
+}
+
+.video-wrapper video {
+    display: block;
+}
+
+@media (max-width: 992px) {
+    .video-comparison {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+function syncVideos() {
+    const demo = document.getElementById('demoVideo');
+    const student = document.getElementById('studentVideo');
+    if (!demo || !student) return;
+    student.currentTime = demo.currentTime;
+    if (demo.paused) {
+        student.pause();
+    } else {
+        student.play();
+    }
+}
+
+function slowMotion() {
+    const student = document.getElementById('studentVideo');
+    if (!student) return;
+    student.playbackRate = student.playbackRate === 0.5 ? 1.0 : 0.5;
+}
+</script>
+{% endblock %}

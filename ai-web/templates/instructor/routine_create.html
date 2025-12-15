@@ -1,0 +1,332 @@
+{% extends "base/instructor_base.html" %}
+
+{% block title %}Tạo bài võ mới{% endblock %}
+
+{% block instructor_content %}
+<div class="page-header-modern">
+    <div class="page-header-content">
+        <div class="page-header-icon">
+            <i class="fas fa-plus-circle"></i>
+        </div>
+        <div class="page-header-text">
+            <h1 class="page-header-title">Tạo bài võ mới</h1>
+            <p class="page-header-subtitle">Thêm bài võ mới vào hệ thống</p>
+        </div>
+    </div>
+</div>
+
+<!-- Form Errors Display -->
+{% if form.errors %}
+<div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+    <h5 class="alert-heading"><i class="fas fa-exclamation-circle me-2"></i>Có lỗi xảy ra!</h5>
+    <ul class="mb-0">
+        {% for field, errors in form.errors.items() %}
+            {% for error in errors %}
+                <li><strong>{{ form[field].label.text }}:</strong> {{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+    </ul>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+{% endif %}
+
+<!-- Form Wizard Steps -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <div class="form-wizard">
+            <div class="wizard-steps">
+                <div class="wizard-step active" data-step="1">
+                    <div class="step-number">1</div>
+                    <div class="step-label">Thông tin cơ bản</div>
+                </div>
+                <div class="wizard-step" data-step="2">
+                    <div class="step-number">2</div>
+                    <div class="step-label">Video demo</div>
+                </div>
+                <div class="wizard-step" data-step="3">
+                    <div class="step-number">3</div>
+                    <div class="step-label">Tiêu chí đánh giá</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Form Content -->
+<form method="POST" enctype="multipart/form-data" id="routineForm">
+    {{ form.hidden_tag() }}
+    
+    <!-- Step 1: Basic Info -->
+    <div class="form-step active" id="step1">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle text-primary me-2"></i>
+                    Bước 1: Thông tin cơ bản
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label required">Mã bài võ</label>
+                        {{ form.routine_code(class="form-control", placeholder="VD: TCV-001") }}
+                        {% if form.routine_code.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.routine_code.errors[0] }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label required">Tên bài võ</label>
+                        {{ form.routine_name(class="form-control", placeholder="VD: Thái Cực Quyền Sơ Đẳng") }}
+                        {% if form.routine_name.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.routine_name.errors[0] }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label class="form-label required">Cấp độ</label>
+                        {{ form.level(class="form-select") }}
+                        {% if form.level.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.level.errors[0] }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label class="form-label required">Vũ khí</label>
+                        {{ form.weapon_id(class="form-select") }}
+                        {% if form.weapon_id.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.weapon_id.errors[0] }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label class="form-label required">Thời lượng (giây)</label>
+                        {{ form.duration_seconds(class="form-control", type="number", min="1", max="3600", placeholder="120") }}
+                        {% if form.duration_seconds.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.duration_seconds.errors[0] }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label">Số động tác</label>
+                        {{ form.total_moves(class="form-control", type="number", min="1", placeholder="12") }}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label">Điểm đạt (0-100)</label>
+                        {{ form.pass_threshold(class="form-control", type="number", min="0", max="100", step="0.01", placeholder="70") }}
+                    </div>
+                    
+                    <div class="col-12">
+                        <label class="form-label">Mô tả</label>
+                        {{ form.description(class="form-control rich-editor", rows="5", placeholder="Mô tả chi tiết về bài võ...") }}
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-white border-0 py-3">
+                <button type="button" class="btn btn-primary" onclick="nextStep(2)">
+                    Tiếp theo <i class="fas fa-arrow-right ms-2"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Step 2: Video Demo -->
+    <div class="form-step" id="step2">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0">
+                    <i class="fas fa-video text-danger me-2"></i>
+                    Bước 2: Video demo
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">Video URL</label>
+                        {{ form.reference_video_url(class="form-control", placeholder="https://example.com/video.mp4") }}
+                        <small class="form-text text-muted">
+                            Hoặc tải video lên từ máy tính
+                        </small>
+                    </div>
+                    
+                    <div class="col-12">
+                        <label class="form-label">Upload Video</label>
+                        {{ form.reference_video_file(class="form-control", accept="video/*") }}
+                        {% if form.reference_video_file.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.reference_video_file.errors[0] }}
+                        </div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            MP4, MOV, AVI - Tối đa 500MB
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-white border-0 py-3 d-flex justify-content-between">
+                <button type="button" class="btn btn-secondary" onclick="prevStep(1)">
+                    <i class="fas fa-arrow-left me-2"></i> Quay lại
+                </button>
+                <button type="button" class="btn btn-primary" onclick="nextStep(3)">
+                    Tiếp theo <i class="fas fa-arrow-right ms-2"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Step 3: Review & Submit -->
+    <div class="form-step" id="step3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0">
+                    <i class="fas fa-check-circle text-success me-2"></i>
+                    Bước 3: Xác nhận
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Sau khi tạo bài võ, bạn có thể thêm tiêu chí đánh giá chi tiết.
+                </div>
+                
+                <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="is_published" name="is_published">
+                    <label class="form-check-label" for="is_published">
+                        Xuất bản ngay (học viên có thể xem)
+                    </label>
+                </div>
+            </div>
+            <div class="card-footer bg-white border-0 py-3 d-flex justify-content-between">
+                <button type="button" class="btn btn-secondary" onclick="prevStep(2)">
+                    <i class="fas fa-arrow-left me-2"></i> Quay lại
+                </button>
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save me-2"></i> Tạo bài võ
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<style>
+.form-wizard {
+    padding: 1rem 0;
+}
+
+.wizard-steps {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+}
+
+.wizard-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0.5;
+    transition: all 0.3s ease;
+}
+
+.wizard-step.active {
+    opacity: 1;
+}
+
+.step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    transition: all 0.3s ease;
+}
+
+.wizard-step.active .step-number {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.wizard-step.completed .step-number {
+    background: #10b981;
+    color: white;
+}
+
+.step-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6b7280;
+}
+
+.wizard-step.active .step-label {
+    color: #1f2937;
+}
+
+.form-step {
+    display: none;
+}
+
+.form-step.active {
+    display: block;
+}
+
+.upload-area {
+    border: 2px dashed #d1d5db;
+    border-radius: 12px;
+    padding: 3rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.upload-area:hover {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.form-label.required::after {
+    content: " *";
+    color: #dc2626;
+}
+</style>
+
+<script>
+function nextStep(step) {
+    // Hide current step
+    document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
+    
+    // Show next step
+    document.getElementById('step' + step).classList.add('active');
+    document.querySelector(`.wizard-step[data-step="${step}"]`).classList.add('active');
+    
+    // Mark previous as completed
+    for(let i = 1; i < step; i++) {
+        document.querySelector(`.wizard-step[data-step="${i}"]`).classList.add('completed');
+    }
+    
+    // Scroll to top
+    window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function prevStep(step) {
+    nextStep(step);
+}
+</script>
+{% endblock %}

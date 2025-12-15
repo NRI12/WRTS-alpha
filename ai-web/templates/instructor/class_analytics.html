@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Phân tích lớp học</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        .overview-stats {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            flex: 1;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        .chart-container {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <h1>📊 PHÂN TÍCH LỚP: {{ class_obj.class_name }}</h1>
+    
+    <h2>Tổng quan</h2>
+    <div class="overview-stats">
+        <div class="stat-card">
+            <h3>Tổng học viên</h3>
+            <div class="value">{{ overview.total_students }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Điểm trung bình</h3>
+            <div class="value">{{ overview.avg_score }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Tổng bài nộp</h3>
+            <div class="value">{{ overview.total_submissions }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Tỷ lệ đạt</h3>
+            <div class="value">{{ overview.pass_rate }}%</div>
+        </div>
+    </div>
+    
+    <!-- BAR CHART: Student Rankings -->
+    <div class="chart-container">
+        <h2>🏆 Xếp hạng học viên</h2>
+        <div class="chart-wrapper">
+            <canvas id="rankingChart"></canvas>
+        </div>
+    </div>
+    
+    <h2>Export báo cáo</h2>
+    <p><a href="{{ url_for('instructor.export_class_report', class_id=class_obj.class_id) }}" target="_blank">📥 Tải báo cáo (JSON)</a></p>
+    
+    <p><a href="{{ url_for('instructor.analytics') }}">← Quay lại</a></p>
+    
+    <script>
+        // BAR CHART - Student Rankings
+        const rankings = {{ rankings | tojson }};
+        
+        const studentNames = rankings.map(r => r.student.full_name);
+        const avgScores = rankings.map(r => r.avg_score);
+        const videoCounts = rankings.map(r => r.video_count);
+        
+        const ctx = document.getElementById('rankingChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: studentNames,
+                datasets: [
+                    {
+                        label: 'Điểm trung bình',
+                        data: avgScores,
+                        backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                        borderColor: 'rgb(54, 162, 235)',
+                        borderWidth: 1,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Số video nộp',
+                        data: videoCounts,
+                        backgroundColor: 'rgba(255, 159, 64, 0.8)',
+                        borderColor: 'rgb(255, 159, 64)',
+                        borderWidth: 1,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Điểm số'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Số video'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

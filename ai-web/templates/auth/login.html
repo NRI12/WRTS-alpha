@@ -1,0 +1,99 @@
+{% extends "base/base.html" %}
+
+{% block title %}Đăng nhập - AI-WRTS System{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/auth.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-card-header">
+            <div class="auth-logo">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <h1 class="auth-title">Đăng nhập</h1>
+            <p class="auth-subtitle">Chào mừng bạn trở lại với AI-WRTS</p>
+        </div>
+        
+        <div class="auth-card-body">
+            <form method="POST" class="auth-form" novalidate>
+                {{ form.hidden_tag() }}
+                
+                <div class="form-group">
+                    <label for="username" class="form-label">
+                        <i class="fas fa-user"></i>
+                        {{ form.username.label.text }}
+                    </label>
+                    {{ form.username(
+                        class="form-control" + (" is-invalid" if form.username.errors else ""),
+                        placeholder="Nhập username của bạn",
+                        autofocus=true
+                    ) }}
+                    {% if form.username.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.username.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="password" class="form-label">
+                        <i class="fas fa-lock"></i>
+                        {{ form.password.label.text }}
+                    </label>
+                    <div class="password-input-group">
+                        {{ form.password(
+                            class="form-control" + (" is-invalid" if form.password.errors else ""),
+                            placeholder="Nhập mật khẩu của bạn",
+                            type="password"
+                        ) }}
+                        <button type="button" class="password-toggle-btn" aria-label="Hiện mật khẩu">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    {% if form.password.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.password.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <button type="submit" class="auth-submit-btn">
+                    <i class="fas fa-sign-in-alt btn-text"></i>
+                    <span class="btn-text">Đăng nhập</span>
+                    <i class="fas fa-spinner spinner"></i>
+                </button>
+                
+                <div class="auth-links">
+                    <p>
+                        <a href="{{ url_for('auth.forgot_password') }}" class="auth-link">
+                            <i class="fas fa-question-circle"></i>
+                            Quên mật khẩu?
+                        </a>
+                    </p>
+                    
+                    <div class="auth-divider">hoặc</div>
+                    
+                    <p>
+                        Chưa có tài khoản? 
+                        <a href="{{ url_for('auth.register') }}" class="auth-link">
+                            <i class="fas fa-user-plus"></i>
+                            Đăng ký ngay
+                        </a>
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+{% endblock %}

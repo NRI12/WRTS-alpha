@@ -1,0 +1,222 @@
+{% extends "base/instructor_base.html" %}
+
+{% block title %}Quản lý bài tập{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/instructor.css') }}" rel="stylesheet">
+<style>
+.assignment-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    border-radius: 8px;
+    color: white;
+}
+
+.progress {
+    background: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%);
+    transition: width 0.6s ease;
+}
+</style>
+{% endblock %}
+
+{% block instructor_content %}
+<!-- Modern Header -->
+<div class="page-header-modern">
+    <div class="page-header-content">
+        <div class="page-header-icon">
+            <i class="fas fa-tasks"></i>
+        </div>
+        <div class="page-header-text">
+            <h1 class="page-header-title">Quản lý bài tập</h1>
+            <p class="page-header-subtitle">Danh sách bài tập đã giao</p>
+        </div>
+    </div>
+    <div class="page-header-actions">
+        <a href="{{ url_for('instructor.create_assignment') }}" class="btn btn-light btn-sm">
+            <i class="fas fa-plus me-2"></i>Giao bài tập mới
+        </a>
+    </div>
+</div>
+
+<!-- Stats Overview -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-clipboard-list"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">{{ assignments|length }}</div>
+            <div class="stat-label">Tổng bài tập</div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-clock"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">{{ stats.pending if stats is defined else 0 }}</div>
+            <div class="stat-label">Chờ nộp</div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-hourglass-half"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">{{ stats.submitted if stats is defined else 0 }}</div>
+            <div class="stat-label">Chờ chấm</div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-check-double"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">{{ stats.graded if stats is defined else 0 }}</div>
+            <div class="stat-label">Đã hoàn thành</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="filter-section">
+    <form method="get" action="{{ url_for('instructor.assignments') }}">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Loại bài tập</label>
+                <select class="form-select" name="assignment_type">
+                    <option value="" {{ 'selected' if (assignment_type == '' or not assignment_type) else '' }}>Tất cả</option>
+                    <option value="individual" {{ 'selected' if assignment_type == 'individual' else '' }}>Cá nhân</option>
+                    <option value="class" {{ 'selected' if assignment_type == 'class' else '' }}>Lớp học</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Độ ưu tiên</label>
+                <select class="form-select" name="priority">
+                    <option value="" {{ 'selected' if (priority == '' or not priority) else '' }}>Tất cả</option>
+                    <option value="urgent" {{ 'selected' if priority == 'urgent' else '' }}>Khẩn cấp</option>
+                    <option value="high" {{ 'selected' if priority == 'high' else '' }}>Cao</option>
+                    <option value="normal" {{ 'selected' if priority == 'normal' else '' }}>Trung bình</option>
+                    <option value="low" {{ 'selected' if priority == 'low' else '' }}>Thấp</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Trạng thái</label>
+                <select class="form-select" disabled>
+                    <option value="">(Sắp có)</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1"><i class="fas fa-filter me-1"></i>Lọc</button>
+                <a href="{{ url_for('instructor.assignments') }}" class="btn btn-outline-secondary">Đặt lại</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Assignments List -->
+<div class="data-table-wrapper">
+    {% if assignments %}
+    <div class="table-responsive">
+        <table class="table data-table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Bài võ</th>
+                    <th>Loại</th>
+                    <th>Đối tượng</th>
+                    <th>Deadline</th>
+                    <th>Độ ưu tiên</th>
+                    <th>Tiến độ</th>
+                    <th class="text-end">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for assignment in assignments %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="assignment-icon me-2">
+                                <i class="fas fa-dumbbell"></i>
+                            </div>
+                            <div>
+                                <strong>{{ assignment.routine.routine_name }}</strong>
+                                <br>
+                                <small class="text-muted">{{ assignment.routine.level }}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        {% if assignment.assignment_type == 'individual' %}
+                        <span class="badge bg-info">
+                            <i class="fas fa-user me-1"></i>Cá nhân
+                        </span>
+                        {% else %}
+                        <span class="badge bg-primary">
+                            <i class="fas fa-users me-1"></i>Lớp học
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if assignment.assignment_type == 'individual' %}
+                            {{ assignment.student.full_name if assignment.student else 'N/A' }}
+                        {% else %}
+                            {{ assignment.class_obj.class_name if assignment.class_obj else 'N/A' }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-calendar-alt text-muted me-2"></i>
+                            <span>{{ assignment.deadline.strftime('%d/%m/%Y') if assignment.deadline else 'Không có' }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        {% if assignment.priority == 'high' %}
+                        <span class="badge bg-danger">Cao</span>
+                        {% elif assignment.priority == 'medium' %}
+                        <span class="badge bg-warning">TB</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Thấp</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% set a_stat = assignment_stats[assignment.assignment_id] if assignment_stats is defined and assignment.assignment_id in assignment_stats else None %}
+                        {% set percent = a_stat.completion_percent if a_stat else 0 %}
+                        <div class="progress" style="height: 20px; min-width: 100px;">
+                            <div class="progress-bar" style="width: {{ percent }}%">{{ percent }}%</div>
+                        </div>
+                    </td>
+                    <td class="text-end">
+                        <a href="{{ url_for('instructor.assignment_detail', assignment_id=assignment.assignment_id) }}" 
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-eye me-1"></i>Chi tiết
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state-compact">
+        <i class="fas fa-clipboard-list"></i>
+        <p class="mb-0">Chưa có bài tập nào</p>
+        <a href="{{ url_for('instructor.create_assignment') }}" class="btn btn-primary btn-sm mt-3">
+            <i class="fas fa-plus me-2"></i>Giao bài tập mới
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

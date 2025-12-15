@@ -1,0 +1,271 @@
+{% extends 'base/student_base.html' %}
+
+{% block title %}Bài Tập Của Tôi{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/student.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Modern Header -->
+    <div class="page-header-modern mb-4">
+        <div class="page-header-content">
+            <div class="page-header-icon">
+                <i class="fas fa-tasks"></i>
+            </div>
+            <div class="page-header-text">
+                <h1 class="page-header-title">Bài Tập</h1>
+                <p class="page-header-subtitle">Quản lý bài tập và deadline</p>
+            </div>
+        </div>
+        <div class="page-header-actions">
+            <a href="{{ url_for('student.dashboard') }}" class="btn btn-light btn-sm">
+                <i class="fas fa-arrow-left me-2"></i>Quay lại
+            </a>
+        </div>
+    </div>
+    
+    <!-- Tabs Navigation -->
+    <ul class="nav assignment-tabs" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#pending" role="tab">
+                <i class="fas fa-hourglass-half"></i> Đang chờ
+                <span class="badge bg-warning text-dark ms-2">{{ pending|length }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#completed" role="tab">
+                <i class="fas fa-check-circle"></i> Đã nộp
+                <span class="badge bg-success ms-2">{{ completed|length }}</span>
+            </a>
+        </li>
+    </ul>
+    
+    <!-- Tab Content -->
+    <div class="tab-content">
+        <!-- Pending Assignments -->
+        <div class="tab-pane fade show active" id="pending" role="tabpanel">
+            {% if pending %}
+                {% for a in pending %}
+                <div class="assignment-card-compact {{ 'expired' if a.is_expired }}">
+                    <div class="assignment-header-compact">
+                        <div class="flex-grow-1">
+                            <h5 class="assignment-title-compact">{{ a.routine.routine_name }}</h5>
+                            <div class="assignment-meta-compact">
+                                <span class="badge bg-secondary">{{ a.routine.routine_code }}</span>
+                                <span class="student-level-badge 
+                                    {% if a.routine.level == 'beginner' %}student-level-beginner
+                                    {% elif a.routine.level == 'intermediate' %}student-level-intermediate
+                                    {% elif a.routine.level == 'advanced' %}student-level-advanced
+                                    {% endif %}">
+                                    {% if a.routine.level == 'beginner' %}Sơ cấp
+                                    {% elif a.routine.level == 'intermediate' %}Trung cấp
+                                    {% elif a.routine.level == 'advanced' %}Nâng cao
+                                    {% endif %}
+                                </span>
+                                {% if a.priority == 'urgent' %}
+                                <span class="badge bg-danger">Ưu tiên cao</span>
+                                {% endif %}
+                                {% if a.is_mandatory %}
+                                <span class="badge bg-danger">Bắt buộc</span>
+                                {% endif %}
+                                {% if a.is_expired %}
+                                <span class="badge bg-danger">Đã hết hạn</span>
+                                {% else %}
+                                <span class="badge bg-success">Đang mở</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="assignment-info-inline">
+                        {% if a.deadline %}
+                        <div>
+                            <i class="fas fa-calendar-times"></i>
+                            <span>{{ a.deadline.strftime('%d/%m/%Y %H:%M') }}</span>
+                            {% if not a.is_expired %}
+                            {% set time_left = (a.deadline - now) if now else None %}
+                            {% if time_left %}
+                            <span class="time-remaining {{ 'warning' if time_left.days < 3 else 'info' }}">
+                                {% if time_left.days > 0 %}
+                                    Còn {{ time_left.days }} ngày
+                                {% elif time_left.seconds > 3600 %}
+                                    Còn {{ (time_left.seconds / 3600)|round(0)|int }} giờ
+                                {% else %}
+                                    Còn {{ (time_left.seconds / 60)|round(0)|int }} phút
+                                {% endif %}
+                            </span>
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        {% if a.routine.duration_seconds %}
+                        <div>
+                            <i class="fas fa-clock"></i>
+                            <span>{{ (a.routine.duration_seconds / 60)|round(1) }} phút</span>
+                        </div>
+                        {% endif %}
+                        {% if a.routine.total_moves %}
+                        <div>
+                            <i class="fas fa-list-ol"></i>
+                            <span>{{ a.routine.total_moves }} động tác</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if a.instructions %}
+                    <div class="assignment-instructions-compact">
+                        <strong><i class="fas fa-info-circle me-1"></i>Hướng dẫn:</strong>
+                        <div style="white-space: pre-wrap; margin-top: 0.25rem;">{{ a.instructions }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="assignment-action-compact">
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a href="{{ url_for('student.routine_detail', routine_id=a.routine_id) }}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-book-open"></i> Xem bài võ
+                            </a>
+                            {% if a.instructor_video_url %}
+                            <a href="{{ a.instructor_video_url }}" target="_blank" 
+                               class="btn btn-sm btn-outline-success">
+                                <i class="fas fa-video"></i> Demo
+                            </a>
+                            {% endif %}
+                        </div>
+                        {% if not a.is_expired %}
+                        <a href="{{ url_for('student.submit_assignment', assignment_id=a.assignment_id) }}" 
+                           class="btn btn-sm btn-primary">
+                            <i class="fas fa-upload"></i> Nộp bài
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state-compact">
+                    <i class="fas fa-check-double"></i>
+                    <p class="mb-0">Không có bài tập nào đang chờ</p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Completed Assignments -->
+        <div class="tab-pane fade" id="completed" role="tabpanel">
+            {% if completed %}
+                {% for item in completed %}
+                <div class="assignment-card-compact completed">
+                    <div class="assignment-header-compact">
+                        <div class="flex-grow-1">
+                            <h5 class="assignment-title-compact">{{ item.assignment.routine.routine_name }}</h5>
+                            <div class="assignment-meta-compact">
+                                <span class="badge bg-secondary">{{ item.assignment.routine.routine_code }}</span>
+                                <span class="student-level-badge 
+                                    {% if item.assignment.routine.level == 'beginner' %}student-level-beginner
+                                    {% elif item.assignment.routine.level == 'intermediate' %}student-level-intermediate
+                                    {% elif item.assignment.routine.level == 'advanced' %}student-level-advanced
+                                    {% endif %}">
+                                    {% if item.assignment.routine.level == 'beginner' %}Sơ cấp
+                                    {% elif item.assignment.routine.level == 'intermediate' %}Trung cấp
+                                    {% elif item.assignment.routine.level == 'advanced' %}Nâng cao
+                                    {% endif %}
+                                </span>
+                                <span class="badge bg-success">Đã nộp</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="assignment-info-inline">
+                        <div>
+                            <i class="fas fa-calendar-check"></i>
+                            <span>Nộp: {{ item.video.uploaded_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                        </div>
+                    </div>
+                    
+                    {% if item.video.manual_evaluations %}
+                    {% set eval = item.video.manual_evaluations[0] %}
+                    <div class="score-display-compact">
+                        <div class="score-item-compact">
+                            <span class="score-label">Tổng:</span>
+                            <span class="score-value">{{ eval.overall_score }}/100</span>
+                            {% if eval.evaluation_method == 'ai' %}
+                            <span class="badge bg-info badge-sm ms-1">AI</span>
+                            {% elif eval.evaluation_method == 'both' %}
+                            <span class="badge bg-primary badge-sm ms-1">AI+GV</span>
+                            {% endif %}
+                        </div>
+                        {% if eval.technique_score %}
+                        <div class="score-item-compact">
+                            <span class="score-label">Kỹ thuật:</span>
+                            <span class="score-value">{{ eval.technique_score }}/100</span>
+                        </div>
+                        {% endif %}
+                        {% if eval.posture_score %}
+                        <div class="score-item-compact">
+                            <span class="score-label">Tư thế:</span>
+                            <span class="score-value">{{ eval.posture_score }}/100</span>
+                        </div>
+                        {% endif %}
+                        {% if eval.spirit_score %}
+                        <div class="score-item-compact">
+                            <span class="score-label">Tinh thần:</span>
+                            <span class="score-value">{{ eval.spirit_score }}/100</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning mb-0 py-2">
+                        {% if item.assignment.grading_method == 'ai' or item.assignment.grading_method == 'both' %}
+                        <i class="fas fa-robot me-1"></i>Đang chấm điểm AI...
+                        {% else %}
+                        <i class="fas fa-hourglass-half me-2"></i>Đang chờ chấm điểm
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    {% if item.video.detected_weapon %}
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            <i class="fas fa-shield-alt me-1"></i>
+                            Vũ khí phát hiện: <strong>{{ item.video.detected_weapon }}</strong>
+                            {% if item.video.weapon_match_status == 'matched' %}
+                            <span class="badge bg-success badge-sm ms-1">✓ Khớp</span>
+                            {% elif item.video.weapon_match_status == 'mismatched' %}
+                            <span class="badge bg-danger badge-sm ms-1">✗ Không khớp</span>
+                            {% endif %}
+                        </small>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="assignment-action-compact">
+                        <div class="d-flex gap-2 flex-wrap">
+                            {% if item.assignment.instructor_video_url %}
+                            <a href="{{ item.assignment.instructor_video_url }}" target="_blank" 
+                               class="btn btn-sm btn-outline-success">
+                                <i class="fas fa-video"></i> Demo
+                            </a>
+                            {% endif %}
+                        </div>
+                        {% if item.video.manual_evaluations %}
+                        <a href="{{ url_for('student_videos.video_detail', video_id=item.video.video_id) }}" 
+                           class="btn btn-sm btn-primary">
+                            <i class="fas fa-chart-bar"></i> Xem kết quả
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state-compact">
+                    <i class="fas fa-inbox"></i>
+                    <p class="mb-0">Chưa nộp bài tập nào</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/student.js') }}"></script>
+{% endblock %}

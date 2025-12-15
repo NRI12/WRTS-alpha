@@ -1,0 +1,88 @@
+{% extends "base/manager_base.html" %}
+
+{% block title %}Lớp học chờ duyệt{% endblock %}
+
+{% block manager_content %}
+<div class="page-header-modern">
+    <div class="page-header-content">
+        <div class="page-header-icon">
+            <i class="fas fa-tasks"></i>
+        </div>
+        <div class="page-header-text">
+            <h1 class="page-header-title">Lớp học chờ duyệt</h1>
+            <p class="page-header-subtitle">Danh sách các đề xuất lớp học chờ quản lý phê duyệt</p>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        {% if pending %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Mã lớp</th>
+                        <th>Tên lớp</th>
+                        <th>Giảng viên</th>
+                        <th>Cấp độ</th>
+                        <th>HV tối đa</th>
+                        <th>Bắt đầu</th>
+                        <th>Ngày đề xuất</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in pending %}
+                    <tr>
+                        <td><span class="badge bg-primary">{{ c.class_code }}</span></td>
+                        <td class="fw-semibold">{{ c.class_name }}</td>
+                        <td>{{ c.instructor.full_name }}</td>
+                        <td>
+                            {% if c.level == 'beginner' %}
+                                <span class="badge bg-success">Sơ cấp</span>
+                            {% elif c.level == 'intermediate' %}
+                                <span class="badge bg-info">Trung cấp</span>
+                            {% elif c.level == 'advanced' %}
+                                <span class="badge bg-danger">Nâng cao</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ c.level }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ c.max_students }}</td>
+                        <td>{{ c.start_date.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ c.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td class="text-end">
+                            <a href="{{ url_for('manager.review_class', class_id=c.class_id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-check-circle me-1"></i>Xét duyệt
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">Không có lớp học nào chờ duyệt</h5>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="mt-3">
+    <a href="{{ url_for('manager.dashboard') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Về Dashboard
+    </a>
+    <a href="{{ url_for('manager.analytics') }}" class="btn btn-outline-secondary ms-2">
+        Phân tích
+    </a>
+    <a href="{{ url_for('manager.analytics') }}" class="btn btn-outline-secondary ms-2">
+        Thống kê
+    </a>
+</div>
+
+{% endblock %}
+
+

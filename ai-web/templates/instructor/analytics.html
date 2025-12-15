@@ -1,0 +1,97 @@
+{% extends "base/instructor_base.html" %}
+
+{% block title %}Phân tích giảng viên{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/instructor.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block instructor_content %}
+<!-- Modern Header -->
+<div class="page-header-modern">
+    <div class="page-header-content">
+        <div class="page-header-icon">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="page-header-text">
+            <h1 class="page-header-title">Phân tích giảng viên</h1>
+            <p class="page-header-subtitle">Theo dõi hiệu suất và thống kê</p>
+        </div>
+    </div>
+</div>
+
+<!-- Classes Section -->
+<div class="data-table-wrapper mb-4">
+    <h5 class="mb-3">
+        <i class="fas fa-chalkboard text-primary me-2"></i>
+        Các lớp của tôi
+    </h5>
+    {% if classes %}
+    <div class="table-responsive">
+        <table class="table data-table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Lớp</th>
+                    <th>Số học viên</th>
+                    <th class="text-end">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for class in classes %}
+                <tr>
+                    <td><strong>{{ class.class_name }}</strong></td>
+                    <td>{{ class.current_students }}</td>
+                    <td class="text-end">
+                        <a href="{{ url_for('instructor.class_analytics', class_id=class.class_id) }}" 
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-eye me-1"></i>Xem chi tiết
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state-compact">
+        <i class="fas fa-chalkboard"></i>
+        <p class="mb-0">Chưa có lớp học nào</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Routine Stats Section -->
+<div class="data-table-wrapper">
+    <h5 class="mb-3">
+        <i class="fas fa-fist-raised text-primary me-2"></i>
+        Thống kê bài võ
+    </h5>
+    {% if routine_stats %}
+    <div class="table-responsive">
+        <table class="table data-table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Bài võ</th>
+                    <th>Số lần sử dụng</th>
+                    <th>Điểm TB</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stat in routine_stats %}
+                <tr>
+                    <td><strong>{{ stat.routine.routine_name }}</strong></td>
+                    <td>{{ stat.usage_count }}</td>
+                    <td>{{ stat.avg_score }}/100</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state-compact">
+        <i class="fas fa-fist-raised"></i>
+        <p class="mb-0">Chưa có thống kê bài võ</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

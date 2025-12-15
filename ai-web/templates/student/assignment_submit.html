@@ -1,0 +1,126 @@
+{% extends 'base/student_base.html' %}
+
+{% block title %}Nộp Bài Tập - {{ assignment.routine.routine_name }}{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/student.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">
+                <i class="fas fa-paper-plane text-primary me-2"></i>
+                Nộp Bài Tập
+            </h1>
+            <p class="text-muted mb-0">Tải lên video để nộp bài cho bài tập</p>
+        </div>
+        <a href="{{ url_for('student.my_assignments') }}" class="btn btn-outline-secondary">
+            Quay lại
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ 'success' if category == 'success' else ('danger' if category == 'error' else category) }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-0 py-3">
+            <h5 class="mb-0"><i class="fas fa-info-circle text-info me-2"></i>Thông tin bài tập</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div><strong>Bài võ:</strong> {{ assignment.routine.routine_name }}</div>
+                    <div><strong>Mã bài:</strong> {{ assignment.routine.routine_code }}</div>
+                </div>
+                <div class="col-md-6">
+                    <div>
+                        <strong>Hạn nộp:</strong>
+                        <span class="text-danger fw-semibold">
+                            {% if assignment.deadline %}
+                                {{ assignment.deadline.strftime('%d/%m/%Y %H:%M') }}
+                            {% else %}
+                                Không có deadline
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                {% if assignment.instructions %}
+                <div class="col-12">
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <strong>Hướng dẫn:</strong> {{ assignment.instructions }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Demo của Assignment -->
+    {% if assignment.instructor_video_url %}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-0 py-3">
+            <h5 class="mb-0">
+                <i class="fas fa-video text-success me-2"></i>
+                Video Demo - Tham khảo
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info mb-3">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Video demo:</strong> Xem video này để hiểu cách thực hiện bài tập đúng cách.
+            </div>
+            <div class="ratio ratio-16x9 bg-black rounded">
+                <video controls class="w-100 h-100">
+                    <source src="{{ assignment.instructor_video_url }}" type="video/mp4">
+                    <p class="text-white text-center p-3">Trình duyệt không hỗ trợ video hoặc file không tồn tại</p>
+                </video>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 py-3">
+            <h5 class="mb-0"><i class="fas fa-file-video text-primary me-2"></i>Biểu mẫu nộp bài</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="mb-3">
+                    <label for="video_file" class="form-label">📹 Chọn file video *</label>
+                    <input type="file" id="video_file" name="video_file" accept="video/mp4,video/avi,video/mov,video/x-matroska" class="form-control" required>
+                    <div class="form-text">Định dạng: mp4, avi, mov, mkv | Tối đa: 500MB</div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="notes" class="form-label">📝 Ghi chú (tùy chọn)</label>
+                    <textarea id="notes" name="notes" rows="4" class="form-control" placeholder="VD: Tập ở nhà, chưa thuộc hết động tác..."></textarea>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-check me-2"></i>Nộp Bài
+                    </button>
+                    <a href="{{ url_for('student.my_assignments') }}" class="btn btn-light">Hủy</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/student.js') }}"></script>
+{% endblock %}

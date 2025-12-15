@@ -1,0 +1,181 @@
+/* AdminLTE Fixes for Sidebar and Layout */
+
+/* Fix sidebar alignment - ensure it's above other elements */
+.main-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    z-index: 1038 !important;
+    height: 100vh !important;
+    overflow-y: auto !important;
+}
+
+/* Ensure AdminLTE sidebar is not affected by custom sidebar styles */
+.main-sidebar .sidebar {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    height: auto !important;
+    width: auto !important;
+    z-index: auto !important;
+}
+
+/* Fix content wrapper when sidebar is present */
+.content-wrapper {
+    margin-left: 250px !important;
+    transition: margin-left 0.3s ease-in-out;
+}
+
+/* Reduce padding in content section for better spacing - moderate amount */
+.content-wrapper .content {
+    padding: 1.5rem 0 !important;
+}
+
+.content-wrapper .content .container-fluid {
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+    max-width: 100% !important;
+}
+
+/* Reduce padding in content header */
+.content-header {
+    padding: 1.25rem 2rem !important;
+}
+
+.content-header .container-fluid {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    max-width: 100% !important;
+}
+
+/* Override Bootstrap container-fluid padding in AdminLTE */
+.content-wrapper .container-fluid {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+}
+
+/* Remove extra padding from nested container-fluid with py-4, px-4 */
+.content-wrapper .content .container-fluid .container-fluid.py-4,
+.content-wrapper .content .container-fluid .container-fluid.px-4 {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+/* Override py-4 and px-4 classes inside content-wrapper - moderate reduction */
+.content-wrapper .content .py-4 {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+}
+
+.content-wrapper .content .px-4 {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+/* Force minimal padding for all content inside content-wrapper */
+.content-wrapper .content .container-fluid > *:first-child {
+    margin-top: 0;
+}
+
+/* When sidebar is collapsed */
+.sidebar-mini.sidebar-collapse .content-wrapper {
+    margin-left: 4.6rem;
+}
+
+/* Fix sidebar menu active states */
+.nav-sidebar > .nav-item > .nav-link.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.nav-sidebar .nav-item > .nav-link.active > .nav-icon {
+    color: #fff;
+}
+
+/* Fix treeview menu */
+.nav-treeview > .nav-item > .nav-link.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+/* Ensure sidebar menu items are clickable */
+.nav-sidebar .nav-link {
+    cursor: pointer;
+    color: #c2c7d0;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.nav-sidebar .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.nav-sidebar .nav-link.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.nav-sidebar .nav-link.active .nav-icon {
+    color: #fff;
+}
+
+/* Fix brand logo */
+.brand-link {
+    display: block;
+    padding: 1rem;
+    text-align: center;
+}
+
+.brand-text {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+/* Fix user panel */
+.user-panel {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.user-panel .info a {
+    color: #c2c7d0;
+    font-weight: 500;
+}
+
+.user-panel .info a:hover {
+    color: #fff;
+}
+
+/* Responsive fixes */
+@media (max-width: 991.98px) {
+    .content-wrapper {
+        margin-left: 0 !important;
+    }
+    
+    .main-sidebar {
+        transform: translateX(-100%);
+    }
+    
+    .sidebar-open .main-sidebar {
+        transform: translateX(0);
+    }
+}
+
+/* Fix menu open state */
+.nav-sidebar .menu-open > .nav-link {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Fix treeview arrow rotation */
+.nav-sidebar .menu-open > a > .right {
+    transform: rotate(-90deg);
+}
+

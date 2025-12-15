@@ -1,0 +1,169 @@
+{% extends "base/instructor_base.html" %}
+
+{% block title %}Thêm tiêu chí đánh giá{% endblock %}
+
+{% block instructor_content %}
+<div class="page-header">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2">
+                <li class="breadcrumb-item"><a href="{{ url_for('instructor.routines') }}">Bài võ</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('instructor.routine_detail', routine_id=routine.routine_id) }}">{{ routine.routine_name }}</a></li>
+                <li class="breadcrumb-item active">Thêm tiêu chí</li>
+            </ol>
+        </nav>
+        <h1 class="page-title">
+            <i class="fas fa-clipboard-check me-2"></i>
+            Thêm tiêu chí đánh giá
+        </h1>
+        <p class="text-muted mb-0">{{ routine.routine_name }}</p>
+    </div>
+</div>
+
+<form method="POST">
+    {{ form.hidden_tag() }}
+    
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-star text-warning me-2"></i>
+                        Thông tin tiêu chí
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label required">Tên tiêu chí</label>
+                        {{ form.criteria_name(class="form-control", placeholder="VD: Tư thế cơ bản") }}
+                        {% if form.criteria_name.errors %}
+                        <div class="invalid-feedback d-block">{{ form.criteria_name.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Mô tả</label>
+                        {{ form.description(class="form-control rich-editor", rows="4", placeholder="Mô tả chi tiết về tiêu chí này...") }}
+                    </div>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label required">Mã tiêu chí</label>
+                            {{ form.criteria_code(class="form-control", placeholder="VD: POSTURE") }}
+                            {% if form.criteria_code.errors %}
+                            <div class="invalid-feedback d-block">{{ form.criteria_code.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Phương pháp đánh giá</label>
+                            {{ form.evaluation_method(class="form-control", placeholder="VD: Thủ công / AI / Kết hợp") }}
+                            {% if form.evaluation_method.errors %}
+                            <div class="invalid-feedback d-block">{{ form.evaluation_method.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label required">Trọng số (%)</label>
+                            <div class="input-group">
+                                {{ form.weight_percentage(class="form-control", type="number", min="0.01", max="100", step="0.01", value="10") }}
+                                <span class="input-group-text">%</span>
+                            </div>
+                            {% if form.weight_percentage.errors %}
+                            <div class="invalid-feedback d-block">{{ form.weight_percentage.errors[0] }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">Tổng trọng số = 100%</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie text-info me-2"></i>
+                        Tổng trọng số
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <div class="display-4 fw-bold" id="totalWeight">0</div>
+                        <div class="text-muted">/ 100%</div>
+                    </div>
+                    
+                    <div class="progress" style="height: 25px;">
+                        <div class="progress-bar" id="weightBar" style="width: 0%">0%</div>
+                    </div>
+                    
+                    <div class="mt-3 small text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Tổng trọng số của tất cả tiêu chí phải bằng 100%
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body">
+                    <h6 class="mb-3">
+                        <i class="fas fa-lightbulb text-warning me-2"></i>
+                        Ví dụ tiêu chí
+                    </h6>
+                    <ul class="small mb-0 ps-3">
+                        <li class="mb-2">Tư thế cơ bản (30%)</li>
+                        <li class="mb-2">Độ chính xác động tác (40%)</li>
+                        <li class="mb-2">Tốc độ & nhịp điệu (20%)</li>
+                        <li>Tinh thần (10%)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-body d-flex justify-content-between">
+            <a href="{{ url_for('instructor.routine_detail', routine_id=routine.routine_id) }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Quay lại
+            </a>
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus me-2"></i>Thêm tiêu chí
+            </button>
+        </div>
+    </div>
+</form>
+
+<style>
+.form-label.required::after {
+    content: " *";
+    color: #dc2626;
+}
+</style>
+
+<script>
+// Calculate total weight
+function updateTotalWeight() {
+    const currentWeight = parseFloat(document.querySelector('[name="weight_percentage"]').value) || 0;
+    const existingWeight = {{ (existing_weight|default(0))|tojson }};
+    const total = existingWeight + currentWeight;
+    
+    document.getElementById('totalWeight').textContent = total.toFixed(1);
+    document.getElementById('weightBar').style.width = total + '%';
+    document.getElementById('weightBar').textContent = total.toFixed(1) + '%';
+    
+    if (total > 100) {
+        document.getElementById('weightBar').classList.add('bg-danger');
+        document.getElementById('weightBar').classList.remove('bg-primary');
+    } else {
+        document.getElementById('weightBar').classList.add('bg-primary');
+        document.getElementById('weightBar').classList.remove('bg-danger');
+    }
+}
+
+const weightInput = document.querySelector('[name="weight_percentage"]');
+if (weightInput) {
+    weightInput.addEventListener('input', updateTotalWeight);
+}
+document.addEventListener('DOMContentLoaded', updateTotalWeight);
+</script>
+{% endblock %}

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Làm bài thi - {{ exam.exam_name }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: Arial, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        .exam-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .info-item i {
+            color: #667eea;
+            font-size: 20px;
+        }
+        .info-item strong {
+            display: block;
+            color: #333;
+            font-size: 14px;
+        }
+        .info-item span {
+            display: block;
+            color: #666;
+            font-size: 12px;
+        }
+        .video-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        .video-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .video-section h3 i {
+            color: #667eea;
+        }
+        .video-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            background: black;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        video {
+            width: 100%;
+            display: block;
+        }
+        .recording-section {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #ffc107;
+            margin-bottom: 30px;
+        }
+        .recording-section h3 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: bold;
+        }
+        .form-group input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+        }
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            resize: vertical;
+            min-height: 80px;
+        }
+        .timer {
+            background: #dc3545;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 10px rgba(220,53,69,0.3);
+        }
+        .timer.warning {
+            background: #ffc107;
+            color: #333;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .alert-warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+        }
+        .instructions {
+            background: #e7f3ff;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #0066cc;
+            margin-bottom: 30px;
+        }
+        .instructions h3 {
+            color: #0066cc;
+            margin-bottom: 15px;
+        }
+        .instructions ul {
+            margin-left: 20px;
+        }
+        .instructions li {
+            margin-bottom: 8px;
+            color: #333;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 {{ exam.exam_name }}</h1>
+            <p style="color: #666; margin-top: 10px;">
+                <i class="fas fa-info-circle"></i> Thi 1 lần duy nhất - Không giới hạn thời gian
+            </p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        <strong>{{ message }}</strong>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Info -->
+        <div class="timer" id="timer">
+            <i class="fas fa-clock"></i> Thời gian làm bài: <span id="time-display">Không giới hạn</span>
+        </div>
+
+        <!-- Exam Info -->
+        <div class="exam-info">
+            <div class="info-item">
+                <i class="fas fa-book"></i>
+                <div>
+                    <span>Loại thi</span>
+                    <strong>{{ exam.exam_type|upper }}</strong>
+                </div>
+            </div>
+            <div class="info-item">
+                <i class="fas fa-clock"></i>
+                <div>
+                    <span>Thời gian làm bài</span>
+                    <strong>Không giới hạn</strong>
+                </div>
+            </div>
+            <div class="info-item">
+                <i class="fas fa-percentage"></i>
+                <div>
+                    <span>Điểm đạt</span>
+                    <strong>{{ exam.pass_score }}%</strong>
+                </div>
+            </div>
+            <div class="info-item">
+                <i class="fas fa-calendar"></i>
+                <div>
+                    <span>Hạn nộp</span>
+                    <strong>{{ exam.end_time.strftime('%H:%M %d/%m/%Y') }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="instructions">
+            <h3><i class="fas fa-info-circle"></i> Hướng dẫn làm bài</h3>
+            <ul>
+                <li>Xem video mẫu bên dưới để hiểu rõ bài võ cần thực hiện</li>
+                <li>Ghi video của bạn thực hiện bài võ (định dạng: MP4, AVI, MOV, WEBM)</li>
+                <li>Thời gian làm bài: <strong>Không giới hạn</strong> - Làm bài thoải mái</li>
+                <li>Sau khi nộp bài, hệ thống AI sẽ tự động chấm điểm</li>
+                <li><strong style="color: #dc3545;">Lưu ý:</strong> Không thể làm lại sau khi nộp!</li>
+            </ul>
+        </div>
+
+        <!-- Video mẫu -->
+        <div class="video-section">
+            <h3>
+                <i class="fas fa-video"></i>
+                Video mẫu - Bài võ cần thực hiện
+            </h3>
+            {% if video_url %}
+                <div class="video-container">
+                    <video controls>
+                        <source src="{{ video_url }}" type="video/mp4">
+                        Trình duyệt không hỗ trợ video.
+                    </video>
+                </div>
+            {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Không có video mẫu cho bài thi này
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Recording Section -->
+        <div class="recording-section">
+            <h3><i class="fas fa-file-video"></i> Nộp video của bạn</h3>
+            
+            <form method="POST" action="{{ url_for('student.submit_exam', exam_id=exam.exam_id) }}" 
+                  enctype="multipart/form-data" id="submit-form">
+                
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                
+                <div class="form-group">
+                    <label for="student_video">
+                        <i class="fas fa-upload"></i> Chọn video đã ghi (*)
+                    </label>
+                    <input type="file" 
+                           id="student_video" 
+                           name="student_video" 
+                           accept="video/mp4,video/avi,video/mov,video/webm"
+                           required>
+                    <small style="color: #666; display: block; margin-top: 5px;">
+                        Định dạng: MP4, AVI, MOV, WEBM | Kích thước tối đa: 500MB
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">
+                        <i class="fas fa-comment"></i> Ghi chú (tùy chọn)
+                    </label>
+                    <textarea id="notes" 
+                              name="notes" 
+                              placeholder="Nhập ghi chú của bạn về bài làm (nếu có)..."></textarea>
+                </div>
+
+                <div class="btn-group">
+                    <a href="{{ url_for('student.my_exams') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Hủy bỏ
+                    </a>
+                    <button type="submit" class="btn btn-primary" id="submit-btn">
+                        <i class="fas fa-paper-plane"></i> Nộp bài
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>Lưu ý quan trọng:</strong> Sau khi nhấn "Nộp bài", bạn không thể chỉnh sửa. 
+            Hãy kiểm tra kỹ video trước khi nộp!
+        </div>
+    </div>
+
+    <script>
+        // No timer needed - unlimited time
+
+        // Confirm before submit
+        document.getElementById('submit-form').addEventListener('submit', function(e) {
+            if (!confirm('Bạn có chắc chắn muốn nộp bài? Không thể chỉnh sửa sau khi nộp!')) {
+                e.preventDefault();
+            }
+        });
+
+        // Prevent accidental page leave
+        window.addEventListener('beforeunload', function(e) {
+            e.preventDefault();
+            e.returnValue = '';
+            return 'Bạn có chắc muốn rời khỏi trang? Bài làm sẽ không được lưu!';
+        });
+
+        // Validate file size
+        document.getElementById('student_video').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const maxSize = 500 * 1024 * 1024; // 500MB
+                if (file.size > maxSize) {
+                    alert('File quá lớn! Kích thước tối đa: 500MB');
+                    e.target.value = '';
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+{% extends "base/instructor_base.html" %}
+
+{% block title %}Thêm lịch học{% endblock %}
+
+{% block instructor_content %}
+<div class="page-header">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2">
+                <li class="breadcrumb-item"><a href="{{ url_for('instructor.classes') }}">Lớp học</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('instructor.class_schedules', class_id=class_obj.class_id) }}">Lịch học</a></li>
+                <li class="breadcrumb-item active">Thêm lịch</li>
+            </ol>
+        </nav>
+        <h1 class="page-title">
+            <i class="fas fa-calendar-plus text-primary me-2"></i>
+            Thêm lịch học mới
+        </h1>
+        <p class="text-muted mb-0">{{ class_obj.class_name }} ({{ class_obj.class_code }})</p>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <form method="POST">
+            {{ form.hidden_tag() }}
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label required">{{ form.day_of_week.label }}</label>
+                    {{ form.day_of_week(class="form-select") }}
+                    {% if form.day_of_week.errors %}
+                    <div class="invalid-feedback d-block">{{ form.day_of_week.errors[0] }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label required">{{ form.time_start.label }}</label>
+                    {{ form.time_start(class="form-control", placeholder="18:00") }}
+                    {% if form.time_start.errors %}
+                    <div class="invalid-feedback d-block">{{ form.time_start.errors[0] }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label required">{{ form.time_end.label }}</label>
+                    {{ form.time_end(class="form-control", placeholder="20:00") }}
+                    {% if form.time_end.errors %}
+                    <div class="invalid-feedback d-block">{{ form.time_end.errors[0] }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.location.label }}</label>
+                    {{ form.location(class="form-control", placeholder="Phòng tập / Địa điểm") }}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.notes.label }}</label>
+                    {{ form.notes(class="form-control", rows=2, placeholder="Ghi chú (tùy chọn)") }}
+                </div>
+
+                <div class="col-12">
+                    <div class="form-check">
+                        {{ form.is_active(class="form-check-input", id="isActive", checked=True) }}
+                        <label class="form-check-label" for="isActive">{{ form.is_active.label.text }}</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+                <a href="{{ url_for('instructor.class_schedules', class_id=class_obj.class_id) }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Quay lại
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Thêm lịch học
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

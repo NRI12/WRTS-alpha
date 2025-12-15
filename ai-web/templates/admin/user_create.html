@@ -1,0 +1,356 @@
+{% extends "base/admin_base.html" %}
+
+{% block title %}Tạo Người dùng Mới - AI-WRTS System{% endblock %}
+
+{% block admin_content %}
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1 gradient-text">
+            <i class="fas fa-user-plus me-2"></i>
+            Tạo Người dùng Mới
+        </h1>
+        <p class="text-muted mb-0">Thêm tài khoản người dùng mới vào hệ thống</p>
+    </div>
+    <div>
+        <a href="{{ url_for('admin.users') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i>
+            Quay lại
+        </a>
+    </div>
+</div>
+
+<!-- Create User Form -->
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="admin-panel">
+            <div class="admin-panel-header">
+                <h3 class="admin-panel-title">
+                    <i class="fas fa-user-edit"></i>
+                    Thông tin người dùng
+                </h3>
+            </div>
+            
+            <form method="POST" id="createUserForm">
+                {{ form.hidden_tag() }}
+                
+                <div class="row g-4">
+                    <!-- Basic Information -->
+                    <div class="col-12">
+                        <div class="form-section">
+                            <h5 class="form-section-title">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Thông tin cơ bản
+                            </h5>
+                            
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Tên đăng nhập <span class="text-danger">*</span></label>
+                                    <input type="text" name="username" class="form-control" 
+                                           placeholder="Nhập tên đăng nhập" required minlength="3"
+                                           value="{{ form.username.data or '' }}">
+                                    <div class="form-text">Tối thiểu 3 ký tự, chỉ chứa chữ cái, số và dấu gạch dưới</div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label class="form-label">Mật khẩu <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input type="password" name="password" class="form-control" 
+                                               placeholder="Nhập mật khẩu" required minlength="6" id="passwordInput">
+                                        <button class="btn btn-outline-secondary" type="button" onclick="togglePassword()">
+                                            <i class="fas fa-eye" id="passwordToggleIcon"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text">Tối thiểu 6 ký tự</div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label class="form-label">Email <span class="text-danger">*</span></label>
+                                    <input type="email" name="email" class="form-control" 
+                                           placeholder="Nhập địa chỉ email" required
+                                           value="{{ form.email.data or '' }}">
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label class="form-label">Họ và tên <span class="text-danger">*</span></label>
+                                    <input type="text" name="full_name" class="form-control" 
+                                           placeholder="Nhập họ và tên đầy đủ" required
+                                           value="{{ form.full_name.data or '' }}">
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label class="form-label">Số điện thoại</label>
+                                    <input type="tel" name="phone" class="form-control" 
+                                           placeholder="Nhập số điện thoại"
+                                           value="{{ form.phone.data or '' }}">
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label class="form-label">Ngày sinh</label>
+                                    <input type="date" name="date_of_birth" class="form-control"
+                                           value="{{ form.date_of_birth.data or '' }}">
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label class="form-label">Giới tính</label>
+                                    <select name="gender" class="form-select">
+                                        <option value="">-- Chọn giới tính --</option>
+                                        <option value="male" {{ 'selected' if form.gender.data == 'male' }}>Nam</option>
+                                        <option value="female" {{ 'selected' if form.gender.data == 'female' }}>Nữ</option>
+                                        <option value="other" {{ 'selected' if form.gender.data == 'other' }}>Khác</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label class="form-label">Vai trò <span class="text-danger">*</span></label>
+                                    {{ form.role_id(class="form-select") }}
+                                    {% if form.role_id.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.role_id.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Additional Information -->
+                    <div class="col-12">
+                        <div class="form-section">
+                            <h5 class="form-section-title">
+                                <i class="fas fa-map-marker-alt me-2"></i>
+                                Thông tin bổ sung
+                            </h5>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Địa chỉ</label>
+                                <textarea name="address" class="form-control" rows="3" 
+                                          placeholder="Nhập địa chỉ chi tiết">{{ form.address.data or '' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Form Actions -->
+                <div class="d-flex justify-content-end gap-3 mt-4 pt-4 border-top">
+                    <a href="{{ url_for('admin.users') }}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i>
+                        Hủy
+                    </a>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        <i class="fas fa-user-plus"></i>
+                        Tạo người dùng
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Role Information -->
+<div class="row justify-content-center mt-4">
+    <div class="col-lg-8">
+        <div class="admin-panel">
+            <div class="admin-panel-header">
+                <h3 class="admin-panel-title">
+                    <i class="fas fa-info-circle"></i>
+                    Thông tin vai trò
+                </h3>
+            </div>
+            
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="role-info-card">
+                        <div class="role-icon bg-primary">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                        <h6>Học viên</h6>
+                        <p class="text-muted small">Truy cập các khóa học, bài tập và kiểm tra</p>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="role-info-card">
+                        <div class="role-icon bg-warning">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                        </div>
+                        <h6>Giảng viên</h6>
+                        <p class="text-muted small">Tạo và quản lý lớp học, bài võ, đánh giá</p>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="role-info-card">
+                        <div class="role-icon bg-danger">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <h6>Quản lý</h6>
+                        <p class="text-muted small">Xem báo cáo, thống kê và quản lý lớp học</p>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="role-info-card">
+                        <div class="role-icon bg-success">
+                            <i class="fas fa-crown"></i>
+                        </div>
+                        <h6>Admin</h6>
+                        <p class="text-muted small">Toàn quyền truy cập và quản lý hệ thống</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: var(--light-bg);
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-section-title {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid white;
+        display: flex;
+        align-items: center;
+    }
+    
+    .role-info-card {
+        text-align: center;
+        padding: 1.5rem;
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        transition: var(--transition);
+    }
+    
+    .role-info-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--box-shadow-lg);
+    }
+    
+    .role-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        margin: 0 auto 1rem;
+    }
+    
+    .role-info-card h6 {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-text {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin-top: 0.25rem;
+    }
+    
+    .text-danger {
+        color: var(--danger-color) !important;
+    }
+    
+    @media (max-width: 768px) {
+        .form-section {
+            padding: 1rem;
+        }
+        
+        .role-info-card {
+            padding: 1rem;
+        }
+        
+        .role-icon {
+            width: 50px;
+            height: 50px;
+            font-size: 1.25rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function togglePassword() {
+        const passwordInput = document.getElementById('passwordInput');
+        const toggleIcon = document.getElementById('passwordToggleIcon');
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            toggleIcon.classList.remove('fa-eye');
+            toggleIcon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            toggleIcon.classList.remove('fa-eye-slash');
+            toggleIcon.classList.add('fa-eye');
+        }
+    }
+    
+    // Form validation
+    document.getElementById('createUserForm').addEventListener('submit', function(e) {
+        const submitBtn = document.getElementById('submitBtn');
+        const originalText = submitBtn.innerHTML;
+        
+        // Show loading state
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tạo...';
+        submitBtn.disabled = true;
+        
+        // Re-enable after 3 seconds (in case of error)
+        setTimeout(() => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }, 3000);
+    });
+    
+    // Username validation
+    document.querySelector('input[name="username"]').addEventListener('input', function() {
+        const username = this.value;
+        const isValid = /^[a-zA-Z0-9_]{3,}$/.test(username);
+        
+        if (username.length > 0) {
+            if (isValid) {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } else {
+                this.classList.remove('is-valid');
+                this.classList.add('is-invalid');
+            }
+        } else {
+            this.classList.remove('is-valid', 'is-invalid');
+        }
+    });
+    
+    // Email validation
+    document.querySelector('input[name="email"]').addEventListener('input', function() {
+        const email = this.value;
+        const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        
+        if (email.length > 0) {
+            if (isValid) {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } else {
+                this.classList.remove('is-valid');
+                this.classList.add('is-invalid');
+            }
+        } else {
+            this.classList.remove('is-valid', 'is-invalid');
+        }
+    });
+</script>
+{% endblock %}

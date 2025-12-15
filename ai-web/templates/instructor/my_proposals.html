@@ -1,0 +1,84 @@
+{% extends "base/instructor_base.html" %}
+
+{% block title %}Đề xuất lớp học của tôi{% endblock %}
+
+{% block instructor_content %}
+<div class="page-header-modern">
+    <div class="page-header-content">
+        <div class="page-header-icon">
+            <i class="fas fa-file-alt"></i>
+        </div>
+        <div class="page-header-text">
+            <h1 class="page-header-title">Đề xuất lớp học của tôi</h1>
+            <p class="page-header-subtitle">Theo dõi trạng thái duyệt các đề xuất lớp học đã gửi</p>
+        </div>
+    </div>
+    <div class="page-header-actions">
+        <a href="{{ url_for('instructor.propose_class') }}" class="btn btn-light btn-sm">
+            <i class="fas fa-plus me-2"></i>Tạo đề xuất mới
+        </a>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        {% if proposals %}
+        <div class="table-responsive">
+            <table class="table data-table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Mã lớp</th>
+                        <th>Tên lớp</th>
+                        <th>Cấp độ</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tạo</th>
+                        <th>Lý do từ chối</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in proposals %}
+                    <tr>
+                        <td><code>{{ p.class_code }}</code></td>
+                        <td class="fw-semibold">{{ p.class_name }}</td>
+                        <td>
+                            {% if p.level == 'beginner' %}
+                                <span class="badge bg-success">Sơ cấp</span>
+                            {% elif p.level == 'intermediate' %}
+                                <span class="badge bg-info">Trung cấp</span>
+                            {% elif p.level == 'advanced' %}
+                                <span class="badge bg-danger">Nâng cao</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ p.level }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if p.approval_status == 'approved' %}
+                                <span class="badge bg-success">{{ p.approval_status_display }}</span>
+                            {% elif p.approval_status == 'pending' %}
+                                <span class="badge bg-warning text-dark">{{ p.approval_status_display }}</span>
+                            {% elif p.approval_status == 'rejected' %}
+                                <span class="badge bg-danger">{{ p.approval_status_display }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ p.approval_status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ p.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td>{{ p.rejection_reason or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">Chưa có đề xuất nào</h5>
+            <a href="{{ url_for('instructor.propose_class') }}" class="btn btn-primary mt-2">
+                <i class="fas fa-plus me-2"></i>Tạo đề xuất đầu tiên
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
