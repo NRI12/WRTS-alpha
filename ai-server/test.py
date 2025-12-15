@@ -1,231 +1,137 @@
-# test.py
+# test.py - Version có debug
 import requests
 import os
-from pathlib import Path
+import time
 
-# ============================================================
-# CONFIGURATION
-# ============================================================
-BASE_URL = "https://ctv55345--ai-server"  # ← ĐÃ SỬA
+WORKSPACE = "ctv55345"
+APP_NAME = "ai-server"
 VIDEO_DIR = r"C:\Users\nguye\Pictures\ĐATN_H.anh_Final_10-12\Score_Compare"
-TIMEOUT = 1800  # 30 phút
 
-# ============================================================
-# HELPER FUNCTIONS
-# ============================================================
-def get_file_size_mb(file_path):
-    """Lấy kích thước file (MB)"""
-    size_bytes = os.path.getsize(file_path)
-    return size_bytes / (1024 * 1024)
+def get_url(endpoint):
+    # Endpoint mới qua FastAPI
+    return f"https://{WORKSPACE}--{APP_NAME}-fastapi-app.modal.run/{endpoint}"
 
-def print_header(title):
-    """In header đẹp"""
-    print("\n" + "="*60)
-    print(title)
-    print("="*60)
+def upload_file(url, files, timeout=300):
+    """Upload file với retry và debug"""
+    for i in range(2):
+        try:
+            print(f"   Upload (lần {i+1})...", end=" ")
+            res = requests.post(url, files=files, timeout=timeout)
+            print(f"Status: {res.status_code}")
+            
+            # Debug response
+            if res.status_code != 200:
+                print(f"   ❌ Error response: {res.text[:300]}")
+            
+            return res
+        except Exception as e:
+            print(f"❌ {type(e).__name__}: {str(e)[:100]}")
+            if i == 0:
+                time.sleep(3)
+    return None
 
-# ============================================================
-# TEST FUNCTIONS
-# ============================================================
 def test_health():
-    """Test health check"""
-    print_header("Testing Health Check")
-    url = f"{BASE_URL}--health.modal.run"
-    print(f"🔍 URL: {url}")
+    print("\n1️⃣ TEST HEALTH")
+    # Health endpoint vẫn là web_endpoint riêng trên Modal, không đi qua FastAPI app
+    url = f"https://{WORKSPACE}--health.modal.run"
+    res = requests.get(url, timeout=10)
+    print(f"   {res.json()}")
+    return res.status_code == 200
+
+def test_weapon(video_file):
+    print(f"\n2️⃣ TEST WEAPON - {video_file}")
+    url = get_url("weapon/detect")
+    path = os.path.join(VIDEO_DIR, video_file)
     
-    try:
-        response = requests.get(url, timeout=10)
-        print(f"   ✅ Status: {response.status_code}")
-        print(f"   Response: {response.json()}")
+    with open(path, 'rb') as f:
+        # Thử cả 2 cách
+        print("   Cách 1: field='video'")
+        files = {'video': (video_file, f, 'video/mp4')}
+        res = upload_file(url, files)
+        
+        if res and res.status_code == 200:
+            print(f"   ✅ Result: {res.json()}")
+            return True
+    
+    # Thử cách 2 nếu cách 1 fail
+    with open(path, 'rb') as f:
+        print("   Cách 2: field='file'")
+        files = {'file': (video_file, f, 'video/mp4')}
+        res = upload_file(url, files)
+        
+        if res and res.status_code == 200:
+            print(f"   ✅ Result: {res.json()}")
+            return True
+    
+    return False
+
+def test_extract(video_file):
+    print(f"\n3️⃣ TEST EXTRACT - {video_file}")
+    url = get_url("pose/extract-template")
+    path = os.path.join(VIDEO_DIR, video_file)
+    
+    with open(path, 'rb') as f:
+        files = {'video': (video_file, f, 'video/mp4')}
+        res = upload_file(url, files)
+    
+    if res and res.status_code == 200:
+        print(f"   ✅ Success")
         return True
-    except Exception as e:
-        print(f"   ❌ Error: {e}")
-        return False
+    return False
 
-def test_weapon_detection(video_path):
-    """Test weapon detection"""
-    url = f"{BASE_URL}--weapon-detect.modal.run"
-    file_name = os.path.basename(video_path)
-    file_size = get_file_size_mb(video_path)
+def test_score(video_file, template_file):
+    print(f"\n4️⃣ TEST SCORE")
+    print(f"   Video: {video_file}")
+    print(f"   Template: {template_file}")
     
-    print(f"\n🔍 Testing Weapon Detection: {file_name} ({file_size:.2f} MB)")
-    print(f"   Uploading...", end=" ", flush=True)
+    url = get_url("pose/score")
+    video_path = os.path.join(VIDEO_DIR, video_file)
+    template_path = os.path.join(VIDEO_DIR, template_file)
     
-    try:
-        with open(video_path, 'rb') as f:
-            files = {'file': (file_name, f, 'video/mp4')}
-            data = {}  # Empty data dict
-            
-            response = requests.post(
-                url,
-                files=files,
-                data=data,
-                timeout=TIMEOUT
-            )
-        
-        print("Done")
-        print(f"   Status: {response.status_code}")
-        
-        if response.status_code == 200:
-            print(f"   ✅ Response: {response.json()}")
-            return True
-        else:
-            print(f"   ❌ Error: {response.text}")
-            return False
-            
-    except requests.exceptions.Timeout:
-        print(f"\n   ❌ Timeout: Request took longer than {TIMEOUT} seconds")
-        return False
-    except requests.exceptions.ConnectionError as e:
-        print(f"\n   ❌ Connection Error: {str(e)[:100]}")
-        print(f"   💡 Tip: Check if endpoint is correct or server is busy")
-        return False
-    except Exception as e:
-        print(f"\n   ❌ Unexpected Error: {type(e).__name__}: {str(e)[:150]}")
-        return False
+    with open(video_path, 'rb') as v, open(template_path, 'rb') as t:
+        files = {
+            'student_video': (video_file, v, 'video/mp4'),
+            'teacher_template': (template_file, t, 'application/octet-stream')
+        }
+        res = upload_file(url, files, timeout=600)
+    
+    if res and res.status_code == 200:
+        print(f"   ✅ Score: {res.json()}")
+        return True
+    return False
 
-def test_extract_template(video_path):
-    """Test extract template"""
-    url = f"{BASE_URL}--pose-extract-template.modal.run"
-    file_name = os.path.basename(video_path)
-    file_size = get_file_size_mb(video_path)
-    
-    print(f"\n🔍 Testing Extract Template: {file_name} ({file_size:.2f} MB)")
-    print(f"   Uploading...", end=" ", flush=True)
-    
-    try:
-        with open(video_path, 'rb') as f:
-            files = {'file': (file_name, f, 'video/mp4')}
-            data = {}
-            
-            response = requests.post(
-                url,
-                files=files,
-                data=data,
-                timeout=TIMEOUT
-            )
-        
-        print("Done")
-        print(f"   Status: {response.status_code}")
-        
-        if response.status_code == 200:
-            result = response.json()
-            print(f"   ✅ Template extracted successfully")
-            if 'template' in result:
-                print(f"   Template shape: {len(result['template'])} frames")
-            return True
-        else:
-            print(f"   ❌ Error: {response.text}")
-            return False
-            
-    except requests.exceptions.Timeout:
-        print(f"\n   ❌ Timeout: Request took longer than {TIMEOUT} seconds")
-        return False
-    except requests.exceptions.ConnectionError as e:
-        print(f"\n   ❌ Connection Error: {str(e)[:100]}")
-        return False
-    except Exception as e:
-        print(f"\n   ❌ Unexpected Error: {type(e).__name__}: {str(e)[:150]}")
-        return False
-
-def test_pose_score(video_path, template_path):
-    """Test pose scoring"""
-    url = f"{BASE_URL}--pose-score.modal.run"
-    video_name = os.path.basename(video_path)
-    template_name = os.path.basename(template_path)
-    video_size = get_file_size_mb(video_path)
-    
-    print(f"\n🔍 Testing Pose Score: {video_name} ({video_size:.2f} MB) vs {template_name}")
-    print(f"   Uploading...", end=" ", flush=True)
-    
-    try:
-        with open(video_path, 'rb') as vf, open(template_path, 'rb') as tf:
-            files = {
-                'video': (video_name, vf, 'video/mp4'),
-                'template': (template_name, tf, 'application/octet-stream')
-            }
-            data = {}
-            
-            response = requests.post(
-                url,
-                files=files,
-                data=data,
-                timeout=TIMEOUT
-            )
-        
-        print("Done")
-        print(f"   Status: {response.status_code}")
-        
-        if response.status_code == 200:
-            result = response.json()
-            print(f"   ✅ Score: {result.get('score', 'N/A')}")
-            print(f"   Details: {result}")
-            return True
-        else:
-            print(f"   ❌ Error: {response.text}")
-            return False
-            
-    except requests.exceptions.Timeout:
-        print(f"\n   ❌ Timeout: Request took longer than {TIMEOUT} seconds")
-        return False
-    except requests.exceptions.ConnectionError as e:
-        print(f"\n   ❌ Connection Error: {str(e)[:100]}")
-        return False
-    except Exception as e:
-        print(f"\n   ❌ Unexpected Error: {type(e).__name__}: {str(e)[:150]}")
-        return False
-
-# ============================================================
-# MAIN
-# ============================================================
 def main():
     print("="*60)
-    print("AI Server API Test")
-    print("="*60)
-    print(f"Base URL: {BASE_URL}")
-    print(f"Video Directory: {VIDEO_DIR}")
-    print(f"Timeout: {TIMEOUT} seconds")
+    print("AI SERVER DEBUG TEST")
     print("="*60)
     
-    # Test health first
     if not test_health():
-        print("\n⚠️  Health check failed! Stopping tests.")
+        print("\n❌ Health check failed!")
         return
     
-    # Get video files
-    video_files = [f for f in os.listdir(VIDEO_DIR) 
-                   if f.endswith(('.mp4', '.avi', '.mov'))]
-    template_files = [f for f in os.listdir(VIDEO_DIR) 
-                      if f.endswith('.npy')]
+    videos = [f for f in os.listdir(VIDEO_DIR) if f.endswith('.mp4')]
+    templates = [f for f in os.listdir(VIDEO_DIR) if f.endswith('.npy')]
     
-    print(f"\n📹 Found {len(video_files)} video files")
-    print(f"📦 Found {len(template_files)} template files")
+    if not videos:
+        print("\n❌ Không tìm thấy video!")
+        return
     
-    # Test Weapon Detection
-    print_header("Testing Weapon Detection")
-    for video_file in video_files[:3]:  # Test first 3 videos
-        video_path = os.path.join(VIDEO_DIR, video_file)
-        test_weapon_detection(video_path)
+    videos.sort(key=lambda f: os.path.getsize(os.path.join(VIDEO_DIR, f)))
+    small_video = videos[0]
     
-    # Test Extract Template
-    print_header("Testing Extract Template")
-    if video_files:
-        # Test with teacher video
-        teacher_videos = [v for v in video_files if 'teacher' in v.lower()]
-        test_video = teacher_videos[0] if teacher_videos else video_files[0]
-        video_path = os.path.join(VIDEO_DIR, test_video)
-        test_extract_template(video_path)
+    print(f"\n📹 File test: {small_video}")
     
-    # Test Pose Score
-    print_header("Testing Pose Score")
-    if video_files and template_files:
-        video_path = os.path.join(VIDEO_DIR, video_files[0])
-        template_path = os.path.join(VIDEO_DIR, template_files[0])
-        test_pose_score(video_path, template_path)
+    # Test từng endpoint
+    test_weapon(small_video)
+    
+    teacher_videos = [v for v in videos if 'teacher' in v.lower()]
+    test_video = teacher_videos[0] if teacher_videos else small_video
+    test_extract(test_video)
+    
+    if templates:
+        test_score(small_video, templates[0])
     
     print("\n" + "="*60)
-    print("✅ Test completed!")
-    print("="*60)
 
 if __name__ == "__main__":
     main()

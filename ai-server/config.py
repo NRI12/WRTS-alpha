@@ -25,7 +25,8 @@ class ModalConfig:
         "Pillow>=9.0.0",
         "numpy>=2.0.0",
         "gdown>=4.7.0",
-        "fastapi>=0.104.0"
+        "fastapi>=0.104.0",
+        "python-multipart>=0.0.9",
     ]
     
     # Model Configuration
