@@ -8,22 +8,17 @@ class AIClientService:
     
     @staticmethod
     def _get_ai_server_url():
-        return os.getenv('AI_SERVER_URL', 'http://localhost:5001')
+        url = os.getenv('AI_SERVER_URL', 'http://localhost:5001')
+        return url.rstrip('/')
     
     @staticmethod
-    def _get_endpoint_url(endpoint_label: str) -> str:
+    def _get_endpoint_url(path: str) -> str:
         ai_server_url = AIClientService._get_ai_server_url()
-        if ai_server_url.startswith('http://localhost') or ai_server_url.startswith('http://127.0.0.1'):
-            return f"{ai_server_url}/{endpoint_label}"
-        elif '--' in ai_server_url:
-            base_url = ai_server_url.split('--')[0]
-            return f"{base_url}--{endpoint_label}.modal.run"
-        else:
-            return f"{ai_server_url}--{endpoint_label}.modal.run"
+        return f"{ai_server_url}/{path.lstrip('/')}"
     
     @staticmethod
     def detect_weapon(video_url: str) -> dict:
-        endpoint = AIClientService._get_endpoint_url("weapon-detect")
+        endpoint = AIClientService._get_endpoint_url("weapon/detect")
         
         temp_path = None
         try:
@@ -55,7 +50,9 @@ class AIClientService:
                 print(f"[AIClientService] Response text: {response.text[:500]}", flush=True)
             
             response.raise_for_status()
-            return response.json()
+            result = response.json()
+            print(f"[AIClientService] Response JSON: {result}", flush=True)
+            return result
             
         except requests.exceptions.RequestException as e:
             print(f"[AIClientService] Error: {e}", flush=True)
@@ -68,7 +65,7 @@ class AIClientService:
     
     @staticmethod
     def extract_template(video_url: str) -> dict:
-        endpoint = AIClientService._get_endpoint_url("pose-extract-template")
+        endpoint = AIClientService._get_endpoint_url("pose/extract-template")
         
         temp_path = None
         try:
@@ -104,7 +101,7 @@ class AIClientService:
     
     @staticmethod
     def score_pose(student_video_url: str, teacher_template_path: str) -> dict:
-        endpoint = AIClientService._get_endpoint_url("pose-score")
+        endpoint = AIClientService._get_endpoint_url("pose/score")
         
         temp_video_path = None
         try:

@@ -686,6 +686,38 @@ def delete_assignment(assignment_id: int):
     return redirect(url_for('instructor.assignments'))
 
 
+@instructor_bp.route('/assignments/delete-bulk', methods=['POST'])
+@login_required
+@role_required('INSTRUCTOR')
+def delete_assignments_bulk():
+    assignment_ids = request.form.getlist('assignment_ids')
+    
+    if not assignment_ids:
+        flash('Vui lòng chọn ít nhất một bài tập để xóa', 'error')
+        return redirect(url_for('instructor.assignments'))
+    
+    success_count = 0
+    error_count = 0
+    
+    for assignment_id_str in assignment_ids:
+        try:
+            assignment_id = int(assignment_id_str)
+            result = AssignmentService.delete_assignment(assignment_id, session['user_id'])
+            if result['success']:
+                success_count += 1
+            else:
+                error_count += 1
+        except (ValueError, TypeError):
+            error_count += 1
+    
+    if success_count > 0:
+        flash(f'Đã xóa thành công {success_count} bài tập', 'success')
+    if error_count > 0:
+        flash(f'Không thể xóa {error_count} bài tập', 'error')
+    
+    return redirect(url_for('instructor.assignments'))
+
+
 
 @instructor_bp.route('/exams')
 @login_required

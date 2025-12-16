@@ -424,6 +424,7 @@ a {
 
 /* ===== BUTTONS ===== */
 .btn {
+    border-radius: 10px;
     border-radius: var(--border-radius-sm);
     padding: 0.625rem 1.5rem;
     font-weight: 500;
@@ -507,7 +508,7 @@ a {
 
 .form-control, .form-select {
     border: 2px solid var(--border-color);
-    border-radius: var(--border-radius-sm);
+    border-radius: 10px;
     padding: 0.75rem 1rem;
     transition: var(--transition);
     background-color: #ffffff !important;
@@ -519,6 +520,7 @@ a {
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     background-color: #ffffff !important;
     color: var(--text-primary) !important;
+    border-radius: 10px;
 }
 
 .form-control.is-invalid {
@@ -558,7 +560,7 @@ a {
 /* ===== BADGES ===== */
 .badge {
     padding: 0.5rem 0.75rem;
-    border-radius: var(--border-radius-sm);
+    border-radius: 6px;
     font-weight: 500;
 }
 

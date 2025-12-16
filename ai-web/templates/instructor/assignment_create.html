@@ -2,25 +2,300 @@
 
 {% block title %}Giao bài tập mới{% endblock %}
 
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/instructor.css') }}" rel="stylesheet">
+<style>
+.form-label {
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.form-label.required::after {
+    content: " *";
+    color: #dc2626;
+}
+
+.form-control, .form-select {
+    border: 2px solid #e5e7eb;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.input-group {
+    display: flex;
+    width: 100%;
+}
+
+.input-group .form-control {
+    border-right: none;
+    border-radius: 10px 0 0 10px !important;
+}
+
+.input-group .form-control:focus {
+    border-right: none;
+    border-radius: 10px 0 0 10px !important;
+    z-index: 3;
+}
+
+.input-group-text {
+    border: 2px solid #e5e7eb;
+    border-left: none;
+    border-radius: 0 10px 10px 0 !important;
+    background: #f9fafb;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.input-group .form-control:focus + .input-group-text,
+.input-group .form-control:focus ~ .input-group-text {
+    border-color: #3b82f6;
+    border-left: none;
+    border-radius: 0 10px 10px 0 !important;
+    z-index: 2;
+}
+
+.assignment-type-group {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.assignment-type-option {
+    flex: 1;
+    position: relative;
+}
+
+.assignment-type-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.assignment-type-option label {
+    display: block;
+    padding: 0.75rem 1rem;
+    text-align: center;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    background: white;
+    color: #6b7280;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 0;
+}
+
+.assignment-type-option label:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+    background: #eff6ff;
+}
+
+.assignment-type-option input[type="radio"]:checked + label {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.drag-drop-zone {
+    border: 2px dashed #d1d5db;
+    border-radius: 12px;
+    padding: 2.5rem;
+    text-align: center;
+    background: #f9fafb;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.drag-drop-zone:hover {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.drag-drop-zone.drag-over {
+    border-color: #3b82f6;
+    background: #dbeafe;
+    transform: scale(1.02);
+}
+
+.drag-drop-content {
+    transition: opacity 0.3s ease;
+}
+
+.drag-drop-zone.has-file .drag-drop-content {
+    display: none;
+}
+
+.drag-drop-icon {
+    font-size: 3rem;
+    color: #9ca3af;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.drag-drop-zone:hover .drag-drop-icon {
+    color: #3b82f6;
+    transform: translateY(-5px);
+}
+
+.drag-drop-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.drag-drop-text {
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+}
+
+.drag-drop-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.preview-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.preview-content i {
+    font-size: 2rem;
+}
+
+.preview-info {
+    flex: 1;
+    text-align: left;
+}
+
+.preview-name {
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.25rem;
+    word-break: break-all;
+}
+
+.preview-size {
+    font-size: 0.875rem;
+}
+
+.remove-file {
+    padding: 0.5rem;
+}
+
+.deadline-input-wrapper {
+    position: relative;
+}
+
+.deadline-input-wrapper .form-control {
+    padding-right: 45px;
+    cursor: pointer;
+}
+
+.deadline-input-wrapper .calendar-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: #6b7280;
+}
+
+
+.container-fluid {
+    padding-bottom: 2rem;
+}
+
+#assignmentForm {
+    margin-bottom: 0;
+}
+
+.page-header-modern {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border-radius: 16px !important;
+    padding: 1.75rem 2rem !important;
+    color: white !important;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3) !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    position: relative !important;
+    overflow: hidden !important;
+    margin-bottom: 1.5rem !important;
+}
+
+.page-header-modern .page-header-content {
+    display: flex !important;
+    align-items: center !important;
+    gap: 1.25rem !important;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+.page-header-modern .page-header-title {
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+    color: white !important;
+}
+
+.page-header-modern .page-header-subtitle {
+    font-size: 0.95rem !important;
+    margin: 0.25rem 0 0 0 !important;
+    opacity: 0.9 !important;
+    color: white !important;
+}
+
+.page-header-modern .page-header-actions {
+    position: relative !important;
+    z-index: 1 !important;
+    display: flex !important;
+    gap: 0.5rem !important;
+    flex-wrap: wrap !important;
+}
+
+</style>
+{% endblock %}
+
 {% block instructor_content %}
+<!-- Modern Header -->
 <div class="page-header-modern">
     <div class="page-header-content">
-        <div class="page-header-icon">
-            <i class="fas fa-tasks"></i>
-        </div>
         <div class="page-header-text">
             <h1 class="page-header-title">Giao bài tập mới</h1>
-            <p class="page-header-subtitle">Tạo bài tập cho học viên hoặc lớp học</p>
+            <p class="page-header-subtitle">Tạo và gán bài tập cho học viên hoặc lớp học</p>
         </div>
     </div>
-    <div class="page-header-circles">
-        <div class="circle circle-1"></div>
-        <div class="circle circle-2"></div>
-        <div class="circle circle-3"></div>
+    <div class="page-header-actions">
+        <a href="{{ url_for('instructor.assignments') }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-arrow-left me-2"></i>Quay lại
+        </a>
     </div>
 </div>
 
-<form method="POST" id="assignmentForm" enctype="multipart/form-data" class="py-4">
+<div class="container-fluid">
+
+    <form method="POST" id="assignmentForm" enctype="multipart/form-data" class="py-4">
     {{ form.hidden_tag() }}
     
     <div class="row g-3">
@@ -39,15 +314,15 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label required">Loại bài tập</label>
-                            <div class="btn-group w-100" role="group">
-                                <input type="radio" class="btn-check" name="assignment_type" id="typeIndividual" value="individual" checked>
-                                <label class="btn btn-outline-primary" for="typeIndividual">
-                                    <i class="fas fa-user me-1"></i>Cá nhân
-                                </label>
-                                <input type="radio" class="btn-check" name="assignment_type" id="typeClass" value="class">
-                                <label class="btn btn-outline-primary" for="typeClass">
-                                    <i class="fas fa-users me-1"></i>Lớp học
-                                </label>
+                            <div class="assignment-type-group">
+                                <div class="assignment-type-option">
+                                    <input type="radio" name="assignment_type" id="typeIndividual" value="individual" checked>
+                                    <label for="typeIndividual">Cá nhân</label>
+                                </div>
+                                <div class="assignment-type-option">
+                                    <input type="radio" name="assignment_type" id="typeClass" value="class">
+                                    <label for="typeClass">Lớp học</label>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -69,12 +344,17 @@
                         <div class="col-12">
                             <label class="form-label required">Phương thức chấm điểm</label>
                             {{ form.grading_method(class="form-select") }}
-                            <small class="form-text text-muted">
-                                <i class="fas fa-info-circle me-1"></i>
-                                <strong>Chấm tay:</strong> Chỉ giảng viên chấm điểm<br>
-                                <strong>AI tự động:</strong> Hệ thống tự động chấm điểm bằng AI<br>
-                                <strong>Cả hai:</strong> AI chấm điểm trước, giảng viên có thể xem và điều chỉnh
-                            </small>
+                            <div class="mt-2 p-3 bg-light rounded" style="border-left: 3px solid #3b82f6;">
+                                <small class="text-muted d-block mb-1">
+                                    <strong style="color: #1f2937;">Chấm tay:</strong> Chỉ giảng viên chấm điểm
+                                </small>
+                                <small class="text-muted d-block mb-1">
+                                    <strong style="color: #1f2937;">AI tự động:</strong> Hệ thống tự động chấm điểm bằng AI
+                                </small>
+                                <small class="text-muted d-block">
+                                    <strong style="color: #1f2937;">Cả hai:</strong> AI chấm điểm trước, giảng viên có thể xem và điều chỉnh
+                                </small>
+                            </div>
                             {% if form.grading_method.errors %}
                             <div class="invalid-feedback d-block">{{ form.grading_method.errors[0] }}</div>
                             {% endif %}
@@ -86,33 +366,48 @@
             <!-- Hướng dẫn và Video gộp lại -->
             <div class="card border-0 shadow-sm mb-3">
                 <div class="card-body">
-                    <label class="form-label">Hướng dẫn thực hiện</label>
-                    {{ form.instructions(class="form-control", rows="4", placeholder="Nhập hướng dẫn chi tiết cho học viên...") }}
+                    <label class="form-label mb-2" style="font-weight: 600; color: #374151;">Hướng dẫn thực hiện</label>
+                    {{ form.instructions(class="form-control", rows="5", placeholder="Nhập hướng dẫn chi tiết cho học viên...", style="min-height: 120px; resize: vertical;") }}
                 </div>
             </div>
             
             <!-- VIDEO DEMO - BẮT BUỘC -->
             <div class="card border-0 shadow-sm mb-3 assignment-video-card">
                 <div class="card-body">
-                    <div class="d-flex align-items-center mb-3">
-                        <i class="fas fa-video text-danger me-2"></i>
-                        <label class="form-label mb-0 text-danger fw-bold">Video Demo - BẮT BUỘC</label>
-                    </div>
-                    <div class="alert alert-warning py-2 mb-3">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        <small><strong>BẮT BUỘC:</strong> Upload video demo hoặc nhập link video</small>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small">Link Video (tùy chọn)</label>
-                        {{ form.instructor_video_url(class="form-control", placeholder="https://example.com/video.mp4") }}
+                    <label class="form-label mb-3 d-block" style="font-weight: 600; color: #dc2626; font-size: 1rem;">
+                        Video Demo - BẮT BUỘC
+                    </label>
+                    <div class="alert alert-warning py-2 mb-3" style="border-left: 3px solid #f59e0b;">
+                        <small><strong>BẮT BUỘC:</strong> Upload video demo</small>
                     </div>
                     <div>
-                        <label class="form-label small text-danger required">Upload Video</label>
-                        {{ form.instructor_video_file(class="form-control") }}
+                        <label class="form-label mb-2" style="font-weight: 600; color: #374151;">Upload Video</label>
+                        <div class="drag-drop-zone" id="videoUploadZone">
+                            <input type="file" name="instructor_video_file" id="instructor_video_file" class="d-none" accept="video/*">
+                            <div class="drag-drop-content">
+                                <div class="drag-drop-icon">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                </div>
+                                <h5 class="drag-drop-title">Kéo thả video vào đây</h5>
+                                <p class="drag-drop-text">hoặc <span class="text-primary">click để chọn file</span></p>
+                                <small class="text-muted">MP4, MOV, AVI, MKV - Tối đa {{ (config.MAX_VIDEO_SIZE // (1024 * 1024)) if config.MAX_VIDEO_SIZE else 100 }}MB</small>
+                            </div>
+                            <div class="drag-drop-preview" style="display: none;">
+                                <div class="preview-content">
+                                    <i class="fas fa-file-video text-primary"></i>
+                                    <div class="preview-info">
+                                        <div class="preview-name"></div>
+                                        <div class="preview-size text-muted"></div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-danger remove-file" style="border-radius: 8px;">
+                                        Xóa
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                         {% if form.instructor_video_file.errors %}
-                        <div class="text-danger small mt-1">{{ form.instructor_video_file.errors[0] }}</div>
+                        <div class="text-danger small mt-2">{{ form.instructor_video_file.errors[0] }}</div>
                         {% endif %}
-                        <small class="text-muted d-block mt-1">MP4, MOV, AVI, MKV - Tối đa {{ (config.MAX_VIDEO_SIZE // (1024 * 1024)) if config.MAX_VIDEO_SIZE else 100 }}MB</small>
                     </div>
                 </div>
             </div>
@@ -122,42 +417,35 @@
         <div class="col-lg-4">
             <div class="card border-0 shadow-sm mb-3">
                 <div class="card-body">
-                    <h6 class="mb-3 fw-bold">
-                        <i class="fas fa-cog text-secondary me-2"></i>
+                    <h6 class="mb-3" style="font-weight: 600; color: #1f2937; font-size: 1rem;">
                         Cài đặt
                     </h6>
                     <div class="mb-3">
-                        <label class="form-label required small">Deadline</label>
-                        <div class="input-group input-group-sm">
-                            {{ form.deadline(class="form-control datepicker", placeholder="DD/MM/YYYY HH:MM") }}
-                            <span class="input-group-text">
-                                <i class="fas fa-calendar-alt"></i>
-                            </span>
-                        </div>
+                        <label class="form-label required mb-2" style="font-weight: 500; color: #374151;">Deadline</label>
+                        {{ form.deadline(class="form-control", id="deadlineInput", type="datetime-local") }}
                         {% if form.deadline.errors %}
                         <div class="invalid-feedback d-block">{{ form.deadline.errors[0] }}</div>
                         {% endif %}
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small">Độ ưu tiên</label>
-                        {{ form.priority(class="form-select form-select-sm") }}
+                        <label class="form-label mb-2" style="font-weight: 500; color: #374151;">Độ ưu tiên</label>
+                        {{ form.priority(class="form-select") }}
                     </div>
-                    <div class="form-check form-switch">
-                        {{ form.is_mandatory(class="form-check-input", checked=true) }}
-                        <label class="form-check-label small" for="is_mandatory">
+                    <div class="form-check form-switch p-3 bg-light rounded" style="border-left: 3px solid #10b981;">
+                        {{ form.is_mandatory(class="form-check-input", checked=true, style="cursor: pointer;") }}
+                        <label class="form-check-label ms-2" for="is_mandatory" style="font-weight: 500; color: #374151; cursor: pointer;">
                             Bắt buộc hoàn thành
                         </label>
                     </div>
                 </div>
             </div>
             
-            <div class="card border-0 shadow-sm bg-light">
+            <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);">
                 <div class="card-body">
-                    <h6 class="mb-2 small fw-bold">
-                        <i class="fas fa-lightbulb text-warning me-2"></i>
+                    <h6 class="mb-3" style="font-weight: 600; color: #92400e; font-size: 1rem;">
                         Gợi ý
                     </h6>
-                    <ul class="small mb-0 ps-3" style="line-height: 1.8;">
+                    <ul class="mb-0 ps-3" style="line-height: 2; color: #78350f;">
                         <li>Deadline nên cách ngày giao 3-7 ngày</li>
                         <li>Ghi rõ yêu cầu trong hướng dẫn</li>
                         <li>Kiểm tra bài võ đã có video mẫu</li>
@@ -169,15 +457,16 @@
     
     <div class="card border-0 shadow-sm mt-3">
         <div class="card-body d-flex justify-content-between align-items-center py-3">
-            <a href="{{ url_for('instructor.assignments') }}" class="btn btn-secondary btn-sm">
-                <i class="fas fa-times me-2"></i>Hủy
+            <a href="{{ url_for('instructor.assignments') }}" class="btn btn-outline-secondary">
+                Hủy
             </a>
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-paper-plane me-2"></i>Giao bài tập
+            <button type="submit" class="btn btn-primary btn-lg">
+                Giao bài tập
             </button>
         </div>
     </div>
-</form>
+    </form>
+</div>
 
 <script>
 // Toggle assignment type
@@ -193,46 +482,86 @@ document.querySelectorAll('input[name="assignment_type"]').forEach(radio => {
     });
 });
 
-// Date picker initialization
+// Date picker initialization - using HTML5 datetime-local
 document.addEventListener('DOMContentLoaded', function() {
-    const deadlineInput = document.querySelector('input[name="deadline"]');
+    const deadlineInput = document.getElementById('deadlineInput');
     
     if (deadlineInput) {
-        if (typeof flatpickr === 'undefined') {
-            console.error('Flatpickr not loaded! Check CDN in base template.');
-            deadlineInput.type = 'datetime-local';
-        } else {
-            flatpickr(deadlineInput, {
-                enableTime: true,
-                dateFormat: 'Y-m-d\\TH:i',
-                altInput: true,
-                altFormat: 'd/m/Y H:i',
-                time_24hr: true,
-                minDate: "today",
-                locale: "vn"
-            });
-        }
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const minDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+        
+        deadlineInput.setAttribute('min', minDateTime);
     }
     
-    // File size validation
-    const videoFileInput = document.querySelector('input[name="instructor_video_file"]');
-    if (videoFileInput) {
-        videoFileInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const maxSize = {{ config.MAX_VIDEO_SIZE if config.MAX_VIDEO_SIZE else 100 * 1024 * 1024 }};
-                const maxSizeMB = maxSize / (1024 * 1024);
-                
-                if (file.size > maxSize) {
-                    alert(`File video quá lớn! Vui lòng chọn file nhỏ hơn ${maxSizeMB}MB.`);
-                    e.target.value = '';
-                } else {
-                    const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
-                    console.log(`File size: ${sizeInMB} MB (Max: ${maxSizeMB} MB)`);
-                }
-            }
-        });
-    }
+    const maxVideoSize = {{ config.MAX_VIDEO_SIZE if config.MAX_VIDEO_SIZE else 100 * 1024 * 1024 }};
+    initDragDrop('videoUploadZone', 'instructor_video_file', maxVideoSize);
 });
+
+function initDragDrop(zoneId, inputId, maxSize) {
+    const zone = document.getElementById(zoneId);
+    const input = document.getElementById(inputId);
+    const preview = zone.querySelector('.drag-drop-preview');
+    const content = zone.querySelector('.drag-drop-content');
+    const previewName = preview.querySelector('.preview-name');
+    const previewSize = preview.querySelector('.preview-size');
+    const removeBtn = preview.querySelector('.remove-file');
+    
+    const maxSizeMB = maxSize / (1024 * 1024);
+    
+    zone.addEventListener('click', () => input.click());
+    
+    zone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        zone.classList.add('drag-over');
+    });
+    
+    zone.addEventListener('dragleave', () => {
+        zone.classList.remove('drag-over');
+    });
+    
+    zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('drag-over');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFile(files[0]);
+        }
+    });
+    
+    input.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleFile(e.target.files[0]);
+        }
+    });
+    
+    removeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        input.value = '';
+        zone.classList.remove('has-file');
+        preview.style.display = 'none';
+        content.style.display = 'block';
+    });
+    
+    function handleFile(file) {
+        if (file.size > maxSize) {
+            alert(`File video quá lớn! Vui lòng chọn file nhỏ hơn ${maxSizeMB}MB.`);
+            return;
+        }
+        
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        previewName.textContent = file.name;
+        previewSize.textContent = `${sizeMB} MB`;
+        
+        zone.classList.add('has-file');
+        preview.style.display = 'flex';
+        content.style.display = 'none';
+    }
+}
 </script>
 {% endblock %}

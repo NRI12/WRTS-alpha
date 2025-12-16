@@ -50,6 +50,13 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link-modern {% if request.endpoint == 'student.weapon_detect' %}active{% endif %}" 
+                           href="{{ url_for('student.weapon_detect') }}">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>Nhận diện vũ khí</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link-modern {% if 'student_videos' in request.endpoint %}active{% endif %}"
                            href="{{ url_for('student_videos.history') }}">
                             <i class="fas fa-chart-bar"></i>

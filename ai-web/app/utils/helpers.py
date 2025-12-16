@@ -59,20 +59,27 @@ def get_video_url(video_url):
     if video_url.startswith('https://storage.railway.app'):
         try:
             from app.utils.storage_service import StorageService
-            from flask import current_app
+            from flask import url_for, current_app
+            
+            # Ưu tiên dùng proxy route thay vì presigned URL trực tiếp
+            try:
+                s3_client, bucket_name = StorageService._get_s3_client()
+                if bucket_name in video_url:
+                    file_path = video_url.split(f"{bucket_name}/", 1)[1]
+                    proxy_url = url_for('shared.serve_storage_file', file_path=file_path, _external=True)
+                    return proxy_url
+            except Exception as e:
+                print(f"[get_video_url] Error getting proxy URL: {e}", flush=True)
+            
+            # Fallback: dùng presigned URL
             try:
                 presigned_url = StorageService.get_presigned_url(video_url, expiration=3600)
                 return presigned_url
-            except:
-                try:
-                    s3_client, bucket_name = StorageService._get_s3_client()
-                    if bucket_name in video_url:
-                        file_path = video_url.split(f"{bucket_name}/", 1)[1]
-                        return url_for('shared.serve_storage_file', file_path=file_path, _external=True)
-                except:
-                    pass
+            except Exception as e:
+                print(f"[get_video_url] Error getting presigned URL: {e}", flush=True)
                 return video_url
-        except:
+        except Exception as e:
+            print(f"[get_video_url] Error: {e}", flush=True)
             return video_url
     elif video_url.startswith('/static/'):
         return video_url

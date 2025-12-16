@@ -13,45 +13,36 @@
 <!-- Modern Header -->
 <div class="page-header-modern dashboard">
     <div class="page-header-content">
-        <div class="page-header-icon">
-            <i class="fas fa-tachometer-alt"></i>
-        </div>
         <div class="page-header-text">
             <h1 class="page-header-title">Xin chào, <strong>{{ session.full_name }}</strong></h1>
             <p class="page-header-subtitle">Dashboard quản lý lớp học và bài giảng</p>
         </div>
     </div>
     <div class="page-header-actions">
-        <a href="{{ url_for('instructor.propose_class') }}" class="btn btn-light btn-sm">
-            <i class="fas fa-plus me-2"></i>Đề xuất lớp
+        <a href="{{ url_for('instructor.propose_class') }}" class="btn btn-outline-primary btn-sm">
+            Đề xuất lớp
         </a>
-        <a href="{{ url_for('instructor.create_routine') }}" class="btn btn-light btn-sm">
-            <i class="fas fa-dumbbell me-2"></i>Tạo bài võ
+        <a href="{{ url_for('instructor.create_routine') }}" class="btn btn-outline-primary btn-sm">
+            Tạo bài võ
         </a>
-        <a href="{{ url_for('instructor.create_assignment') }}" class="btn btn-light btn-sm">
-            <i class="fas fa-tasks me-2"></i>Gán bài tập
+        <a href="{{ url_for('instructor.create_assignment') }}" class="btn btn-primary btn-sm">
+            Gán bài tập
         </a>
     </div>
 </div>
 
 <!-- Overview Cards -->
 <div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-icon">
-            <i class="fas fa-chalkboard-teacher"></i>
-        </div>
+    <div class="stat-card" style="border-left: 4px solid #3b82f6;">
         <div class="stat-content">
-            <div class="stat-value">{{ approved_classes|length }}</div>
+            <div class="stat-value" style="color: #3b82f6;">{{ approved_classes|length }}</div>
             <div class="stat-label">Lớp học</div>
         </div>
     </div>
     
-    <div class="stat-card">
-        <div class="stat-icon">
-            <i class="fas fa-user-graduate"></i>
-        </div>
+    <div class="stat-card" style="border-left: 4px solid #10b981;">
         <div class="stat-content">
-            <div class="stat-value">
+            <div class="stat-value" style="color: #10b981;">
                 {% set total_students = approved_classes|sum(attribute='actual_students_count') %}
                 {{ total_students }}
             </div>
@@ -59,22 +50,16 @@
         </div>
     </div>
     
-    <div class="stat-card">
-        <div class="stat-icon">
-            <i class="fas fa-clipboard-list"></i>
-        </div>
+    <div class="stat-card" style="border-left: 4px solid #f59e0b;">
         <div class="stat-content">
-            <div class="stat-value">0</div>
+            <div class="stat-value" style="color: #f59e0b;">0</div>
             <div class="stat-label">Bài tập chờ chấm</div>
         </div>
     </div>
     
-    <div class="stat-card">
-        <div class="stat-icon">
-            <i class="fas fa-chart-line"></i>
-        </div>
+    <div class="stat-card" style="border-left: 4px solid #8b5cf6;">
         <div class="stat-content">
-            <div class="stat-value">--</div>
+            <div class="stat-value" style="color: #8b5cf6;">--</div>
             <div class="stat-label">Điểm TB</div>
         </div>
     </div>
@@ -83,27 +68,23 @@
 <!-- Quick Links Section -->
 <div class="row g-3 mb-4">
     <div class="col-md-3 col-sm-6">
-        <a href="{{ url_for('instructor.routines') }}" class="quick-link-card">
-            <i class="fas fa-dumbbell"></i>
-            <span>Quản lý bài võ</span>
+        <a href="{{ url_for('instructor.routines') }}" class="quick-link-card" style="text-align: center; padding: 1.5rem;">
+            <div style="font-weight: 600; font-size: 1.1rem; color: #1f2937;">Quản lý bài võ</div>
         </a>
     </div>
     <div class="col-md-3 col-sm-6">
-        <a href="{{ url_for('instructor.assignments') }}" class="quick-link-card">
-            <i class="fas fa-tasks"></i>
-            <span>Quản lý bài tập</span>
+        <a href="{{ url_for('instructor.assignments') }}" class="quick-link-card" style="text-align: center; padding: 1.5rem;">
+            <div style="font-weight: 600; font-size: 1.1rem; color: #1f2937;">Quản lý bài tập</div>
         </a>
     </div>
     <div class="col-md-3 col-sm-6">
-        <a href="{{ url_for('instructor.exams') }}" class="quick-link-card">
-            <i class="fas fa-file-alt"></i>
-            <span>Quản lý kiểm tra</span>
+        <a href="{{ url_for('instructor.exams') }}" class="quick-link-card" style="text-align: center; padding: 1.5rem;">
+            <div style="font-weight: 600; font-size: 1.1rem; color: #1f2937;">Quản lý kiểm tra</div>
         </a>
     </div>
     <div class="col-md-3 col-sm-6">
-        <a href="{{ url_for('instructor.pending_evaluations') }}" class="quick-link-card">
-            <i class="fas fa-video"></i>
-            <span>Chấm điểm video</span>
+        <a href="{{ url_for('instructor.pending_evaluations') }}" class="quick-link-card" style="text-align: center; padding: 1.5rem;">
+            <div style="font-weight: 600; font-size: 1.1rem; color: #1f2937;">Chấm điểm video</div>
         </a>
     </div>
 </div>
@@ -111,16 +92,15 @@
 <!-- Classes Section -->
 <div class="data-table-wrapper mb-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="mb-0">
-            <i class="fas fa-chalkboard text-primary me-2"></i>
+        <h5 class="mb-0" style="font-weight: 600; color: #1f2937;">
             Lớp học đã duyệt ({{ approved_classes|length }})
         </h5>
         <div class="d-flex gap-2">
             <a href="{{ url_for('instructor.propose_class') }}" class="btn btn-sm btn-outline-primary">
-                <i class="fas fa-plus me-1"></i>Đề xuất lớp mới
+                Đề xuất lớp mới
             </a>
             <a href="{{ url_for('instructor.my_proposals') }}" class="btn btn-sm btn-outline-secondary">
-                <i class="fas fa-list me-1"></i>Đề xuất của tôi
+                Đề xuất của tôi
             </a>
         </div>
     </div>
@@ -150,26 +130,19 @@
                         <span class="badge bg-info">{{ class.level }}</span>
                     </td>
                     <td>
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-users text-muted me-2"></i>
-                            <span>{{ class.actual_students_count }}/{{ class.max_students }}</span>
-                        </div>
+                        <span style="color: #374151;">{{ class.actual_students_count }}/{{ class.max_students }}</span>
                     </td>
                     <td>
                         {% if class.is_active %}
-                        <span class="badge bg-success">
-                            <i class="fas fa-check-circle me-1"></i>Hoạt động
-                        </span>
+                        <span class="badge bg-success">Hoạt động</span>
                         {% else %}
-                        <span class="badge bg-warning">
-                            <i class="fas fa-pause-circle me-1"></i>Tạm dừng
-                        </span>
+                        <span class="badge bg-warning">Tạm dừng</span>
                         {% endif %}
                     </td>
                     <td class="text-end">
                         <a href="{{ url_for('instructor.class_detail', class_id=class.class_id) }}" 
                            class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-eye me-1"></i>Chi tiết
+                            Chi tiết
                         </a>
                     </td>
                 </tr>
@@ -179,10 +152,9 @@
     </div>
     {% else %}
     <div class="empty-state-compact">
-        <i class="fas fa-chalkboard"></i>
-        <p class="mb-0">Chưa có lớp học nào được duyệt</p>
+        <p class="mb-0" style="font-size: 1.1rem; color: #6b7280;">Chưa có lớp học nào được duyệt</p>
         <a href="{{ url_for('instructor.propose_class') }}" class="btn btn-primary btn-sm mt-3">
-            <i class="fas fa-plus me-2"></i>Đề xuất lớp mới
+            Đề xuất lớp mới
         </a>
     </div>
     {% endif %}
@@ -190,8 +162,7 @@
 
 <!-- Recent Proposals Section -->
 <div class="data-table-wrapper">
-    <h5 class="mb-3">
-        <i class="fas fa-clock text-warning me-2"></i>
+    <h5 class="mb-3" style="font-weight: 600; color: #1f2937;">
         Đề xuất gần đây
     </h5>
     <div class="table-responsive">
@@ -236,11 +207,11 @@
                         <td class="text-end">
                             {% if p.approval_status == 'approved' %}
                             <a href="{{ url_for('instructor.class_detail', class_id=p.class_id) }}" class="btn btn-sm btn-outline-primary">
-                                <i class="fas fa-eye me-1"></i>Chi tiết
+                                Chi tiết
                             </a>
                             {% else %}
                             <a href="{{ url_for('instructor.my_proposals') }}" class="btn btn-sm btn-outline-secondary">
-                                <i class="fas fa-list me-1"></i>Xem đề xuất
+                                Xem đề xuất
                             </a>
                             {% endif %}
                         </td>

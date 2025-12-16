@@ -12,6 +12,9 @@ from app.services.exam_service import ExamService
 from app.services.video_service import VideoService
 from app.services.weapon_detection_service import WeaponDetectionService
 from app.services.analytics_service import AnalyticsService
+from werkzeug.utils import secure_filename
+import tempfile
+import os
 
 
 student_bp = Blueprint('student', __name__, url_prefix='/student')
@@ -318,19 +321,16 @@ def submit_assignment(assignment_id):
                 notes=request.form.get('notes', '')
             )
             
-            # Nhận diện vũ khí bất đồng bộ
-            WeaponDetectionService.detect_async(video.video_id)
-            
             # Chạy AI grading nếu được chọn trong assignment
             print(f"\n[Submit Assignment] Assignment ID: {assignment_id}, Grading Method: {assignment.grading_method}", flush=True)
             if assignment.grading_method in ['ai', 'both']:
                 print(f"[Submit Assignment] Triggering AI grading for video {video.video_id}", flush=True)
                 from app.services.ai_grading_service import AIGradingService
                 AIGradingService.grade_async(video.video_id)
-                flash('Nộp bài thành công! Hệ thống đang nhận diện binh khí và chấm điểm AI...', 'success')
+                flash('Nộp bài thành công! Hệ thống đang chấm điểm AI...', 'success')
             else:
                 print(f"[Submit Assignment] Grading method is '{assignment.grading_method}', skipping AI grading", flush=True)
-                flash('Nộp bài thành công! Hệ thống đang nhận diện binh khí...', 'success')
+                flash('Nộp bài thành công!', 'success')
             
             return redirect(url_for('student.my_assignments'))
             
@@ -569,3 +569,160 @@ def submit_exam(exam_id: int):
     except Exception as e:
         flash(f'Lỗi khi nộp bài: {str(e)}', 'error')
         return redirect(url_for('student.take_exam', exam_id=exam_id))
+
+
+@student_bp.route('/weapon-detect', methods=['GET', 'POST'])
+@login_required
+@role_required('STUDENT')
+def weapon_detect():
+    from app.services.ai_client_service import AIClientService
+    from app.utils.storage_service import StorageService
+    import uuid
+    
+    result = None
+    error = None
+    file_url = None
+    file_type = None
+    original_filename = None
+    
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            error = 'Vui lòng chọn file video hoặc ảnh'
+        else:
+            file = request.files['file']
+            if file.filename == '':
+                error = 'Vui lòng chọn file'
+            else:
+                try:
+                    filename = secure_filename(file.filename)
+                    original_filename = filename
+                    ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+                    
+                    if ext not in ['mp4', 'avi', 'mov', 'jpg', 'jpeg', 'png']:
+                        error = 'File không hợp lệ. Vui lòng chọn video (MP4, AVI, MOV) hoặc ảnh (JPG, PNG)'
+                    else:
+                        temp_path = None
+                        try:
+                            with tempfile.NamedTemporaryFile(delete=False, suffix=f'.{ext}') as temp_file:
+                                file.save(temp_file.name)
+                                temp_path = temp_file.name
+                            
+                            detection_result = AIClientService.detect_weapon(temp_path)
+                            
+                            detected_weapon = detection_result.get('detected_weapon')
+                            if detected_weapon is None:
+                                detected_weapon = 'Không xác định'
+                            
+                            annotated_image_b64 = detection_result.get('annotated_image')
+                            annotated_video_b64 = detection_result.get('annotated_video')
+                            
+                            result_image_url = None
+                            result_video_url = None
+                            
+                            if ext in ['jpg', 'jpeg', 'png']:
+                                file_type = 'image'
+                                if annotated_image_b64:
+                                    try:
+                                        import base64
+                                        image_bytes = base64.b64decode(annotated_image_b64)
+                                        result_image_path = temp_path.replace(f'.{ext}', f'_result.{ext}')
+                                        with open(result_image_path, 'wb') as f:
+                                            f.write(image_bytes)
+                                        
+                                        result_image_filename = f"{uuid.uuid4().hex}_result.{ext}"
+                                        result_image_url = StorageService.upload_file_from_path(result_image_path, folder='weapon_detect', filename=result_image_filename)
+                                        
+                                        if os.path.exists(result_image_path):
+                                            os.remove(result_image_path)
+                                    except Exception:
+                                        pass
+                            else:
+                                file_type = 'video'
+                                if annotated_video_b64:
+                                    try:
+                                        import base64
+                                        video_bytes = base64.b64decode(annotated_video_b64)
+                                        result_video_path = temp_path.replace(f'.{ext}', f'_result.{ext}')
+                                        with open(result_video_path, 'wb') as f:
+                                            f.write(video_bytes)
+                                        
+                                        result_video_filename = f"{uuid.uuid4().hex}_result.{ext}"
+                                        result_video_url = StorageService.upload_file_from_path(result_video_path, folder='weapon_detect', filename=result_video_filename)
+                                        
+                                        if os.path.exists(result_video_path):
+                                            os.remove(result_video_path)
+                                    except Exception:
+                                        pass
+                            
+                            unique_filename = f"{uuid.uuid4().hex}.{ext}"
+                            try:
+                                file_url = StorageService.upload_file_from_path(temp_path, folder='weapon_detect', filename=unique_filename)
+                            except Exception:
+                                file_url = None
+                            
+                            result = {
+                                'detected_weapon': detected_weapon,
+                                'confidence': detection_result.get('confidence', 0.0) or 0.0,
+                                'detection_count': detection_result.get('detection_count', 0) or 0,
+                                'total_samples': detection_result.get('total_samples', 0) or 1,
+                                'all_detections': detection_result.get('all_detections', []),
+                                'file_info': {
+                                    'name': original_filename,
+                                    'size': file.content_length or 0
+                                },
+                                'result_image_url': result_image_url,
+                                'result_video_url': result_video_url
+                            }
+                            
+                            files_to_delete = []
+                            if file_url:
+                                files_to_delete.append(file_url)
+                            if result_image_url:
+                                files_to_delete.append(result_image_url)
+                            if result_video_url:
+                                files_to_delete.append(result_video_url)
+                            
+                            if files_to_delete:
+                                import threading
+                                import time
+                                
+                                def delete_files_after_delay(urls, delay_seconds=300):
+                                    time.sleep(delay_seconds)
+                                    for url in urls:
+                                        try:
+                                            StorageService.delete_file(url)
+                                        except Exception:
+                                            pass
+                                
+                                thread = threading.Thread(target=delete_files_after_delay, args=(files_to_delete,))
+                                thread.daemon = True
+                                thread.start()
+                        except Exception as e:
+                            error = f'Lỗi khi nhận diện vũ khí: {str(e)}'
+                            import traceback
+                            traceback.print_exc()
+                        finally:
+                            if temp_path and os.path.exists(temp_path):
+                                import time
+                                max_retries = 5
+                                for i in range(max_retries):
+                                    try:
+                                        os.remove(temp_path)
+                                        break
+                                    except (OSError, PermissionError) as e:
+                                        if i < max_retries - 1:
+                                            time.sleep(0.1)
+                                        else:
+                                            print(f"[WeaponDetect] Không thể xóa file {temp_path}: {e}", flush=True)
+                            
+                except Exception as e:
+                    error = f'Lỗi khi xử lý file: {str(e)}'
+                    import traceback
+                    traceback.print_exc()
+    
+    return render_template('student/weapon_detect.html', 
+                         result=result, 
+                         error=error, 
+                         file_url=file_url, 
+                         file_type=file_type,
+                         original_filename=original_filename)

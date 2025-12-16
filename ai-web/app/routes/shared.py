@@ -83,15 +83,29 @@ def serve_storage_file(file_path):
         s3_client, bucket_name = StorageService._get_s3_client()
         file_url = f"https://storage.railway.app/{bucket_name}/{file_path}"
         
+        # Xác định content type dựa trên extension
+        content_type = 'application/octet-stream'
+        if file_path.endswith('.mp4'):
+            content_type = 'video/mp4'
+        elif file_path.endswith('.avi'):
+            content_type = 'video/x-msvideo'
+        elif file_path.endswith('.mov'):
+            content_type = 'video/quicktime'
+        elif file_path.endswith(('.jpg', '.jpeg')):
+            content_type = 'image/jpeg'
+        elif file_path.endswith('.png'):
+            content_type = 'image/png'
+        
         presigned_url = StorageService.get_presigned_url(file_url, expiration=3600)
         
-        response = requests.get(presigned_url, stream=True, timeout=30)
+        response = requests.get(presigned_url, stream=True, timeout=60)
         response.raise_for_status()
         
         headers = {
-            'Content-Type': response.headers.get('Content-Type', 'application/octet-stream'),
+            'Content-Type': content_type,
             'Content-Length': response.headers.get('Content-Length'),
-            'Cache-Control': 'public, max-age=3600'
+            'Cache-Control': 'public, max-age=3600',
+            'Accept-Ranges': 'bytes'
         }
         
         return Response(
@@ -100,4 +114,7 @@ def serve_storage_file(file_path):
             status=response.status_code
         )
     except Exception as e:
+        print(f"[serve_storage_file] Error: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
         return f"Error serving file: {str(e)}", 500

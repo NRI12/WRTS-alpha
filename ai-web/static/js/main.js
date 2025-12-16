@@ -64,20 +64,40 @@ function initSidebar() {
 
 // ===== TOOLTIPS & POPOVERS =====
 function initTooltips() {
-    const tooltipTriggerList = [].slice.call(
-        document.querySelectorAll('[data-bs-toggle="tooltip"]')
-    );
-    tooltipTriggerList.map(function(tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
+    // Check for Bootstrap 5 or Bootstrap 4
+    const tooltipSelectors = document.querySelectorAll('[data-bs-toggle="tooltip"], [data-toggle="tooltip"]');
+    tooltipSelectors.forEach(function(tooltipEl) {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+            try {
+                new bootstrap.Tooltip(tooltipEl);
+            } catch (e) {
+                // Fallback for Bootstrap 4
+                if (typeof $ !== 'undefined' && $.fn.tooltip) {
+                    $(tooltipEl).tooltip();
+                }
+            }
+        } else if (typeof $ !== 'undefined' && $.fn.tooltip) {
+            $(tooltipEl).tooltip();
+        }
     });
 }
 
 function initPopovers() {
-    const popoverTriggerList = [].slice.call(
-        document.querySelectorAll('[data-bs-toggle="popover"]')
-    );
-    popoverTriggerList.map(function(popoverTriggerEl) {
-        return new bootstrap.Popover(popoverTriggerEl);
+    // Check for Bootstrap 5 or Bootstrap 4
+    const popoverSelectors = document.querySelectorAll('[data-bs-toggle="popover"], [data-toggle="popover"]');
+    popoverSelectors.forEach(function(popoverEl) {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Popover) {
+            try {
+                new bootstrap.Popover(popoverEl);
+            } catch (e) {
+                // Fallback for Bootstrap 4
+                if (typeof $ !== 'undefined' && $.fn.popover) {
+                    $(popoverEl).popover();
+                }
+            }
+        } else if (typeof $ !== 'undefined' && $.fn.popover) {
+            $(popoverEl).popover();
+        }
     });
 }
 
@@ -87,8 +107,24 @@ function initAlerts() {
     const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
     alerts.forEach(alert => {
         setTimeout(() => {
-            const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
-            bsAlert.close();
+            // Check Bootstrap version and use appropriate API
+            if (typeof bootstrap !== 'undefined' && bootstrap.Alert) {
+                // Bootstrap 5
+                if (typeof bootstrap.Alert.getOrCreateInstance === 'function') {
+                    const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+                    bsAlert.close();
+                } else {
+                    // Bootstrap 4 fallback
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            } else if (typeof $ !== 'undefined' && $.fn.alert) {
+                // jQuery Bootstrap 4 fallback
+                $(alert).alert('close');
+            } else {
+                // Manual close fallback
+                alert.style.display = 'none';
+            }
         }, TOAST_DURATION);
     });
 }

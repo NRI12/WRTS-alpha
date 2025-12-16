@@ -424,6 +424,55 @@
 }
 
 /* =========================
+   UNIFIED FORM FIELD STYLES
+   ========================= */
+.form-control,
+.form-select,
+.btn {
+    border-radius: 10px !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-radius: 10px !important;
+}
+
+.btn-sm {
+    border-radius: 8px !important;
+}
+
+.btn-lg {
+    border-radius: 12px !important;
+}
+
+.input-group .form-control,
+.input-group .form-select {
+    border-radius: 10px !important;
+}
+
+.input-group > :first-child {
+    border-top-left-radius: 10px !important;
+    border-bottom-left-radius: 10px !important;
+}
+
+.input-group > :last-child {
+    border-top-right-radius: 10px !important;
+    border-bottom-right-radius: 10px !important;
+}
+
+.badge {
+    border-radius: 6px !important;
+}
+
+.card {
+    border-radius: 12px !important;
+}
+
+.alert {
+    border-radius: 10px !important;
+}
+
+/* =========================
    ADDITIONAL INSTRUCTOR STYLES
    ========================= */
 .page-header {
@@ -458,7 +507,7 @@
 
 .search-box input {
     padding-left: 2.5rem;
-    border-radius: 8px;
+    border-radius: 10px;
     border: 2px solid #dee2e6;
 }
 
@@ -482,7 +531,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 8px;
+    border-radius: 10px;
 }
 
 .student-list-card {
@@ -568,7 +617,7 @@
     background: rgba(0, 0, 0, 0.7);
     color: white;
     padding: 0.5rem 1rem;
-    border-radius: 8px;
+    border-radius: 10px;
     font-weight: 500;
     z-index: 10;
 }
@@ -580,7 +629,7 @@
 .criteria-item {
     background: #f8f9fa;
     padding: 1rem;
-    border-radius: 8px;
+    border-radius: 10px;
     margin-bottom: 1rem;
 }
 
@@ -622,7 +671,7 @@
 .comment-box {
     background: #f8f9fa;
     border: 2px solid #dee2e6;
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 1rem;
     min-height: 120px;
     resize: vertical;
@@ -645,7 +694,7 @@
 .class-stat-item {
     background: #f8f9fa;
     padding: 1rem;
-    border-radius: 8px;
+    border-radius: 10px;
     text-align: center;
 }
 
@@ -710,7 +759,7 @@
 .page-header-modern .breadcrumb {
     background: rgba(255, 255, 255, 0.15);
     padding: 0.25rem 0.75rem;
-    border-radius: 6px;
+    border-radius: 8px;
     margin-bottom: 0.5rem;
 }
 
@@ -761,7 +810,7 @@
 
 .stat-card-compact {
     background: white;
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 1rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     display: flex;
@@ -773,7 +822,7 @@
 .stat-icon-compact {
     width: 48px;
     height: 48px;
-    border-radius: 8px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -816,7 +865,7 @@
 
 .assignment-video-preview {
     max-height: 400px;
-    border-radius: 8px;
+    border-radius: 10px;
     background: #000;
 }
 

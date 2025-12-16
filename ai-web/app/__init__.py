@@ -32,8 +32,12 @@ def create_app(config_class=None):
     @app.context_processor
     def inject_now():
         from app.utils.helpers import get_vietnam_time_naive
+        from flask_wtf.csrf import generate_csrf
+        from flask import session
         return {
-            'now': lambda: get_vietnam_time_naive()
+            'now': lambda: get_vietnam_time_naive(),
+            'generate_csrf': generate_csrf,
+            'csrf_token': lambda: generate_csrf()
         }
     
     # Jinja filters

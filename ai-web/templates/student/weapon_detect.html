@@ -1,0 +1,522 @@
+{% extends "base/student_base.html" %}
+
+{% block title %}Nhận diện vũ khí{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/student.css') }}" rel="stylesheet">
+<style>
+.form-label {
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.drag-drop-zone {
+    border: 2px dashed #d1d5db;
+    border-radius: 12px;
+    padding: 2.5rem;
+    text-align: center;
+    background: #f9fafb;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.drag-drop-zone:hover {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.drag-drop-zone.drag-over {
+    border-color: #3b82f6;
+    background: #dbeafe;
+    transform: scale(1.02);
+}
+
+.drag-drop-icon {
+    font-size: 3rem;
+    color: #9ca3af;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.drag-drop-zone:hover .drag-drop-icon {
+    color: #3b82f6;
+    transform: translateY(-5px);
+}
+
+.drag-drop-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.drag-drop-text {
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+}
+
+.result-card {
+    border-left: 4px solid #10b981;
+    background: #f0fdf4;
+}
+
+.result-card.error {
+    border-left-color: #ef4444;
+    background: #fef2f2;
+}
+
+.result-item {
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.result-label {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.25rem;
+}
+
+.result-value {
+    color: #1f2937;
+    font-size: 1.1rem;
+}
+
+.confidence-bar {
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+}
+
+.confidence-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981 0%, #3b82f6 100%);
+    transition: width 0.3s ease;
+}
+
+.page-header-modern {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border-radius: 16px !important;
+    padding: 1.75rem 2rem !important;
+    color: white !important;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3) !important;
+    margin-bottom: 1.5rem !important;
+}
+
+.page-header-modern .page-header-title {
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+    color: white !important;
+}
+
+.page-header-modern .page-header-subtitle {
+    font-size: 0.95rem !important;
+    margin: 0.25rem 0 0 0 !important;
+    opacity: 0.9 !important;
+    color: white !important;
+}
+
+.loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+.loading-overlay.active {
+    display: flex;
+}
+
+.loading-content {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    text-align: center;
+    max-width: 400px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.progress-container {
+    width: 100%;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 1rem 0;
+}
+
+.progress-bar-animated {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    border-radius: 4px;
+    animation: progress-animation 2s ease-in-out infinite;
+    width: 100%;
+}
+
+@keyframes progress-animation {
+    0% { transform: translateX(-100%); }
+    50% { transform: translateX(0%); }
+    100% { transform: translateX(100%); }
+}
+
+.comparison-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.comparison-item {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.comparison-item.result {
+    border: 3px solid #059669;
+}
+
+.comparison-item.original {
+    border: 2px solid #e5e7eb;
+}
+
+.comparison-label {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    z-index: 10;
+}
+
+.comparison-item img,
+.comparison-item video {
+    width: 100%;
+    height: auto;
+    display: block;
+    max-height: 400px;
+    object-fit: contain;
+}
+
+@media (max-width: 768px) {
+    .comparison-container {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block student_content %}
+<div class="page-header-modern">
+    <div class="page-header-content">
+        <div class="page-header-text">
+            <h1 class="page-header-title">Nhận diện vũ khí</h1>
+            <p class="page-header-subtitle">Upload video hoặc ảnh để nhận diện vũ khí</p>
+        </div>
+    </div>
+    <div class="page-header-actions">
+        <a href="{{ url_for('student.dashboard') }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-arrow-left me-2"></i>Quay lại
+        </a>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data" id="weaponDetectForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <label class="form-label mb-3 d-block" style="font-weight: 600; color: #374151; font-size: 1rem;">
+                            Upload Video hoặc Ảnh
+                        </label>
+                        <div class="drag-drop-zone" id="uploadZone">
+                            <input type="file" name="file" id="fileInput" class="d-none" accept="video/*,image/*">
+                            <div class="drag-drop-content">
+                                <div class="drag-drop-icon">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                </div>
+                                <h5 class="drag-drop-title">Kéo thả file vào đây</h5>
+                                <p class="drag-drop-text">hoặc <span class="text-primary">click để chọn file</span></p>
+                                <small class="text-muted">Video: MP4, AVI, MOV | Ảnh: JPG, PNG</small>
+                            </div>
+                            <div class="drag-drop-preview" style="display: none;">
+                                <div class="preview-content">
+                                    <i class="fas fa-file-video text-primary" id="previewIcon"></i>
+                                    <div class="preview-info">
+                                        <div class="preview-name" id="previewName"></div>
+                                        <div class="preview-size text-muted" id="previewSize"></div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-danger remove-file" style="border-radius: 8px;">
+                                        Xóa
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        
+                        <div class="mt-3 text-center">
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                                <i class="fas fa-search me-2"></i>Nhận diện vũ khí
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            {% if error %}
+            <div class="card border-0 shadow-sm result-card error">
+                <div class="card-body">
+                    <h6 class="mb-2" style="color: #dc2626; font-weight: 600;">
+                        <i class="fas fa-exclamation-circle me-2"></i>Lỗi
+                    </h6>
+                    <p class="mb-0" style="color: #991b1b;">{{ error }}</p>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if result %}
+            <div class="card border-0 shadow-sm result-card mb-3">
+                <div class="card-body">
+                    <h6 class="mb-3" style="color: #059669; font-weight: 600; font-size: 1.1rem;">
+                        <i class="fas fa-check-circle me-2"></i>Kết quả nhận diện
+                    </h6>
+                    
+                    {% if (result.result_image_url or result.result_video_url) and file_url %}
+                    <div class="comparison-container">
+                        <div class="comparison-item result">
+                            <div class="comparison-label">
+                                <i class="fas fa-check-circle me-1"></i>Kết quả (có bounding box)
+                            </div>
+                            {% if file_type == 'image' and result.result_image_url %}
+                            <img src="{{ get_video_url(result.result_image_url) }}" alt="Ảnh kết quả" onerror="this.onerror=null; this.src='{{ result.result_image_url }}';">
+                            {% elif file_type == 'video' and result.result_video_url %}
+                            <video controls preload="metadata">
+                                <source src="{{ get_video_url(result.result_video_url) }}" type="video/mp4">
+                                <source src="{{ get_video_url(result.result_video_url) }}" type="video/avi">
+                                <source src="{{ get_video_url(result.result_video_url) }}" type="video/x-msvideo">
+                                Trình duyệt không hỗ trợ video.
+                            </video>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="comparison-item original">
+                            <div class="comparison-label">
+                                <i class="fas fa-file me-1"></i>File gốc
+                            </div>
+                            {% if file_type == 'image' %}
+                            <img src="{{ get_video_url(file_url) }}" alt="Ảnh gốc" onerror="this.onerror=null; this.src='{{ file_url }}';">
+                            {% else %}
+                            <video controls preload="metadata">
+                                <source src="{{ get_video_url(file_url) }}" type="video/mp4">
+                                <source src="{{ get_video_url(file_url) }}" type="video/avi">
+                                <source src="{{ get_video_url(file_url) }}" type="video/x-msvideo">
+                                Trình duyệt không hỗ trợ video.
+                            </video>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% elif result.result_image_url or result.result_video_url %}
+                    <div class="mb-3">
+                        <div class="comparison-item result" style="max-width: 100%;">
+                            <div class="comparison-label">
+                                <i class="fas fa-check-circle me-1"></i>Kết quả (có bounding box)
+                            </div>
+                            {% if file_type == 'image' and result.result_image_url %}
+                            <img src="{{ get_video_url(result.result_image_url) }}" alt="Ảnh kết quả" onerror="this.onerror=null; this.src='{{ result.result_image_url }}';">
+                            {% elif file_type == 'video' and result.result_video_url %}
+                            <video controls preload="metadata">
+                                <source src="{{ get_video_url(result.result_video_url) }}" type="video/mp4">
+                                <source src="{{ get_video_url(result.result_video_url) }}" type="video/avi">
+                                <source src="{{ get_video_url(result.result_video_url) }}" type="video/x-msvideo">
+                                Trình duyệt không hỗ trợ video.
+                            </video>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% elif file_url %}
+                    <div class="mb-3">
+                        <div class="comparison-item original" style="max-width: 100%;">
+                            <div class="comparison-label">
+                                <i class="fas fa-file me-1"></i>File gốc
+                            </div>
+                            {% if file_type == 'image' %}
+                            <img src="{{ get_video_url(file_url) }}" alt="Ảnh gốc" onerror="this.onerror=null; this.src='{{ file_url }}';">
+                            {% else %}
+                            <video controls preload="metadata">
+                                <source src="{{ get_video_url(file_url) }}" type="video/mp4">
+                                <source src="{{ get_video_url(file_url) }}" type="video/avi">
+                                <source src="{{ get_video_url(file_url) }}" type="video/x-msvideo">
+                                Trình duyệt không hỗ trợ video.
+                            </video>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="result-item">
+                                <div class="result-label">
+                                    <i class="fas fa-shield-alt me-2"></i>Vũ khí phát hiện
+                                </div>
+                                <div class="result-value" style="font-size: 1.2rem; font-weight: 600; color: #059669;">
+                                    {{ result.detected_weapon }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="result-item">
+                                <div class="result-label">
+                                    <i class="fas fa-percentage me-2"></i>Độ tin cậy
+                                </div>
+                                <div class="result-value" style="font-size: 1.2rem; font-weight: 600;">
+                                    {{ "%.1f"|format(result.confidence * 100) }}%
+                                </div>
+                                <div class="confidence-bar">
+                                    <div class="confidence-fill" style="width: {{ result.confidence * 100 }}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const zone = document.getElementById('uploadZone');
+    const input = document.getElementById('fileInput');
+    const preview = zone.querySelector('.drag-drop-preview');
+    const content = zone.querySelector('.drag-drop-content');
+    const previewName = document.getElementById('previewName');
+    const previewSize = document.getElementById('previewSize');
+    const previewIcon = document.getElementById('previewIcon');
+    const removeBtn = preview.querySelector('.remove-file');
+    const form = document.getElementById('weaponDetectForm');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    zone.addEventListener('click', () => input.click());
+    
+    zone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        zone.classList.add('drag-over');
+    });
+    
+    zone.addEventListener('dragleave', () => {
+        zone.classList.remove('drag-over');
+    });
+    
+    zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('drag-over');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            input.files = files;
+            handleFile(files[0]);
+        }
+    });
+    
+    input.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleFile(e.target.files[0]);
+        }
+    });
+    
+    removeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        input.value = '';
+        zone.classList.remove('has-file');
+        preview.style.display = 'none';
+        content.style.display = 'block';
+    });
+    
+    form.addEventListener('submit', function(e) {
+        if (!input.files || input.files.length === 0) {
+            e.preventDefault();
+            alert('Vui lòng chọn file trước khi nhận diện');
+            return false;
+        }
+        
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-search me-2"></i>Đang xử lý...';
+        showLoading();
+    });
+    
+    function showLoading() {
+        const overlay = document.createElement('div');
+        overlay.className = 'loading-overlay active';
+        overlay.id = 'loadingOverlay';
+        overlay.innerHTML = `
+            <div class="loading-content">
+                <div style="font-size: 3rem; color: #667eea; margin-bottom: 1rem;">
+                    <i class="fas fa-shield-alt fa-spin"></i>
+                </div>
+                <h5 style="color: #374151; margin-bottom: 0.5rem;">Đang nhận diện vũ khí...</h5>
+                <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1rem;">Vui lòng đợi trong giây lát</p>
+                <div class="progress-container">
+                    <div class="progress-bar-animated"></div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+    }
+    
+    function hideLoading() {
+        const overlay = document.getElementById('loadingOverlay');
+        if (overlay) {
+            overlay.remove();
+        }
+    }
+    
+    window.addEventListener('load', function() {
+        hideLoading();
+    });
+    
+    function handleFile(file) {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        previewName.textContent = file.name;
+        previewSize.textContent = `${sizeMB} MB`;
+        
+        if (file.type.startsWith('video/')) {
+            previewIcon.className = 'fas fa-file-video text-primary';
+        } else if (file.type.startsWith('image/')) {
+            previewIcon.className = 'fas fa-file-image text-success';
+        } else {
+            previewIcon.className = 'fas fa-file text-secondary';
+        }
+        
+        zone.classList.add('has-file');
+        preview.style.display = 'flex';
+        content.style.display = 'none';
+    }
+});
+</script>
+{% endblock %}
+

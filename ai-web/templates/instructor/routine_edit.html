@@ -2,6 +2,107 @@
 
 {% block title %}Chỉnh sửa bài võ - {{ routine.routine_name }}{% endblock %}
 
+{% block extra_css %}
+<style>
+.drag-drop-zone {
+    border: 2px dashed #d1d5db;
+    border-radius: 12px;
+    padding: 2.5rem;
+    text-align: center;
+    background: #f9fafb;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.drag-drop-zone:hover {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.drag-drop-zone.drag-over {
+    border-color: #3b82f6;
+    background: #dbeafe;
+    transform: scale(1.02);
+}
+
+.drag-drop-content {
+    transition: opacity 0.3s ease;
+}
+
+.drag-drop-zone.has-file .drag-drop-content {
+    display: none;
+}
+
+.drag-drop-icon {
+    font-size: 3rem;
+    color: #9ca3af;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.drag-drop-zone:hover .drag-drop-icon {
+    color: #3b82f6;
+    transform: translateY(-5px);
+}
+
+.drag-drop-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.drag-drop-text {
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+}
+
+.drag-drop-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.preview-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.preview-content i {
+    font-size: 2rem;
+}
+
+.preview-info {
+    flex: 1;
+    text-align: left;
+}
+
+.preview-name {
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.25rem;
+    word-break: break-all;
+}
+
+.preview-size {
+    font-size: 0.875rem;
+}
+
+.remove-file {
+    padding: 0.5rem;
+}
+</style>
+{% endblock %}
+
 {% block instructor_content %}
 <div class="page-header-modern">
     <div class="page-header-content">
@@ -85,20 +186,35 @@
                     {% endif %}
                     
                     <div class="mb-3">
-                        <label class="form-label">Thay thế video bằng URL</label>
-                        {{ form.reference_video_url(class="form-control", placeholder="Nhập URL video (YouTube, Vimeo...) hoặc để trống nếu không thay đổi") }}
-                        <small class="form-text text-muted">Hỗ trợ YouTube, Vimeo và các URL video khác</small>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">HOẶC upload video từ máy</label>
-                        {{ form.reference_video_file(class="form-control") }}
-                        <small class="form-text text-muted">Chấp nhận: MP4, AVI, MOV, MKV (tối đa 100MB)</small>
+                        <label class="form-label">Upload video mới</label>
+                        <div class="drag-drop-zone" id="routineEditVideoUploadZone">
+                            <input type="file" name="reference_video_file" id="reference_video_file" class="d-none" accept="video/*">
+                            <div class="drag-drop-content">
+                                <div class="drag-drop-icon">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                </div>
+                                <h5 class="drag-drop-title">Kéo thả video vào đây</h5>
+                                <p class="drag-drop-text">hoặc <span class="text-primary">click để chọn file</span></p>
+                                <small class="text-muted">MP4, AVI, MOV, MKV - Tối đa 100MB</small>
+                            </div>
+                            <div class="drag-drop-preview" style="display: none;">
+                                <div class="preview-content">
+                                    <i class="fas fa-file-video text-primary"></i>
+                                    <div class="preview-info">
+                                        <div class="preview-name"></div>
+                                        <div class="preview-size text-muted"></div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-danger remove-file">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="alert alert-warning">
                         <i class="fas fa-info-circle me-2"></i>
-                        <strong>Lưu ý:</strong> Nếu bạn upload file video mới, nó sẽ thay thế video hiện tại. Nếu chỉ nhập URL mới, nó sẽ thay thế URL hiện tại.
+                        <strong>Lưu ý:</strong> Nếu bạn upload file video mới, nó sẽ thay thế video hiện tại.
                     </div>
                 </div>
             </div>
@@ -183,4 +299,74 @@
     color: #dc2626;
 }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    initDragDrop('routineEditVideoUploadZone', 'reference_video_file', 100 * 1024 * 1024);
+});
+
+function initDragDrop(zoneId, inputId, maxSize) {
+    const zone = document.getElementById(zoneId);
+    if (!zone) return;
+    
+    const input = document.getElementById(inputId);
+    const preview = zone.querySelector('.drag-drop-preview');
+    const content = zone.querySelector('.drag-drop-content');
+    const previewName = preview.querySelector('.preview-name');
+    const previewSize = preview.querySelector('.preview-size');
+    const removeBtn = preview.querySelector('.remove-file');
+    
+    const maxSizeMB = maxSize / (1024 * 1024);
+    
+    zone.addEventListener('click', () => input.click());
+    
+    zone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        zone.classList.add('drag-over');
+    });
+    
+    zone.addEventListener('dragleave', () => {
+        zone.classList.remove('drag-over');
+    });
+    
+    zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('drag-over');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFile(files[0]);
+        }
+    });
+    
+    input.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleFile(e.target.files[0]);
+        }
+    });
+    
+    removeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        input.value = '';
+        zone.classList.remove('has-file');
+        preview.style.display = 'none';
+        content.style.display = 'block';
+    });
+    
+    function handleFile(file) {
+        if (file.size > maxSize) {
+            alert(`File video quá lớn! Vui lòng chọn file nhỏ hơn ${maxSizeMB}MB.`);
+            return;
+        }
+        
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        previewName.textContent = file.name;
+        previewSize.textContent = `${sizeMB} MB`;
+        
+        zone.classList.add('has-file');
+        preview.style.display = 'flex';
+        content.style.display = 'none';
+    }
+}
+</script>
 {% endblock %}

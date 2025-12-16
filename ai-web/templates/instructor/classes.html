@@ -10,17 +10,14 @@
 <!-- Modern Header -->
 <div class="page-header-modern">
     <div class="page-header-content">
-        <div class="page-header-icon">
-            <i class="fas fa-chalkboard-teacher"></i>
-        </div>
         <div class="page-header-text">
             <h1 class="page-header-title">Quản lý lớp học</h1>
             <p class="page-header-subtitle">Danh sách lớp học của bạn</p>
         </div>
     </div>
     <div class="page-header-actions">
-        <a href="{{ url_for('instructor.propose_class') }}" class="btn btn-light btn-sm">
-            <i class="fas fa-plus me-2"></i>Đề xuất lớp mới
+        <a href="{{ url_for('instructor.propose_class') }}" class="btn btn-primary btn-sm">
+            Đề xuất lớp mới
         </a>
     </div>
 </div>
@@ -52,7 +49,7 @@
         <div class="col-md-2">
             <label class="form-label">&nbsp;</label>
             <button class="btn btn-secondary w-100" onclick="resetFilters()">
-                <i class="fas fa-redo me-2"></i>Reset
+                Reset
             </button>
         </div>
     </div>
@@ -79,21 +76,16 @@
                                 <span class="badge bg-secondary">{{ class.level }}</span>
                             {% endif %}
                             {% if class.is_active %}
-                            <span class="badge bg-success">
-                                <i class="fas fa-check-circle me-1"></i>Hoạt động
-                            </span>
+                            <span class="badge bg-success">Hoạt động</span>
                             {% else %}
-                            <span class="badge bg-warning">
-                                <i class="fas fa-pause-circle me-1"></i>Tạm dừng
-                            </span>
+                            <span class="badge bg-warning">Tạm dừng</span>
                             {% endif %}
                         </div>
                     </div>
                 </div>
                 
                 <div class="compact-card-info">
-                    <div>
-                        <i class="fas fa-users"></i>
+                    <div style="color: #6b7280;">
                         <span>{{ class.actual_students_count }}/{{ class.max_students }} học viên</span>
                     </div>
                 </div>
@@ -105,11 +97,11 @@
                 <div class="compact-card-actions">
                     <a href="{{ url_for('instructor.class_detail', class_id=class.class_id) }}" 
                        class="btn btn-sm btn-primary flex-grow-1">
-                        <i class="fas fa-eye me-1"></i>Chi tiết
+                        Chi tiết
                     </a>
                     <a href="{{ url_for('instructor.edit_class', class_id=class.class_id) }}" 
                        class="btn btn-sm btn-outline-secondary">
-                        <i class="fas fa-edit"></i>
+                        Sửa
                     </a>
                 </div>
             </div>
@@ -118,10 +110,9 @@
     {% else %}
     <div class="col-12">
         <div class="empty-state-compact">
-            <i class="fas fa-chalkboard"></i>
-            <p class="mb-0">Chưa có lớp học nào</p>
+            <p class="mb-0" style="font-size: 1.1rem; color: #6b7280;">Chưa có lớp học nào</p>
             <a href="{{ url_for('instructor.propose_class') }}" class="btn btn-primary btn-sm mt-3">
-                <i class="fas fa-plus me-2"></i>Đề xuất lớp mới
+                Đề xuất lớp mới
             </a>
         </div>
     </div>

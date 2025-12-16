@@ -10,63 +10,48 @@
 <!-- Modern Header -->
 <div class="page-header-modern">
     <div class="page-header-content">
-        <div class="page-header-icon">
-            <i class="fas fa-fist-raised"></i>
-        </div>
         <div class="page-header-text">
             <h1 class="page-header-title">Quản lý bài võ</h1>
             <p class="page-header-subtitle">Danh sách bài võ đã tạo</p>
         </div>
     </div>
     <div class="page-header-actions">
-        <a href="{{ url_for('instructor.create_routine') }}" class="btn btn-light btn-sm">
-            <i class="fas fa-plus me-2"></i>Tạo bài võ mới
+        <a href="{{ url_for('instructor.create_routine') }}" class="btn btn-primary btn-sm">
+            Tạo bài võ mới
         </a>
     </div>
 </div>
 
 <!-- Stats Overview -->
 <div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-icon">
-            <i class="fas fa-fist-raised"></i>
-        </div>
+    <div class="stat-card" style="border-left: 4px solid #3b82f6;">
         <div class="stat-content">
-            <div class="stat-value">{{ routines|length }}</div>
+            <div class="stat-value" style="color: #3b82f6;">{{ routines|length }}</div>
             <div class="stat-label">Tổng bài võ</div>
         </div>
     </div>
     
-    <div class="stat-card">
-        <div class="stat-icon">
-            <i class="fas fa-globe"></i>
-        </div>
+    <div class="stat-card" style="border-left: 4px solid #10b981;">
         <div class="stat-content">
-            <div class="stat-value">
+            <div class="stat-value" style="color: #10b981;">
                 {{ routines|selectattr('is_published', 'equalto', true)|list|length }}
             </div>
             <div class="stat-label">Đã xuất bản</div>
         </div>
     </div>
     
-    <div class="stat-card">
-        <div class="stat-icon">
-            <i class="fas fa-file-alt"></i>
-        </div>
+    <div class="stat-card" style="border-left: 4px solid #f59e0b;">
         <div class="stat-content">
-            <div class="stat-value">
+            <div class="stat-value" style="color: #f59e0b;">
                 {{ routines|selectattr('is_published', 'equalto', false)|list|length }}
             </div>
             <div class="stat-label">Bản nháp</div>
         </div>
     </div>
     
-    <div class="stat-card">
-        <div class="stat-icon">
-            <i class="fas fa-user-graduate"></i>
-        </div>
+    <div class="stat-card" style="border-left: 4px solid #8b5cf6;">
         <div class="stat-content">
-            <div class="stat-value">0</div>
+            <div class="stat-value" style="color: #8b5cf6;">0</div>
             <div class="stat-label">Đang được giao</div>
         </div>
     </div>
@@ -105,7 +90,7 @@
                 </select>
             </div>
             <div class="col-md-3 d-flex gap-2">
-                <button type="submit" class="btn btn-primary flex-grow-1"><i class="fas fa-filter me-1"></i>Lọc</button>
+                <button type="submit" class="btn btn-primary flex-grow-1">Lọc</button>
                 <a href="{{ url_for('instructor.routines') }}" class="btn btn-outline-secondary">Đặt lại</a>
             </div>
         </div>
@@ -125,25 +110,19 @@
                             <span class="badge bg-primary me-1">{{ routine.level }}</span>
                             <span class="badge bg-info">{{ routine.weapon.weapon_name if routine.weapon else 'N/A' }}</span>
                             {% if routine.is_published %}
-                            <span class="badge bg-success">
-                                <i class="fas fa-globe me-1"></i>Published
-                            </span>
+                            <span class="badge bg-success">Published</span>
                             {% else %}
-                            <span class="badge bg-warning">
-                                <i class="fas fa-file-alt me-1"></i>Draft
-                            </span>
+                            <span class="badge bg-warning">Draft</span>
                             {% endif %}
                         </div>
                     </div>
                 </div>
                 
                 <div class="compact-card-info">
-                    <div>
-                        <i class="fas fa-stopwatch"></i>
+                    <div style="color: #6b7280;">
                         <span>{{ routine.duration_seconds // 60 }}:{{ '%02d' % (routine.duration_seconds % 60) }}</span>
                     </div>
-                    <div>
-                        <i class="fas fa-clipboard-check"></i>
+                    <div style="color: #6b7280;">
                         <span>0 tiêu chí</span>
                     </div>
                 </div>
@@ -155,11 +134,11 @@
                 <div class="compact-card-actions">
                     <a href="{{ url_for('instructor.routine_detail', routine_id=routine.routine_id) }}" 
                        class="btn btn-sm btn-primary flex-grow-1">
-                        <i class="fas fa-eye me-1"></i>Chi tiết
+                        Chi tiết
                     </a>
                     <a href="{{ url_for('instructor.edit_routine', routine_id=routine.routine_id) }}" 
                        class="btn btn-sm btn-outline-secondary">
-                        <i class="fas fa-pencil-alt"></i>
+                        Sửa
                     </a>
                 </div>
             </div>
@@ -168,10 +147,9 @@
     {% else %}
     <div class="col-12">
         <div class="empty-state-compact">
-            <i class="fas fa-fist-raised"></i>
-            <p class="mb-0">Chưa có bài võ nào</p>
+            <p class="mb-0" style="font-size: 1.1rem; color: #6b7280;">Chưa có bài võ nào</p>
             <a href="{{ url_for('instructor.create_routine') }}" class="btn btn-primary btn-sm mt-3">
-                <i class="fas fa-plus me-2"></i>Tạo bài võ mới
+                Tạo bài võ mới
             </a>
         </div>
     </div>

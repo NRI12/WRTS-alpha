@@ -12,6 +12,9 @@ import base64
 import tempfile
 import numpy as np
 
+_template_locks = {}
+_template_lock = threading.Lock()
+
 
 class AIGradingService:
     
@@ -30,63 +33,72 @@ class AIGradingService:
         template_path = os.path.join(templates_dir, template_filename)
         
         if not os.path.exists(template_path):
-            print(f"[AIGradingService] Teacher template not found, generating from instructor video...", flush=True)
+            with _template_lock:
+                if assignment_id not in _template_locks:
+                    _template_locks[assignment_id] = threading.Lock()
+                lock = _template_locks[assignment_id]
             
-            instructor_video_url = assignment.instructor_video_url
-            temp_instructor_path = None
-            
-            if instructor_video_url.startswith('https://storage.railway.app'):
-                try:
-                    temp_instructor_path = StorageService.download_file_to_temp(instructor_video_url)
-                    instructor_video_path = temp_instructor_path
-                except Exception as e:
-                    print(f"[AIGradingService] ERROR downloading instructor video from storage: {e}", flush=True)
-                    return None
-            else:
-                instructor_video_path = instructor_video_url
-                if not os.path.isabs(instructor_video_path):
-                    rel_path = instructor_video_path.lstrip('/').replace('/', os.sep).replace('\\', os.sep)
-                    instructor_video_path = os.path.join(project_root, rel_path)
-                    instructor_video_path = os.path.normpath(instructor_video_path)
+            with lock:
+                if os.path.exists(template_path):
+                    return template_path
                 
-                print(f"[AIGradingService] Instructor video path (normalized): {instructor_video_path}", flush=True)
+                print(f"[AIGradingService] Teacher template not found, generating from instructor video...", flush=True)
                 
-                if not os.path.exists(instructor_video_path):
-                    print(f"[AIGradingService] ERROR: Instructor video not found: {assignment.instructor_video_url} (tried: {instructor_video_path})", flush=True)
-                    return None
-            
-            print(f"[AIGradingService] Extracting template from instructor video: {instructor_video_path}", flush=True)
-            sys.stdout.flush()
-            
-            try:
-                print(f"[AIGradingService] Calling AI server to extract template...", flush=True)
-                sys.stdout.flush()
-                template_result = AIClientService.extract_template(instructor_video_path)
+                instructor_video_url = assignment.instructor_video_url
+                temp_instructor_path = None
                 
-                template_base64 = template_result['template_base64']
-                template_bytes = base64.b64decode(template_base64)
-                
-                import io
-                template_buffer = io.BytesIO(template_bytes)
-                teacher_template = np.load(template_buffer)
-                
-                np.save(template_path, teacher_template)
-                print(f"[AIGradingService] Teacher template saved to: {template_path}", flush=True)
-                print(f"[AIGradingService] Template shape: {teacher_template.shape}", flush=True)
-                sys.stdout.flush()
-                
-            except Exception as e:
-                print(f"[AIGradingService] ERROR generating template: {e}", flush=True)
-                import traceback
-                traceback.print_exc()
-                sys.stdout.flush()
-                return None
-            finally:
-                if temp_instructor_path and os.path.exists(temp_instructor_path):
+                if instructor_video_url.startswith('https://storage.railway.app'):
                     try:
-                        os.remove(temp_instructor_path)
-                    except:
-                        pass
+                        temp_instructor_path = StorageService.download_file_to_temp(instructor_video_url)
+                        instructor_video_path = temp_instructor_path
+                    except Exception as e:
+                        print(f"[AIGradingService] ERROR downloading instructor video from storage: {e}", flush=True)
+                        return None
+                else:
+                    instructor_video_path = instructor_video_url
+                    if not os.path.isabs(instructor_video_path):
+                        rel_path = instructor_video_path.lstrip('/').replace('/', os.sep).replace('\\', os.sep)
+                        instructor_video_path = os.path.join(project_root, rel_path)
+                        instructor_video_path = os.path.normpath(instructor_video_path)
+                    
+                    print(f"[AIGradingService] Instructor video path (normalized): {instructor_video_path}", flush=True)
+                    
+                    if not os.path.exists(instructor_video_path):
+                        print(f"[AIGradingService] ERROR: Instructor video not found: {assignment.instructor_video_url} (tried: {instructor_video_path})", flush=True)
+                        return None
+                
+                print(f"[AIGradingService] Extracting template from instructor video: {instructor_video_path}", flush=True)
+                sys.stdout.flush()
+                
+                try:
+                    print(f"[AIGradingService] Calling AI server to extract template...", flush=True)
+                    sys.stdout.flush()
+                    template_result = AIClientService.extract_template(instructor_video_path)
+                    
+                    template_base64 = template_result['template']
+                    template_bytes = base64.b64decode(template_base64)
+                    
+                    import io
+                    template_buffer = io.BytesIO(template_bytes)
+                    teacher_template = np.load(template_buffer)
+                    
+                    np.save(template_path, teacher_template)
+                    print(f"[AIGradingService] Teacher template saved to: {template_path}", flush=True)
+                    print(f"[AIGradingService] Template shape: {teacher_template.shape}", flush=True)
+                    sys.stdout.flush()
+                    
+                except Exception as e:
+                    print(f"[AIGradingService] ERROR generating template: {e}", flush=True)
+                    import traceback
+                    traceback.print_exc()
+                    sys.stdout.flush()
+                    return None
+                finally:
+                    if temp_instructor_path and os.path.exists(temp_instructor_path):
+                        try:
+                            os.remove(temp_instructor_path)
+                        except:
+                            pass
         
         return template_path if os.path.exists(template_path) else None
     

@@ -246,6 +246,36 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    /**
+     * Handle assignment submit form - non-blocking UI
+     * Form submits → backend redirects immediately → background task runs
+     */
+    function initAssignmentSubmitForm() {
+        // Find assignment submit form (has video_file input)
+        const assignmentForm = document.querySelector('form[enctype="multipart/form-data"] input[name="video_file"]');
+        if (!assignmentForm) return;
+        
+        const form = assignmentForm.closest('form');
+        if (!form) return;
+        
+        form.addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('[type="submit"]');
+            if (!submitBtn) return;
+            
+            // Disable button and show loading state
+            submitBtn.disabled = true;
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang upload...';
+            
+            // Auto-reset after 3 seconds (backend redirects immediately)
+            // This prevents spinner from spinning forever if page doesn't redirect
+            setTimeout(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }, 3000);
+        });
+    }
+    
     // =========================
     // BACK TO TOP BUTTON
     // =========================
@@ -291,6 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initSmoothScroll();
     initAutoHideAlerts();
     initLoadingStates();
+    initAssignmentSubmitForm();
     initBackToTop();
     
     // Log initialization
