@@ -613,13 +613,46 @@ def weapon_detect():
                             if detected_weapon is None:
                                 detected_weapon = 'Không xác định'
                             
-                            annotated_image_url = detection_result.get('annotated_image_url')
-                            annotated_video_url = detection_result.get('annotated_video_url')
+                            annotated_image_b64 = detection_result.get('annotated_image')
+                            annotated_video_b64 = detection_result.get('annotated_video')
+                            
+                            result_image_url = None
+                            result_video_url = None
                             
                             if ext in ['jpg', 'jpeg', 'png']:
                                 file_type = 'image'
+                                if annotated_image_b64:
+                                    try:
+                                        import base64
+                                        image_bytes = base64.b64decode(annotated_image_b64)
+                                        result_image_path = temp_path.replace(f'.{ext}', f'_result.{ext}')
+                                        with open(result_image_path, 'wb') as f:
+                                            f.write(image_bytes)
+                                        
+                                        result_image_filename = f"{uuid.uuid4().hex}_result.{ext}"
+                                        result_image_url = StorageService.upload_file_from_path(result_image_path, folder='weapon_detect', filename=result_image_filename)
+                                        
+                                        if os.path.exists(result_image_path):
+                                            os.remove(result_image_path)
+                                    except Exception:
+                                        pass
                             else:
                                 file_type = 'video'
+                                if annotated_video_b64:
+                                    try:
+                                        import base64
+                                        video_bytes = base64.b64decode(annotated_video_b64)
+                                        result_video_path = temp_path.replace(f'.{ext}', f'_result.{ext}')
+                                        with open(result_video_path, 'wb') as f:
+                                            f.write(video_bytes)
+                                        
+                                        result_video_filename = f"{uuid.uuid4().hex}_result.{ext}"
+                                        result_video_url = StorageService.upload_file_from_path(result_video_path, folder='weapon_detect', filename=result_video_filename)
+                                        
+                                        if os.path.exists(result_video_path):
+                                            os.remove(result_video_path)
+                                    except Exception:
+                                        pass
                             
                             unique_filename = f"{uuid.uuid4().hex}.{ext}"
                             try:
@@ -637,17 +670,17 @@ def weapon_detect():
                                     'name': original_filename,
                                     'size': file.content_length or 0
                                 },
-                                'result_image_url': annotated_image_url,
-                                'result_video_url': annotated_video_url
+                                'result_image_url': result_image_url,
+                                'result_video_url': result_video_url
                             }
                             
                             files_to_delete = []
                             if file_url:
                                 files_to_delete.append(file_url)
-                            if annotated_image_url:
-                                files_to_delete.append(annotated_image_url)
-                            if annotated_video_url:
-                                files_to_delete.append(annotated_video_url)
+                            if result_image_url:
+                                files_to_delete.append(result_image_url)
+                            if result_video_url:
+                                files_to_delete.append(result_video_url)
                             
                             if files_to_delete:
                                 import threading
