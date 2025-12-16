@@ -16,7 +16,7 @@ if 'YOLO_MODELS_DIR' not in os.environ:
 class PoseScorer:
     _pose_model = None
     _model_name = "yolov8n-pose.pt"
-    SMOOTH_WINDOW = 11
+    SMOOTH_WINDOW = 21
     SMOOTH_POLY = 3
     
     @classmethod
@@ -40,19 +40,18 @@ class PoseScorer:
         return cls._pose_model
     
     @classmethod
-    def normalize_pose(cls, kpts):
+    def normalize_keypoints(cls, kpts):
         k = np.array(kpts).reshape(-1, 3)
-        xy = k[:, :2]
-        center = np.mean(xy, axis=0)
-        xy = xy - center
-        scale = np.linalg.norm(xy)
-        if scale < 1e-6:
-            scale = 1.0
-        xy = xy / scale
-        return xy.flatten().astype(np.float32)
-    
+        hip = (k[11, :2] + k[12, :2]) / 2
+        k[:, :2] -= hip
+        torso = np.linalg.norm(k[11, :2] - k[0, :2])
+        if torso < 1:
+            torso = 1
+        k[:, :2] /= torso
+        return k.flatten()
+
     @classmethod
-    def smooth_savgol(cls, seq):
+    def smooth_sequence(cls, seq):
         if len(seq) < cls.SMOOTH_WINDOW:
             return seq
         out = np.zeros_like(seq)
@@ -86,14 +85,14 @@ class PoseScorer:
             k = res[0].keypoints[0].data.cpu().numpy().flatten()
             if np.sum(k == 0) > 10:
                 continue
-            frames.append(cls.normalize_pose(k))
+            frames.append(cls.normalize_keypoints(k))
             del k, res
             gc.collect()
         cap.release()
         if len(frames) == 0:
             raise ValueError("No valid pose frames found in video")
         frames = np.array(frames, dtype=np.float32)
-        frames = cls.smooth_savgol(frames)
+        frames = cls.smooth_sequence(frames)
         frames = cls.smooth_ema(frames)
         return frames
     
@@ -103,7 +102,7 @@ class PoseScorer:
             raise FileNotFoundError(f"Template file not found: {template_path}")
         teacher_raw = np.load(template_path)
         if teacher_raw.shape[1] == 51:
-            teacher = np.apply_along_axis(cls.normalize_pose, 1, teacher_raw)
+            teacher = np.apply_along_axis(cls.normalize_keypoints, 1, teacher_raw)
         else:
             teacher = teacher_raw
         return teacher
@@ -113,64 +112,105 @@ class PoseScorer:
         aligned = resample(teacher_kpts, len(student_kpts), axis=0)
         gc.collect()
         return aligned
-    
+
+    # ===== New scoring helpers =====
     @classmethod
-    def compute_jitter_mse(cls, seq: np.ndarray) -> float:
-        diff = np.diff(seq, axis=0)
-        jitter = np.mean(diff ** 2)
-        return jitter
-    
+    def shape_penalty(cls, student, teacher):
+        d1 = np.std(student, axis=1)
+        d2 = np.std(teacher, axis=1)
+        diff = np.mean(np.abs(d1 - d2))
+        return np.exp(-diff * 8)
+
     @classmethod
-    def compare_templates(cls, teacher: np.ndarray, student: np.ndarray) -> tuple:
-        L = min(len(teacher), len(student))
-        T = teacher[:L]
-        S = student[:L]
-        cosine_sim = float(np.mean([1 - cosine(t, s) for t, s in zip(T, S)]))
-        dtw_shape, _ = fastdtw(T, S, dist=euclidean, radius=10)
-        T_d = np.diff(T, axis=0)
-        S_d = np.diff(S, axis=0)
-        dtw_tempo, _ = fastdtw(T_d, S_d, dist=euclidean, radius=10)
-        dtw_dist = float(dtw_shape * 0.7 + dtw_tempo * 0.3)
-        jitter_mse = cls.compute_jitter_mse(S)
-        gc.collect()
-        return cosine_sim, dtw_dist, jitter_mse
-    
+    def score_cosine(cls, a, b):
+        base = np.mean([
+            np.dot(a[i], b[i]) / (np.linalg.norm(a[i]) * np.linalg.norm(b[i]) + 1e-8)
+            for i in range(len(a))
+        ])
+        s = base * cls.shape_penalty(a, b) * 0.9
+        return max(s, 0.55)
+
     @classmethod
-    def evaluate(cls, cosine_sim: float, dtw_dist: float, jitter: float) -> dict:
-        accuracy_score = max(0, min(50, cosine_sim * 50))
-        speed_score = 30 * math.exp(-dtw_dist / 1000)
-        speed_score = max(0, min(30, speed_score))
-        if jitter < 0.002:
-            stability_score = 20
-        elif jitter < 0.005:
-            stability_score = 15
-        elif jitter < 0.01:
-            stability_score = 10
-        else:
-            stability_score = 5
-        total_score = accuracy_score + speed_score + stability_score
-        feedback = []
-        if cosine_sim < 0.6:
-            feedback.append("Tư thế chưa khớp nhiều với giáo viên.")
-        if dtw_dist >= 600:
-            feedback.append("Nhịp chuyển động chưa khớp bài mẫu – cần giữ đúng tốc độ ở từng pha ra đòn.")
-        if jitter >= 0.005:
-            feedback.append("Keypoint dao động mạnh – cần giữ tư thế vững hơn.")
-        elif jitter >= 0.001:
-            feedback.append("Tư thế hơi rung, cố gắng giữ ổn định hơn một chút.")
-        if not feedback:
-            feedback = ["Tốt! Tư thế và nhịp rất gần với giáo viên."]
-        return {
-            'total_score': round(total_score, 2),
-            'accuracy_score': round(accuracy_score, 2),
-            'speed_score': round(speed_score, 2),
-            'stability_score': round(stability_score, 2),
-            'feedback': feedback,
-            'metrics': {
-                'cosine_similarity': round(cosine_sim, 4),
-                'dtw_distance': round(dtw_dist, 2),
-                'jitter_mse': round(jitter, 6)
+    def dtw_distance(cls, seqA, seqB):
+        n, m = len(seqA), len(seqB)
+        cost = np.full((n + 1, m + 1), np.inf)
+        cost[0, 0] = 0
+        for i in range(1, n + 1):
+            for j in range(1, m + 1):
+                d = np.linalg.norm(seqA[i - 1] - seqB[j - 1])
+                cost[i, j] = d + min(cost[i - 1, j], cost[i, j - 1], cost[i - 1, j - 1])
+        return cost[n, m] / (n + m)
+
+    @classmethod
+    def score_dtw(cls, student, teacher):
+        d = cls.dtw_distance(student, teacher)
+        return np.exp(-2.0 * d)
+
+    @classmethod
+    def score_velocity(cls, a, b):
+        va = np.diff(a, axis=0)
+        vb = np.diff(b, axis=0)
+        c = np.corrcoef(va.flatten(), vb.flatten())[0, 1]
+        if np.isnan(c):
+            c = -1
+        c = (c + 1) / 2
+        return c ** 1.7
+
+    @classmethod
+    def score_stability(cls, student):
+        v = np.diff(student, axis=0)
+        a = np.diff(v, axis=0)
+        j = np.diff(a, axis=0)
+        mse = np.mean(v ** 2) + 3 * np.mean(a ** 2) + 15 * np.mean(j ** 2)
+        return 1 / (1 + 200 * mse)
+
+    @classmethod
+    def action_similarity(cls, student, teacher):
+        v1 = np.std(student, axis=0)
+        v2 = np.std(teacher, axis=0)
+        s = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2) + 1e-8)
+        return (s + 1) / 2
+
+    @classmethod
+    def evaluate(cls, student, teacher):
+        l = min(len(student), len(teacher))
+        student = student[:l]
+        teacher = teacher[:l]
+
+        A = cls.action_similarity(student, teacher)
+
+        if A < 0.55:
+            return {
+                "pose": 5,
+                "speed": 5,
+                "stability": 5,
+                "total": 15,
+                "feedback": {
+                    "pose": "Không cùng bài.",
+                    "speed": "Không cùng bài.",
+                    "stability": "Không cùng bài.",
+                },
             }
+
+        s_pose = 0.7 * cls.score_cosine(student, teacher) + 0.3 * cls.score_dtw(student, teacher)
+        s_speed = cls.score_velocity(student, teacher)
+        s_stab = cls.score_stability(student)
+
+        pose_score = s_pose * 50
+        speed_score = s_speed * 30
+        stab_score = s_stab * 20
+        total = pose_score + speed_score + stab_score
+
+        return {
+            "pose": float(pose_score),
+            "speed": float(speed_score),
+            "stability": float(stab_score),
+            "total": float(total),
+            "feedback": {
+                "pose": "Tốt" if pose_score >= 40 else "Còn lệch nhẹ" if pose_score >= 25 else "Tư thế chưa đúng",
+                "speed": "Ổn" if speed_score >= 20 else "Chưa đều",
+                "stability": "Ổn định" if stab_score >= 12 else "Hơi rung",
+            },
         }
     
     @classmethod
@@ -181,7 +221,5 @@ class PoseScorer:
         gc.collect()  # Thêm dòng này
         
         teacher_template = cls.load_teacher_template(teacher_template_path)
-        teacher_aligned = cls.align_length(teacher_template, student_template)
-        cosine_sim, dtw_dist, jitter = cls.compare_templates(teacher_aligned, student_template)
-        result = cls.evaluate(cosine_sim, dtw_dist, jitter)
+        result = cls.evaluate(student_template, teacher_template)
         return result
