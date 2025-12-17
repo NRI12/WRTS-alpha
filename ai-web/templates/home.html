@@ -3,17 +3,18 @@
 {% block title %}AI-WRTS - Hệ thống luyện tập võ thuật thông minh{% endblock %}
 
 {% block content %}
-<section class="hero-section py-5" style="background: radial-gradient(1200px 600px at 10% 10%, #1f2a44 0%, #0f172a 40%, #0b1020 100%); color: #fff;">
+<section class="hero-section py-5">
     <div class="container py-5">
-        <div class="row align-items-center g-4">
+        <div class="row align-items-center gy-4">
             <div class="col-lg-7">
-                <h1 class="display-5 fw-bold mb-3" style="line-height: 1.2;">
+                <h1 class="display-5 fw-bold mb-3 hero-title">
                     Nâng tầm luyện tập võ thuật với AI
                 </h1>
-                <p class="lead text-light-50 mb-4" style="color: rgba(255,255,255,.7);">
-                    Phân tích động tác theo thời gian thực, chấm điểm tự động và theo dõi tiến độ. Kết nối giảng viên và học viên trong một nền tảng thống nhất.
+                <p class="lead mb-4 hero-subtitle">
+                    AI-WRTS giúp số hoá toàn bộ quá trình luyện tập võ thuật, tạo ra một nơi duy nhất để xem bài tập, kết quả chấm điểm và phản hồi.
+                    Giảng viên và học viên cùng làm việc trên một không gian chung, rõ ràng, có số liệu để theo dõi và cải thiện theo thời gian, thay vì phụ thuộc hoàn toàn vào cảm nhận chủ quan sau mỗi giờ lên lớp.
                 </p>
-                <div class="d-flex gap-3 flex-wrap">
+                <div class="d-flex flex-wrap gap-3 hero-actions">
                     {% if is_logged_in and role_dashboard %}
                         <a href="{{ role_dashboard }}" class="btn btn-primary btn-lg px-4">
                             Tiếp tục với bảng điều khiển
@@ -32,20 +33,20 @@
                 </div>
             </div>
             <div class="col-lg-5">
-                <div class="ratio ratio-16x9 rounded-4 overflow-hidden shadow-lg" style="background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08);">
-                    <div class="d-flex align-items-center justify-content-center h-100 w-100">
-                        <div class="text-center p-4">
-                            <i class="fas fa-dragon fa-3x mb-3" style="color:#60a5fa"></i>
-                            <p class="mb-0" style="color: rgba(255,255,255,.7);">AI-WRTS Demo Preview</p>
-                        </div>
+                <div class="hero-summary-card h-100">
+                    <div class="hero-summary-pill">
+                        Nền tảng luyện tập võ thuật thông minh
                     </div>
+                    <ul class="hero-summary-list">
+                        <li>Chuẩn hoá việc chấm điểm bằng cách áp dụng cùng một bộ tiêu chí cho toàn bộ lớp và toàn bộ buổi thi.</li>
+                        <li>Giữ lại toàn bộ lịch sử luyện tập và kết quả, để mọi người nhìn được bức tranh dài hạn thay vì chỉ từng buổi lẻ.</li>
+                        <li>Giúp việc giao bài, nhận bài và xem lại quá trình luyện tập diễn ra mạch lạc, không phụ thuộc vào nhiều kênh rời rạc.</li>
+                    </ul>
                 </div>
             </div>
         </div>
-        <!-- Decorative gradient orbs -->
         <span class="orb orb-1"></span>
         <span class="orb orb-2"></span>
-        <span class="orb orb-3"></span>
     </div>
 </section>
 
@@ -53,28 +54,37 @@
     <div class="container py-4">
         <div class="text-center mb-5">
             <h2 class="fw-bold">Tính năng nổi bật</h2>
-            <p class="text-muted mb-0">Thiết kế cho giảng viên và học viên hiện đại</p>
+            <p class="text-muted mb-0">
+                AI-WRTS được thiết kế xoay quanh quy trình luyện tập thực tế trong lớp võ: từ tổ chức lớp, giao bài, luyện tập tại nhà,
+                cho tới thi kiểm tra và tổng hợp kết quả cuối kỳ, giúp trung tâm dễ dàng mở rộng quy mô mà vẫn giữ được chất lượng chuyên môn.
+            </p>
         </div>
         <div class="row g-4">
             <div class="col-md-4">
-                <div class="h-100 p-4 rounded-4 border bg-white shadow-sm">
-                    <div class="mb-3"><i class="fas fa-brain text-primary"></i></div>
+                <div class="h-100 p-4 rounded-4 border bg-white feature-card">
                     <h5 class="mb-2">Phân tích bằng AI</h5>
-                    <p class="text-muted mb-0">Đánh giá kỹ thuật, tư thế và nhịp điệu tự động, đưa ra gợi ý cải thiện.</p>
+                    <p class="text-muted mb-0">
+                        Đánh giá kỹ thuật, tư thế và nhịp điệu trên từng khung hình video luyện tập, từ đó đưa ra điểm số và gợi ý cải thiện cụ thể.
+                        Học viên có thể xem lại điểm mạnh, điểm yếu của mình sau mỗi lần nộp bài thay vì chỉ nghe nhận xét chung chung.
+                    </p>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="h-100 p-4 rounded-4 border bg-white shadow-sm">
-                    <div class="mb-3"><i class="fas fa-user-tie text-success"></i></div>
+                <div class="h-100 p-4 rounded-4 border bg-white feature-card">
                     <h5 class="mb-2">Quản lý lớp học</h5>
-                    <p class="text-muted mb-0">Tổ chức lớp, giao bài, chấm điểm và phản hồi tập trung, trực quan.</p>
+                    <p class="text-muted mb-0">
+                        Tổ chức lớp, giao bài, chấm điểm và phản hồi tập trung trên một giao diện trực quan, thay thế cho bảng chấm điểm giấy hoặc file rời rạc.
+                        Mỗi lớp học đều có lịch, bài tập, video nộp bài và kết quả được lưu lại để giảng viên dễ dàng tra cứu khi cần.
+                    </p>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="h-100 p-4 rounded-4 border bg-white shadow-sm">
-                    <div class="mb-3"><i class="fas fa-chart-line text-warning"></i></div>
+                <div class="h-100 p-4 rounded-4 border bg-white feature-card">
                     <h5 class="mb-2">Theo dõi tiến độ</h5>
-                    <p class="text-muted mb-0">Biểu đồ và thống kê giúp theo dõi sự tiến bộ của học viên theo thời gian.</p>
+                    <p class="text-muted mb-0">
+                        Biểu đồ và thống kê giúp theo dõi sự tiến bộ của học viên theo thời gian, cả ở mức độ cá nhân lẫn toàn bộ lớp.
+                        Quản lý, giảng viên và học viên đều có cái nhìn rõ ràng về mức độ nỗ lực, tần suất luyện tập và kết quả đạt được theo từng giai đoạn.
+                    </p>
                 </div>
             </div>
         </div>
@@ -86,35 +96,43 @@
     <div class="container py-3">
         <div class="row g-4 text-center">
             <div class="col-6 col-md-3">
-                <div class="stat-card p-3 rounded-4 border bg-white shadow-sm h-100">
-                    <div class="stat-value display-6 fw-bold">
+                <div class="stat-card p-3 rounded-4 border bg-white h-100">
+                    <div class="stat-value fs-2 fw-bold">
                         {{ system_overview.total_students if system_overview else '—' }}
                     </div>
-                    <div class="text-muted">Học viên đang hoạt động</div>
+                    <div class="text-muted">
+                        Học viên đang hoạt động, thường xuyên tham gia các buổi luyện tập và nộp bài qua hệ thống.
+                    </div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
-                <div class="stat-card p-3 rounded-4 border bg-white shadow-sm h-100">
-                    <div class="stat-value display-6 fw-bold">
+                <div class="stat-card p-3 rounded-4 border bg-white h-100">
+                    <div class="stat-value fs-2 fw-bold">
                         {{ system_overview.total_instructors if system_overview else '—' }}
                     </div>
-                    <div class="text-muted">Giảng viên đang hoạt động</div>
+                    <div class="text-muted">
+                        Giảng viên đang hoạt động, trực tiếp chấm bài, xem video và gửi phản hồi cho học viên.
+                    </div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
-                <div class="stat-card p-3 rounded-4 border bg-white shadow-sm h-100">
-                    <div class="stat-value display-6 fw-bold">
+                <div class="stat-card p-3 rounded-4 border bg-white h-100">
+                    <div class="stat-value fs-2 fw-bold">
                         {{ system_overview.total_classes if system_overview else '—' }}
                     </div>
-                    <div class="text-muted">Lớp học đang mở</div>
+                    <div class="text-muted">
+                        Lớp học đang mở, bao gồm các ca tập thường kỳ và các khoá chuyên sâu theo từng bài võ, từng cấp đai.
+                    </div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
-                <div class="stat-card p-3 rounded-4 border bg-white shadow-sm h-100">
-                    <div class="stat-value display-6 fw-bold">
+                <div class="stat-card p-3 rounded-4 border bg-white h-100">
+                    <div class="stat-value fs-2 fw-bold">
                         {{ system_overview.total_videos if system_overview else '—' }}
                     </div>
-                    <div class="text-muted">Video luyện tập đã ghi nhận</div>
+                    <div class="text-muted">
+                        Video luyện tập đã ghi nhận, tạo nên một kho dữ liệu quý giá phục vụ đánh giá và cải thiện kỹ thuật.
+                    </div>
                     {% if system_overview %}
                         <div class="small text-muted mt-1">
                             Tỷ lệ đạt: {{ system_overview.system_pass_rate }}%
@@ -128,7 +146,7 @@
 </section>
 
 <!-- Context banner: hệ thống đang phục vụ ai -->
-<section class="info-banner py-4" style="background: linear-gradient(90deg, #0f172a, #111827); color: #e5e7eb;">
+<section class="info-banner py-4">
     <div class="container py-2">
         <div class="row align-items-center g-3">
             <div class="col-lg-7">
@@ -137,27 +155,20 @@
                         AI-WRTS đang đồng hành cùng {{ system_overview.total_students }} học viên
                         và {{ system_overview.total_instructors }} giảng viên trên toàn hệ thống.
                     {% else %}
-                        AI-WRTS sẵn sàng đồng hành cùng học viên và giảng viên trong mọi buổi luyện tập.
+                        AI-WRTS sẵn sàng đồng hành cùng học viên và giảng viên trong mọi buổi luyện tập, từ những buổi cơ bản đầu tiên
+                        cho tới các kỳ thi lên đai quan trọng.
                     {% endif %}
                 </h3>
                 <p class="mb-0 small text-muted" style="color: rgba(229,231,235,.85) !important;">
-                    Mỗi video luyện tập đều được lưu lại, chấm điểm và phân tích để làm bằng chứng tiến bộ lâu dài.
+                    Mỗi video luyện tập đều được lưu lại, chấm điểm và phân tích để làm bằng chứng tiến bộ lâu dài; ban quản lý có thể
+                    nhìn lại toàn bộ hành trình rèn luyện của học viên và chất lượng giảng dạy của từng lớp học.
                 </p>
             </div>
             <div class="col-lg-5">
-                <ul class="list-unstyled mb-0 small">
-                    <li class="mb-1">
-                        <i class="fas fa-check-circle text-success me-2"></i>
-                        Học viên quay và gửi video luyện tập trực tiếp trên hệ thống.
-                    </li>
-                    <li class="mb-1">
-                        <i class="fas fa-check-circle text-success me-2"></i>
-                        AI và giảng viên cùng chấm điểm, đưa ra nhận xét chi tiết.
-                    </li>
-                    <li class="mb-1">
-                        <i class="fas fa-check-circle text-success me-2"></i>
-                        Lịch sử điểm số, video và phản hồi được lưu để so sánh theo thời gian.
-                    </li>
+                <ul class="list-unstyled mb-0 small info-list">
+                    <li class="mb-1">Giúp trung tâm có cái nhìn tổng thể về mức độ tham gia luyện tập và kết quả của từng nhóm học viên.</li>
+                    <li class="mb-1">Cho phép so sánh kết quả giữa các kỳ, các lớp để điều chỉnh giáo án và phương pháp giảng dạy.</li>
+                    <li class="mb-1">Hỗ trợ minh chứng chất lượng đào tạo khi làm việc với phụ huynh, liên đoàn hoặc các đơn vị liên quan.</li>
                 </ul>
             </div>
         </div>
@@ -172,33 +183,42 @@
         </div>
         <div class="row g-4">
             <div class="col-md-4">
-                <div class="h-100 p-4 rounded-4 border bg-white shadow-sm">
+                <div class="h-100 p-4 rounded-4 border bg-white role-card">
                     <div class="d-flex align-items-center mb-2">
-                        <i class="fas fa-user-graduate text-primary me-2"></i>
+                        <span class="role-badge">S</span>
                         <h5 class="mb-0">Học viên</h5>
                     </div>
-                    <p class="text-muted">Nộp bài, nhận phản hồi, và theo dõi tiến độ luyện tập.</p>
-                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary">Vào bảng điều khiển</a>
+                    <p class="text-muted">
+                        Nộp bài, nhận phản hồi chi tiết bằng cả điểm số và nhận xét text sau mỗi lần quay video luyện tập.
+                        Học viên có thể chủ động lên lịch luyện tập cá nhân, xem lại quá trình tiến bộ và chuẩn bị tốt hơn cho các kỳ kiểm tra.
+                    </p>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary role-cta">Vào bảng điều khiển</a>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="h-100 p-4 rounded-4 border bg-white shadow-sm">
+                <div class="h-100 p-4 rounded-4 border bg-white role-card">
                     <div class="d-flex align-items-center mb-2">
-                        <i class="fas fa-chalkboard-teacher text-success me-2"></i>
+                        <span class="role-badge">I</span>
                         <h5 class="mb-0">Giảng viên</h5>
                     </div>
-                    <p class="text-muted">Giao bài, chấm điểm, và quản lý lớp học hiệu quả.</p>
-                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-success">Vào bảng điều khiển</a>
+                    <p class="text-muted">
+                        Giao bài, chấm điểm, quản lý lớp học và theo dõi tiến độ của từng học viên trên cùng một màn hình.
+                        Giảng viên tiết kiệm thời gian hành chính, tập trung nhiều hơn cho việc hướng dẫn kỹ thuật và xây dựng giáo án.
+                    </p>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary role-cta">Vào bảng điều khiển</a>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="h-100 p-4 rounded-4 border bg-white shadow-sm">
+                <div class="h-100 p-4 rounded-4 border bg-white role-card">
                     <div class="d-flex align-items-center mb-2">
-                        <i class="fas fa-user-shield text-warning me-2"></i>
+                        <span class="role-badge">A</span>
                         <h5 class="mb-0">Quản trị</h5>
                     </div>
-                    <p class="text-muted">Quản lý người dùng, lớp học, và hoạt động hệ thống.</p>
-                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-warning">Vào bảng điều khiển</a>
+                    <p class="text-muted">
+                        Quản lý người dùng, lớp học, cấu hình bài võ, lịch thi và theo dõi hoạt động tổng thể của hệ thống.
+                        Ban quản lý có đủ số liệu để đánh giá hiệu quả vận hành, từ tỷ lệ tham gia luyện tập cho tới kết quả thi cử theo từng giai đoạn.
+                    </p>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary role-cta">Vào bảng điều khiển</a>
                 </div>
             </div>
         </div>
@@ -212,7 +232,9 @@
     <div class="container py-4">
         <div class="text-center mb-4">
             <h2 class="fw-bold">Phản hồi gần đây từ người dùng</h2>
-            <p class="text-muted mb-0">Một vài chủ đề góp ý mới nhất trong hệ thống</p>
+            <p class="text-muted mb-0">
+                Một vài chủ đề góp ý mới nhất trong hệ thống, thể hiện cách AI-WRTS được sử dụng thực tế và những điểm người dùng quan tâm.
+            </p>
         </div>
         <div class="row g-3">
             {% for fb in recent_feedback %}
@@ -241,7 +263,9 @@
     <div class="container py-4">
         <div class="text-center mb-5">
             <h2 class="fw-bold">Câu hỏi thường gặp</h2>
-            <p class="text-muted mb-0">Giải đáp nhanh thắc mắc của bạn</p>
+            <p class="text-muted mb-0">
+                Giải đáp nhanh các câu hỏi thường gặp khi triển khai AI-WRTS trong trung tâm hoặc khi học viên bắt đầu sử dụng hệ thống.
+            </p>
         </div>
         <div class="accordion" id="faqAccordion">
             <div class="accordion-item rounded-4 overflow-hidden mb-3 border">
@@ -252,7 +276,8 @@
                 </h2>
                 <div id="collapse1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
                     <div class="accordion-body">
-                        Hệ thống sử dụng mô hình học sâu phân tích khung hình, tư thế và nhịp điệu để đưa ra điểm số và gợi ý cải thiện.
+                        Hệ thống phân tích video để gợi ý mức điểm ban đầu, sau đó giảng viên có thể xem lại và điều chỉnh điểm cuối cùng.
+                        Mục tiêu là giúp việc chấm điểm nhanh và nhất quán hơn, nhưng vẫn giữ vai trò quyết định ở người dạy.
                     </div>
                 </div>
             </div>
@@ -271,12 +296,26 @@
             <div class="accordion-item rounded-4 overflow-hidden mb-3 border">
                 <h2 class="accordion-header" id="faq3">
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse3">
-                        Dữ liệu của tôi có an toàn không?
+                        Trung tâm cần chuẩn bị gì để triển khai AI-WRTS?
                     </button>
                 </h2>
                 <div id="collapse3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
                     <div class="accordion-body">
-                        Chúng tôi áp dụng các biện pháp bảo mật chuẩn ngành để bảo vệ tài khoản và video của bạn.
+                        Thông thường trung tâm chỉ cần đường truyền Internet ổn định, thiết bị quay video (điện thoại hoặc máy tính bảng)
+                        và tài khoản cho giảng viên/học viên. Phần mềm AI-WRTS chạy trên nền web nên không cần cài đặt phức tạp.
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item rounded-4 overflow-hidden mb-3 border">
+                <h2 class="accordion-header" id="faq4">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse4">
+                        Học viên có phải quay video chất lượng cao không?
+                    </button>
+                </h2>
+                <div id="collapse4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body">
+                        Hệ thống ưu tiên góc quay rõ ràng, nhìn được toàn thân và ánh sáng đủ hơn là độ phân giải quá cao.
+                        Điện thoại phổ thông quay ở điều kiện ánh sáng bình thường đã đáp ứng đủ cho việc phân tích tư thế bằng AI.
                     </div>
                 </div>
             </div>
@@ -289,7 +328,10 @@
         <div class="row align-items-center">
             <div class="col-lg-8">
                 <h3 class="fw-bold mb-2">Sẵn sàng bắt đầu?</h3>
-                <p class="mb-0" style="color: rgba(255,255,255,.7);">Đăng nhập để vào bảng điều khiển của bạn, hoặc đăng ký để khám phá AI-WRTS.</p>
+                <p class="mb-0" style="color: rgba(255,255,255,.7);">
+                    Đăng nhập để vào bảng điều khiển của bạn, xem lại lịch sử luyện tập, bài tập đang chờ và các kỳ thi sắp tới;
+                    hoặc đăng ký tài khoản mới để trải nghiệm quy trình luyện tập võ thuật được hỗ trợ bởi AI từ hôm nay.
+                </p>
             </div>
             <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
                 <a class="btn btn-primary me-2" href="{{ url_for('auth.login') }}">Đăng nhập</a>
@@ -303,25 +345,149 @@
 
 {% block extra_css %}
 <style>
-    .hero-section .btn-primary { background: linear-gradient(135deg, #2563eb, #7c3aed); border: none; }
-    .hero-section .btn-primary:hover { filter: brightness(1.05); }
-    .hero-section .btn-outline-light { border-color: rgba(255,255,255,.6); color: #fff; }
-    .hero-section .btn-outline-light:hover { background: rgba(255,255,255,.1); }
-    .roles-section .btn { border-radius: 999px; }
-    .features-section .border, .roles-section .border, .testimonials-section .border { border-color: #e5e7eb !important; }
-    /* Hero decorative orbs */
-    .hero-section { position: relative; overflow: hidden; }
-    .orb { position: absolute; filter: blur(50px); opacity: .35; pointer-events: none; animation: float 12s ease-in-out infinite; }
-    .orb-1 { width: 240px; height: 240px; background: #7c3aed; top: -40px; right: 10%; animation-delay: 0s; }
-    .orb-2 { width: 320px; height: 320px; background: #2563eb; bottom: -80px; left: -40px; animation-delay: 1.5s; }
-    .orb-3 { width: 160px; height: 160px; background: #22c55e; bottom: 10%; right: 5%; animation-delay: 3s; }
+    .hero-section {
+        position: relative;
+        overflow: hidden;
+        background: radial-gradient(1000px 520px at 8% 8%, #1f2937 0%, #020617 55%, #020617 100%);
+        color: #fff;
+    }
+    .hero-title {
+        line-height: 1.2;
+    }
+    .hero-subtitle {
+        color: rgba(255,255,255,.75);
+    }
+    .hero-actions .btn-primary {
+        background: linear-gradient(135deg, #2563eb, #7c3aed);
+        border: none;
+    }
+    .hero-actions .btn-primary:hover {
+        filter: brightness(1.05);
+    }
+    .hero-actions .btn-outline-light {
+        border-color: rgba(255,255,255,.6);
+        color: #fff;
+    }
+    .hero-actions .btn-outline-light:hover {
+        background: rgba(255,255,255,.08);
+    }
+    .hero-summary-card {
+        background: rgba(15,23,42,0.7);
+        border-radius: 1.25rem;
+        padding: 1.75rem 1.5rem;
+        border: 1px solid rgba(148,163,184,0.45);
+        backdrop-filter: blur(18px);
+        color: rgba(249,250,251,0.9);
+    }
+    .hero-summary-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.35rem 0.9rem;
+        border-radius: 999px;
+        background: rgba(15,118,255,0.16);
+        color: #dbeafe;
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-bottom: 1rem;
+    }
+    .hero-summary-list {
+        padding-left: 1.1rem;
+        margin-bottom: 0;
+        font-size: 0.95rem;
+    }
+    .hero-summary-list li + li {
+        margin-top: 0.4rem;
+    }
+    .orb {
+        position: absolute;
+        filter: blur(52px);
+        opacity: .28;
+        pointer-events: none;
+        animation: float 12s ease-in-out infinite;
+    }
+    .orb-1 {
+        width: 220px;
+        height: 220px;
+        background: #6366f1;
+        top: -40px;
+        right: 12%;
+        animation-delay: 0s;
+    }
+    .orb-2 {
+        width: 260px;
+        height: 260px;
+        background: #22c55e;
+        bottom: -90px;
+        left: -40px;
+        animation-delay: 1.5s;
+    }
     @keyframes float {
         0% { transform: translateY(0) translateX(0); }
-        50% { transform: translateY(-12px) translateX(6px); }
+        50% { transform: translateY(-10px) translateX(4px); }
         100% { transform: translateY(0) translateX(0); }
     }
-    /* Simple hover lift */
-    .stat-card:hover, .features-section .shadow-sm:hover, .roles-section .shadow-sm:hover, .testimonials-section .shadow-sm:hover { transform: translateY(-4px); transition: transform .25s ease; }
+    .features-section .border,
+    .roles-section .border,
+    .testimonials-section .border {
+        border-color: #e5e7eb !important;
+    }
+    .feature-card,
+    .role-card {
+        box-shadow: none;
+        transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+    .feature-card:hover,
+    .role-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(15,23,42,0.08);
+        border-color: #d1d5db;
+    }
+    .role-badge {
+        width: 32px;
+        height: 32px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(37,99,235,0.1);
+        color: #1d4ed8;
+        font-weight: 600;
+        margin-right: 0.75rem;
+        font-size: 0.9rem;
+    }
+    .role-cta {
+        border-radius: 999px;
+    }
+    .stats-section .stat-card {
+        box-shadow: none;
+        border-color: #e5e7eb;
+    }
+    .info-banner {
+        background: linear-gradient(90deg, #0f172a, #111827);
+        color: #e5e7eb;
+    }
+    .info-banner .info-list {
+        color: rgba(229,231,235,.9);
+    }
+    .testimonials-section .border {
+        box-shadow: none;
+    }
+    .faq-section .accordion-item {
+        box-shadow: none;
+    }
+    .cta-section {
+        background: #0f172a;
+        color: #fff;
+    }
+    @media (max-width: 767.98px) {
+        .hero-section .container {
+            padding-top: 2.5rem;
+            padding-bottom: 2.5rem;
+        }
+        .hero-summary-card {
+            margin-top: 0.5rem;
+        }
+    }
 </style>
 {% endblock %}
 

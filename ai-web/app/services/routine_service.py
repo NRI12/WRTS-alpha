@@ -41,7 +41,7 @@ class RoutineService:
             difficulty_score=data.get('difficulty_score', 1.0),
             reference_video_url=data.get('reference_video_url'),
             thumbnail_url=data.get('thumbnail_url'),
-            duration_seconds=data['duration_seconds'],
+            duration_seconds=data.get('duration_seconds', 0),
             total_moves=data.get('total_moves', 1),
             instructor_id=instructor_id,
             pass_threshold=data.get('pass_threshold', 70.00),
@@ -62,6 +62,8 @@ class RoutineService:
         if routine.instructor_id != instructor_id:
             return {'success': False, 'message': 'Bạn không có quyền sửa bài võ này'}
 
+        if 'routine_code' in data:
+            routine.routine_code = data['routine_code']
         routine.routine_name = data['routine_name']
         routine.description = data.get('description')
         routine.weapon_id = data['weapon_id']
@@ -69,7 +71,8 @@ class RoutineService:
         routine.difficulty_score = data.get('difficulty_score', routine.difficulty_score)
         routine.reference_video_url = data.get('reference_video_url', routine.reference_video_url)
         routine.thumbnail_url = data.get('thumbnail_url', routine.thumbnail_url)
-        routine.duration_seconds = data['duration_seconds']
+        if 'duration_seconds' in data:
+            routine.duration_seconds = data['duration_seconds']
         routine.total_moves = data.get('total_moves', routine.total_moves)
         routine.pass_threshold = data.get('pass_threshold', routine.pass_threshold)
 

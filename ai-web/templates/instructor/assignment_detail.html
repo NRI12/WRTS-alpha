@@ -3,45 +3,31 @@
 {% block title %}Chi tiết bài tập{% endblock %}
 
 {% block instructor_content %}
-<div class="page-header-modern">
-    <div class="page-header-content">
-        <div class="page-header-icon">
-            <i class="fas fa-tasks"></i>
-        </div>
-        <div class="page-header-text">
-            <nav aria-label="breadcrumb" class="mb-2">
-                <ol class="breadcrumb mb-0">
-                    <li class="breadcrumb-item"><a href="{{ url_for('instructor.assignments') }}">Bài tập</a></li>
-                    <li class="breadcrumb-item active">Chi tiết</li>
-                </ol>
-            </nav>
-            <h1 class="page-header-title">{{ assignment.routine.routine_name }}</h1>
-            <div class="page-header-badges">
+<div class="assignment-header-modern">
+    <div class="assignment-header-content">
+        <div class="assignment-header-text">
+            <h1 class="assignment-header-title">{{ assignment.routine.routine_name }}</h1>
+            <p class="assignment-header-subtitle mb-0">
                 {% if assignment.assignment_type == 'individual' %}
-                <span class="badge bg-info">
-                    <i class="fas fa-user me-1"></i>Cá nhân
-                </span>
+                <span class="badge bg-info me-2">Cá nhân</span>
                 {% else %}
-                <span class="badge bg-primary">
-                    <i class="fas fa-users me-1"></i>Lớp học
-                </span>
+                <span class="badge bg-primary me-2">Lớp học</span>
                 {% endif %}
                 {% if assignment.is_mandatory %}
-                <span class="badge bg-danger">
-                    <i class="fas fa-exclamation-circle me-1"></i>Bắt buộc
-                </span>
+                <span class="badge bg-danger me-2">Bắt buộc</span>
                 {% endif %}
                 {% if assignment.priority == 'high' %}
-                <span class="badge bg-warning">
-                    <i class="fas fa-star me-1"></i>Ưu tiên cao
-                </span>
+                <span class="badge bg-warning text-dark">Ưu tiên cao</span>
                 {% endif %}
-            </div>
+            </p>
         </div>
     </div>
-    <div class="page-header-actions">
+    <div class="assignment-header-actions">
         <a href="{{ url_for('instructor.assignments') }}" class="btn btn-light btn-sm">
-            <i class="fas fa-arrow-left me-2"></i>Quay lại danh sách
+            Quay lại danh sách
+        </a>
+        <a href="{{ url_for('instructor.edit_assignment', assignment_id=assignment.assignment_id) }}" class="btn btn-light btn-sm">
+            Chỉnh sửa
         </a>
         <form method="POST"
               action="{{ url_for('instructor.delete_assignment', assignment_id=assignment.assignment_id) }}"
@@ -49,14 +35,9 @@
               onsubmit="return confirm('Bạn có chắc muốn xóa bài tập này? Hành động này không thể hoàn tác.');">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-light btn-sm text-danger border-danger">
-                <i class="fas fa-trash me-2"></i>Xóa bài tập
+                Xóa bài tập
             </button>
         </form>
-    </div>
-    <div class="page-header-circles">
-        <div class="circle circle-1"></div>
-        <div class="circle circle-2"></div>
-        <div class="circle circle-3"></div>
     </div>
 </div>
 
@@ -64,9 +45,6 @@
 <div class="row g-3 mb-3">
     <div class="col-6 col-md-3">
         <div class="stat-card-compact">
-            <div class="stat-icon-compact">
-                <i class="fas fa-users"></i>
-            </div>
             <div class="stat-content-compact">
                 <div class="stat-value-compact">{{ status_list|length }}</div>
                 <div class="stat-label-compact">Tổng học viên</div>
@@ -75,9 +53,6 @@
     </div>
     <div class="col-6 col-md-3">
         <div class="stat-card-compact">
-            <div class="stat-icon-compact">
-                <i class="fas fa-check-circle"></i>
-            </div>
             <div class="stat-content-compact">
                 <div class="stat-value-compact">
                     {{ status_list|selectattr('status', 'in', ['submitted', 'graded'])|list|length }}
@@ -88,9 +63,6 @@
     </div>
     <div class="col-6 col-md-3">
         <div class="stat-card-compact">
-            <div class="stat-icon-compact">
-                <i class="fas fa-hourglass-half"></i>
-            </div>
             <div class="stat-content-compact">
                 <div class="stat-value-compact">
                     {{ status_list|selectattr('status', 'equalto', 'pending')|list|length }}
@@ -101,9 +73,6 @@
     </div>
     <div class="col-6 col-md-3">
         <div class="stat-card-compact">
-            <div class="stat-icon-compact">
-                <i class="fas fa-percentage"></i>
-            </div>
             <div class="stat-content-compact">
                 <div class="stat-value-compact">
                     {% set submitted_count = status_list|selectattr('status', 'in', ['submitted', 'graded'])|list|length %}
@@ -122,13 +91,10 @@
 
 <!-- Assignment Details -->
 <div class="row g-3 mb-3">
-    <div class="col-lg-8">
+    <div class="col-12">
         <div class="card border-0 shadow-sm">
             <div class="card-body">
-                <h6 class="mb-3 fw-bold">
-                    <i class="fas fa-info-circle text-primary me-2"></i>
-                    Thông tin bài tập
-                </h6>
+                <h6 class="mb-3 fw-bold">Thông tin bài tập</h6>
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="text-muted small mb-1 d-block">Bài võ</label>
@@ -151,7 +117,6 @@
                     <div class="col-md-6">
                         <label class="text-muted small mb-1 d-block">Deadline</label>
                         <div>
-                            <i class="fas fa-calendar-alt text-danger me-1"></i>
                             {% if assignment.deadline %}
                                 <strong>{{ assignment.deadline.strftime('%d/%m/%Y %H:%M') }}</strong>
                             {% else %}
@@ -163,7 +128,6 @@
                     <div class="col-12">
                         <label class="text-muted small mb-1 d-block">Hướng dẫn</label>
                         <div class="alert alert-info py-2 mb-0">
-                            <i class="fas fa-lightbulb me-2"></i>
                             <small>{{ assignment.instructions }}</small>
                         </div>
                     </div>
@@ -185,27 +149,13 @@
             </div>
         </div>
     </div>
-    <div class="col-lg-4">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <h6 class="mb-3 fw-bold">
-                    <i class="fas fa-chart-pie text-success me-2"></i>
-                    Tiến độ
-                </h6>
-                <canvas id="completionChart" height="200"></canvas>
-            </div>
-        </div>
-    </div>
 </div>
 
 <!-- Submission Status -->
 <div class="card border-0 shadow-sm">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="mb-0 fw-bold">
-                <i class="fas fa-list-check text-primary me-2"></i>
-                Trạng thái nộp bài
-            </h6>
+            <h6 class="mb-0 fw-bold">Trạng thái nộp bài</h6>
             <span class="badge bg-secondary">{{ status_list|length }}</span>
         </div>
         {% if status_list %}
@@ -236,17 +186,11 @@
                         </td>
                         <td>
                             {% if status.status == 'submitted' %}
-                            <span class="badge bg-success">
-                                <i class="fas fa-check me-1"></i>Đã nộp
-                            </span>
+                            <span class="badge bg-success">Đã nộp</span>
                             {% elif status.status == 'graded' %}
-                            <span class="badge bg-info">
-                                <i class="fas fa-star me-1"></i>Đã chấm
-                            </span>
+                            <span class="badge bg-info">Đã chấm</span>
                             {% else %}
-                            <span class="badge bg-warning">
-                                <i class="fas fa-clock me-1"></i>Chờ nộp
-                            </span>
+                            <span class="badge bg-warning">Chờ nộp</span>
                             {% endif %}
                         </td>
                         <td>
@@ -265,7 +209,6 @@
                             {% if status.latest_video and status.latest_video.detected_weapon %}
                             <div class="mt-1">
                                 <small class="text-muted">
-                                    <i class="fas fa-shield-alt me-1"></i>
                                     Vũ khí: {{ status.latest_video.detected_weapon }}
                                     {% if status.latest_video.weapon_match_status == 'matched' %}
                                     <span class="badge bg-success badge-sm ms-1">✓</span>
@@ -278,19 +221,11 @@
                         </td>
                         <td class="text-end">
                             {% if status.status == 'submitted' %}
-                            <a href="{{ url_for('instructor.evaluate_video', video_id=status.latest_video.video_id) }}" 
-                               class="btn btn-sm btn-primary">
-                                <i class="fas fa-star me-1"></i>Chấm điểm
-                            </a>
+                            <span class="badge bg-warning">Đã nộp</span>
                             {% elif status.status == 'graded' %}
-                            <a href="{{ url_for('instructor.evaluate_video', video_id=status.latest_video.video_id) }}" 
-                               class="btn btn-sm btn-outline-primary">
-                                <i class="fas fa-eye me-1"></i>Xem
-                            </a>
+                            <span class="badge bg-success">Đã chấm</span>
                             {% else %}
-                            <button class="btn btn-sm btn-outline-secondary" disabled>
-                                <i class="fas fa-hourglass me-1"></i>Chờ
-                            </button>
+                            <span class="badge bg-secondary">Chờ nộp</span>
                             {% endif %}
                         </td>
                     </tr>
@@ -300,7 +235,6 @@
         </div>
         {% else %}
         <div class="text-center py-4 text-muted">
-            <i class="fas fa-inbox fa-2x mb-2"></i>
             <p class="mb-0">Chưa có học viên nào</p>
         </div>
         {% endif %}
@@ -308,40 +242,91 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Completion Pie Chart
-    const ctx = document.getElementById('completionChart');
-    if (ctx) {
-        const submitted = Number("{{ status_list|selectattr('status', 'equalto', 'submitted')|list|length }}");
-        const pending = Number("{{ status_list|selectattr('status', 'equalto', 'pending')|list|length }}");
-        
-        new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Đã nộp', 'Chờ nộp'],
-                datasets: [{
-                    data: [submitted, pending],
-                    backgroundColor: ['#10b981', '#f59e0b'],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                }
-            }
-        });
-    }
-});
-
 function viewSubmission(videoId) {
     window.location.href = '/instructor/videos/' + videoId + '/evaluate';
 }
 
 // Delete assignment function is now handled by HTML form
 </script>
+
+<style>
+.assignment-header-modern {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 1.75rem 2rem;
+    color: white;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.assignment-header-modern::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.assignment-header-modern::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -5%;
+    width: 200px;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 50%;
+}
+
+.assignment-header-content {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    position: relative;
+    z-index: 1;
+}
+
+.assignment-header-text {
+    position: relative;
+    z-index: 1;
+}
+
+.assignment-header-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: white;
+}
+
+.assignment-header-subtitle {
+    font-size: 0.95rem;
+    margin: 0.25rem 0 0 0;
+    opacity: 0.9;
+    color: white;
+}
+
+.assignment-header-actions {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.assignment-header-modern .badge {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white !important;
+    font-weight: 500;
+}
+</style>
 {% endblock %}

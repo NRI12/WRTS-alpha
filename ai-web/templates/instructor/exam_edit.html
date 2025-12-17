@@ -1,0 +1,450 @@
+{% extends "base/instructor_base.html" %}
+
+{% block title %}Chỉnh sửa bài kiểm tra{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/instructor.css') }}" rel="stylesheet">
+<style>
+.exam-edit-header-modern {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 1.75rem 2rem;
+    margin-bottom: 1.5rem;
+    color: white;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.exam-edit-header-modern::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.exam-edit-header-modern::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -5%;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.exam-edit-header-content {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    position: relative;
+    z-index: 1;
+}
+
+.exam-edit-header-text {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+}
+
+.exam-edit-header-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: white;
+}
+
+.exam-edit-header-subtitle {
+    font-size: 0.95rem;
+    margin: 0.25rem 0 0 0;
+    opacity: 0.9;
+    color: white;
+}
+
+.exam-edit-header-actions {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.exam-edit-header-actions .btn {
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.exam-edit-header-actions .btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: white;
+}
+
+.drag-drop-zone {
+    border: 2px dashed #d1d5db;
+    border-radius: 12px;
+    padding: 2.5rem;
+    text-align: center;
+    background: #f9fafb;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.drag-drop-zone:hover {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.drag-drop-zone.drag-over {
+    border-color: #3b82f6;
+    background: #dbeafe;
+    transform: scale(1.02);
+}
+
+.drag-drop-content {
+    transition: opacity 0.3s ease;
+}
+
+.drag-drop-zone.has-file .drag-drop-content {
+    display: none;
+}
+
+.drag-drop-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.drag-drop-text {
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+}
+
+.drag-drop-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.preview-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.preview-info {
+    flex: 1;
+    text-align: left;
+}
+
+.preview-name {
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.25rem;
+    word-break: break-all;
+}
+
+.preview-size {
+    font-size: 0.875rem;
+}
+
+.remove-file {
+    padding: 0.5rem;
+}
+</style>
+{% endblock %}
+
+{% block instructor_content %}
+<div class="exam-edit-header-modern">
+    <div class="exam-edit-header-content">
+        <div class="exam-edit-header-text">
+            <h1 class="exam-edit-header-title">Chỉnh sửa bài kiểm tra</h1>
+            {% if exam %}
+            <p class="exam-edit-header-subtitle mb-0">
+                {{ exam.exam_code }}{% if exam.class_obj %} · {{ exam.class_obj.class_name }}{% endif %}
+            </p>
+            {% endif %}
+        </div>
+        <div class="exam-edit-header-actions">
+            {% if exam %}
+            <a href="{{ url_for('instructor.exam_detail', exam_id=exam.exam_id) }}" class="btn btn-light btn-sm">
+                Quay lại chi tiết
+            </a>
+            {% else %}
+            <a href="{{ url_for('instructor.exams') }}" class="btn btn-light btn-sm">
+                Quay lại danh sách
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body pb-2">
+        <form method="POST" enctype="multipart/form-data" id="exam-edit-form">
+            {{ form.hidden_tag() }}
+
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    {{ form.exam_code.label(class="form-label required") }}
+                    {{ form.exam_code(class="form-control") }}
+                    {% if form.exam_code.errors %}
+                        <div class="text-danger small">{{ form.exam_code.errors[0] }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-8">
+                    {{ form.exam_name.label(class="form-label required") }}
+                    {{ form.exam_name(class="form-control") }}
+                    {% if form.exam_name.errors %}
+                        <div class="text-danger small">{{ form.exam_name.errors[0] }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mb-3">
+                {{ form.description.label(class="form-label") }}
+                {{ form.description(class="form-control", rows=3) }}
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    {{ form.exam_type.label(class="form-label required") }}
+                    {{ form.exam_type(class="form-select") }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.class_id.label(class="form-label") }}
+                    {{ form.class_id(class="form-select") }}
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <h6 class="mb-3">Video tham chiếu</h6>
+
+                    <div class="btn-group mb-2 flex-wrap align-items-center" role="group">
+                        {{ form.video_source(class="d-none") }}
+                        <input type="radio" class="btn-check" name="video_source" id="edit_source_routine"
+                               value="routine" {% if form.video_source.data == 'routine' %}checked{% endif %}>
+                        <label class="btn btn-outline-primary" for="edit_source_routine">
+                            Chọn từ Routine
+                        </label>
+
+                        <input type="radio" class="btn-check" name="video_source" id="edit_source_upload"
+                               value="upload" {% if form.video_source.data == 'upload' %}checked{% endif %}>
+                        <label class="btn btn-outline-success" for="edit_source_upload">
+                            Upload video mới
+                        </label>
+                    </div>
+
+                    <div id="edit-routine-section" {% if form.video_source.data == 'upload' %}style="display:none"{% endif %}>
+                        {{ form.routine_id.label(class="form-label mb-1") }}
+                        {{ form.routine_id(class="form-select") }}
+                        {% if form.routine_id.errors %}
+                            <div class="text-danger small">{{ form.routine_id.errors[0] }}</div>
+                        {% endif %}
+                        <small class="text-muted">Chọn bài võ có sẵn với video mẫu</small>
+                    </div>
+
+                    <div id="edit-upload-section" {% if form.video_source.data != 'upload' %}style="display:none"{% endif %}>
+                        {{ form.reference_video.label(class="form-label mb-1") }}
+                        <div class="drag-drop-zone" id="examEditVideoUploadZone">
+                            <input type="file" name="reference_video" id="editVideoFileInput" class="d-none" accept="video/*">
+                            <div class="drag-drop-content">
+                                <h6 class="drag-drop-title">Kéo thả video vào đây</h6>
+                                <p class="drag-drop-text">hoặc <span class="text-primary">chọn file từ máy</span></p>
+                                <small class="text-muted">MP4, AVI, MOV, MKV - Tối đa 500MB</small>
+                            </div>
+                            <div class="drag-drop-preview" style="display: none;">
+                                <div class="preview-content">
+                                    <div class="preview-info">
+                                        <div class="preview-name"></div>
+                                        <div class="preview-size text-muted"></div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-danger remove-file">
+                                        Xóa
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% if form.reference_video.errors %}
+                            <div class="text-danger small mt-2">{{ form.reference_video.errors[0] }}</div>
+                        {% endif %}
+                        <small class="text-muted d-block mt-2">Nếu không chọn file mới, hệ thống sẽ giữ video hiện tại.</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    {{ form.start_time.label(class="form-label required") }}
+                    {{ form.start_time(class="form-control", type="datetime-local") }}
+                    {% if form.start_time.errors %}
+                        <div class="text-danger small">{{ form.start_time.errors[0] }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    {{ form.end_time.label(class="form-label required") }}
+                    {{ form.end_time(class="form-control", type="datetime-local") }}
+                    {% if form.end_time.errors %}
+                        <div class="text-danger small">{{ form.end_time.errors[0] }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    {{ form.pass_score.label(class="form-label") }}
+                    {{ form.pass_score(class="form-control") }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Thông tin thi</label>
+                    <div class="alert alert-info mb-0">
+                        Học viên chỉ được thi 1 lần duy nhất, không giới hạn thời gian làm bài.
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body d-flex flex-wrap align-items-center exam-actions">
+        <button type="submit" form="exam-edit-form" class="btn btn-primary">
+            Lưu thay đổi
+        </button>
+        {% if exam %}
+        <a href="{{ url_for('instructor.exam_detail', exam_id=exam.exam_id) }}" class="btn btn-secondary ms-2">
+            Hủy
+        </a>
+        {% else %}
+        <a href="{{ url_for('instructor.exams') }}" class="btn btn-secondary ms-2">
+            Hủy
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.required::after {
+    content: " *";
+    color: #dc3545;
+}
+
+.exam-actions {
+    margin-top: 0.25rem;
+}
+
+@media (max-width: 576px) {
+    .exam-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .exam-actions .btn + .btn {
+        margin-left: 0;
+        margin-top: 0.5rem;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const routineSection = document.getElementById('edit-routine-section');
+    const uploadSection = document.getElementById('edit-upload-section');
+    const videoSourceRadios = document.querySelectorAll('input[name="video_source"]');
+    
+    videoSourceRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'routine') {
+                routineSection.style.display = 'block';
+                uploadSection.style.display = 'none';
+            } else {
+                routineSection.style.display = 'none';
+                uploadSection.style.display = 'block';
+            }
+        });
+    });
+    
+    const zone = document.getElementById('examEditVideoUploadZone');
+    const input = document.getElementById('editVideoFileInput');
+    const preview = zone.querySelector('.drag-drop-preview');
+    const content = zone.querySelector('.drag-drop-content');
+    const previewName = preview.querySelector('.preview-name');
+    const previewSize = preview.querySelector('.preview-size');
+    const removeBtn = preview.querySelector('.remove-file');
+    
+    if (zone && input) {
+        zone.addEventListener('click', () => input.click());
+        
+        zone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            zone.classList.add('drag-over');
+        });
+        
+        zone.addEventListener('dragleave', () => {
+            zone.classList.remove('drag-over');
+        });
+        
+        zone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            zone.classList.remove('drag-over');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+        
+        input.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+        
+        removeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            input.value = '';
+            zone.classList.remove('has-file');
+            preview.style.display = 'none';
+            content.style.display = 'block';
+        });
+        
+        function handleFile(file) {
+            const maxSize = 500 * 1024 * 1024;
+            if (file.size > maxSize) {
+                alert('File video quá lớn! Vui lòng chọn file nhỏ hơn 500MB.');
+                return;
+            }
+            
+            const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+            previewName.textContent = file.name;
+            previewSize.textContent = `${sizeMB} MB`;
+            
+            zone.classList.add('has-file');
+            preview.style.display = 'flex';
+            content.style.display = 'none';
+        }
+    }
+});
+</script>
+{% endblock %}
+
+

@@ -1,0 +1,241 @@
+{% extends "base/instructor_base.html" %}
+
+{% block title %}Chấm điểm bài kiểm tra - {{ exam.exam_name }}{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/instructor.css') }}" rel="stylesheet">
+<style>
+.exam-grade-header-modern {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 1.75rem 2rem;
+    margin-bottom: 1.5rem;
+    color: white;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.exam-grade-header-modern::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.exam-grade-header-modern::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -5%;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.exam-grade-header-content {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    position: relative;
+    z-index: 1;
+}
+
+.exam-grade-header-text {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+}
+
+.exam-grade-header-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: white;
+}
+
+.exam-grade-header-subtitle {
+    font-size: 0.95rem;
+    margin: 0.25rem 0 0 0;
+    opacity: 0.9;
+    color: white;
+}
+
+.exam-grade-header-actions {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.exam-grade-header-actions .btn {
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.exam-grade-header-actions .btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: white;
+}
+
+.ratio.ratio-16x9 {
+    max-height: 400px;
+}
+
+.ratio video {
+    max-height: 400px;
+    object-fit: contain;
+}
+</style>
+{% endblock %}
+
+{% block instructor_content %}
+<div class="exam-grade-header-modern">
+    <div class="exam-grade-header-content">
+        <div class="exam-grade-header-text">
+            <h1 class="exam-grade-header-title">Chấm điểm bài kiểm tra</h1>
+            <p class="exam-grade-header-subtitle mb-0">
+                {{ exam.exam_name }} • Học viên: {{ result.student.full_name }}
+            </p>
+        </div>
+        <div class="exam-grade-header-actions">
+            <a href="{{ url_for('instructor.exam_detail', exam_id=exam.exam_id) }}" class="btn btn-light btn-sm">
+                Quay lại
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                <h6 class="mb-3 fw-bold">Video học viên</h6>
+                <div class="ratio ratio-16x9 bg-black rounded">
+                    <video controls class="w-100 h-100">
+                        <source src="{{ get_video_url(video.video_url) }}" type="video/mp4">
+                        <p class="text-white text-center p-3">Trình duyệt không hỗ trợ video</p>
+                    </video>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">Nộp lúc: {{ result.submitted_at.strftime('%d/%m/%Y %H:%M') }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                <h6 class="mb-3 fw-bold">Video mẫu</h6>
+                {% if reference_video_url %}
+                <div class="alert alert-info mb-3 small">
+                    {{ video_source }}
+                </div>
+                <div class="ratio ratio-16x9 bg-black rounded">
+                    <video controls class="w-100 h-100">
+                        <source src="{{ get_video_url(reference_video_url) }}" type="video/mp4">
+                    </video>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <p class="text-muted mb-0 small">Chưa có video mẫu</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <h6 class="mb-3 fw-bold">Chấm điểm</h6>
+        
+        {% if ai_eval %}
+        <div class="alert alert-info mb-3">
+            <strong>Đánh giá AI:</strong> Điểm tổng: {{ ai_eval.overall_score }}/100
+            {% if ai_eval.technique_score %} • Kỹ thuật: {{ ai_eval.technique_score }}{% endif %}
+            {% if ai_eval.posture_score %} • Tư thế: {{ ai_eval.posture_score }}{% endif %}
+            {% if ai_eval.spirit_score %} • Tốc độ: {{ ai_eval.spirit_score }}{% endif %}
+        </div>
+        {% endif %}
+        
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            
+            {% if form.errors %}
+            <div class="alert alert-danger mb-3">
+                <strong>Có lỗi trong form:</strong>
+                <ul class="mb-0 mt-2">
+                    {% for field, errors in form.errors.items() %}
+                        {% for error in errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">{{ form.overall_score.label }}</label>
+                    {{ form.overall_score(class="form-control", placeholder="0-100") }}
+                    <small class="text-muted">Điểm đạt: {{ exam.pass_score }}%</small>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">{{ form.technique_score.label }}</label>
+                    {{ form.technique_score(class="form-control", placeholder="0-100") }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">{{ form.posture_score.label }}</label>
+                    {{ form.posture_score(class="form-control", placeholder="0-100") }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">{{ form.spirit_score.label }}</label>
+                    {{ form.spirit_score(class="form-control", placeholder="0-100") }}
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <label class="form-label fw-semibold">{{ form.strengths.label }}</label>
+                {{ form.strengths(class="form-control", rows=3, placeholder="Những điểm học viên làm tốt...") }}
+            </div>
+
+            <div class="mt-3">
+                <label class="form-label fw-semibold">{{ form.improvements_needed.label }}</label>
+                {{ form.improvements_needed(class="form-control", rows=3, placeholder="Những điểm cần luyện tập thêm...") }}
+            </div>
+
+            <div class="mt-3">
+                <label class="form-label fw-semibold">{{ form.comments.label }}</label>
+                {{ form.comments(class="form-control", rows=3, placeholder="Nhận xét tổng quan...") }}
+            </div>
+
+            <div class="form-check mt-3">
+                {{ form.is_passed(class="form-check-input", id="isPassed") }}
+                <label class="form-check-label fw-semibold" for="isPassed">{{ form.is_passed.label }}</label>
+            </div>
+            
+            <div class="mt-4 d-flex gap-2">
+                <a href="{{ url_for('instructor.exam_detail', exam_id=exam.exam_id) }}" class="btn btn-secondary">
+                    Hủy
+                </a>
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

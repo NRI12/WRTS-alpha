@@ -7,33 +7,33 @@
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
+<div class="container-fluid py-2">
     <!-- Page Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h3 mb-1">{{ class_obj.class_name }}</h1>
-            <p class="text-muted mb-0">{{ class_obj.class_code }}</p>
+    <div class="page-header-modern mb-3">
+        <div class="page-header-content">
+            <div class="page-header-text">
+                <h1 class="page-header-title">{{ class_obj.class_name }}</h1>
+                <p class="page-header-subtitle">{{ class_obj.class_code }}</p>
+            </div>
         </div>
-        <a href="{{ url_for('student.classes') }}" class="btn btn-outline-secondary">
-            Quay lại
-        </a>
+        <div class="page-header-actions">
+            <a href="{{ url_for('student.classes') }}" class="btn btn-light btn-sm">
+                Quay lại
+            </a>
+        </div>
     </div>
     
     <!-- Class Information -->
-    <div class="row g-4 mb-4">
+    <div class="row g-2 mb-2">
         <div class="col-md-8">
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-0 py-3">
-                    <h5 class="mb-0">
-                        <i class="fas fa-info-circle text-primary me-2"></i>
-                        Thông tin lớp học
-                    </h5>
+                <div class="card-header bg-white border-0 py-2">
+                    <h5 class="mb-0">Thông tin lớp học</h5>
                 </div>
                 <div class="card-body">
-                    <div class="row g-3">
+                    <div class="row g-2">
                         <div class="col-md-6">
                             <div class="student-info-item">
-                                <i class="fas fa-user-tie"></i>
                                 <div>
                                     <small class="text-muted d-block">Giảng viên</small>
                                     <strong>{{ class_obj.instructor.full_name }}</strong>
@@ -42,7 +42,6 @@
                         </div>
                         <div class="col-md-6">
                             <div class="student-info-item">
-                                <i class="fas fa-layer-group"></i>
                                 <div>
                                     <small class="text-muted d-block">Cấp độ</small>
                                     <span class="student-level-badge 
@@ -60,16 +59,14 @@
                         </div>
                         <div class="col-md-6">
                             <div class="student-info-item">
-                                <i class="fas fa-users"></i>
                                 <div>
                                     <small class="text-muted d-block">Học viên</small>
-                                    <strong>{{ class_obj.current_students }}/{{ class_obj.max_students }}</strong>
+                                    <strong>{{ class_obj.actual_students_count }}/{{ class_obj.max_students }}</strong>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="student-info-item">
-                                <i class="fas fa-calendar-alt"></i>
                                 <div>
                                     <small class="text-muted d-block">Thời gian</small>
                                     <strong>{{ class_obj.start_date.strftime('%d/%m/%Y') if class_obj.start_date else 'Chưa xác định' }}</strong>
@@ -90,11 +87,8 @@
         
         <div class="col-md-4">
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-0 py-3">
-                    <h5 class="mb-0">
-                        <i class="fas fa-chart-line text-success me-2"></i>
-                        Trạng thái
-                    </h5>
+                <div class="card-header bg-white border-0 py-2">
+                    <h5 class="mb-0">Trạng thái</h5>
                 </div>
                 <div class="card-body">
                     <div class="text-center">
@@ -111,7 +105,7 @@
                             {% elif enrollment.enrollment_status == 'dropped' %}Đã rời
                             {% endif %}
                         </span>
-                        <p class="text-muted mt-3 mb-0">
+                        <p class="text-muted mt-2 mb-0">
                             <small>Đăng ký: {{ enrollment.enrolled_at.strftime('%d/%m/%Y') }}</small>
                         </p>
                         {% if enrollment.completed_at %}
@@ -126,30 +120,24 @@
     </div>
     
     <!-- Schedules -->
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white border-0 py-3">
-            <h5 class="mb-0">
-                <i class="fas fa-calendar-week text-warning me-2"></i>
-                Lịch học ({{ schedules|length }})
-            </h5>
+    <div class="card border-0 shadow-sm mb-2">
+        <div class="card-header bg-white border-0 py-2">
+            <h5 class="mb-0">Lịch học ({{ schedules|length }})</h5>
         </div>
         <div class="card-body">
             {% if schedules %}
-                <div class="row g-3">
+                <div class="row g-2">
                     {% for s in schedules %}
                     <div class="col-md-6 col-lg-4">
                         <div class="student-schedule-item">
                             <div class="d-flex align-items-center mb-2">
-                                <i class="fas fa-calendar-day text-primary me-2"></i>
                                 <strong>{{ s.day_display }}</strong>
                             </div>
                             <div class="student-schedule-time">
                                 {{ s.time_start.strftime('%H:%M') }} - {{ s.time_end.strftime('%H:%M') }}
                             </div>
                             {% if s.location %}
-                            <small class="text-muted">
-                                <i class="fas fa-map-marker-alt me-1"></i>{{ s.location }}
-                            </small>
+                            <small class="text-muted">{{ s.location }}</small>
                             {% endif %}
                             {% if s.notes %}
                             <small class="d-block text-muted mt-1">{{ s.notes }}</small>
@@ -166,25 +154,22 @@
     
     <!-- Classmates -->
     <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white border-0 py-3">
-            <h5 class="mb-0">
-                <i class="fas fa-user-friends text-info me-2"></i>
-                Học viên cùng lớp ({{ classmates|length }})
-            </h5>
+        <div class="card-header bg-white border-0 py-2">
+            <h5 class="mb-0">Học viên cùng lớp ({{ classmates|length }})</h5>
         </div>
         <div class="card-body">
             {% if classmates %}
-                <div class="row g-3">
+                <div class="row g-2">
                     {% for cm in classmates %}
                     <div class="col-md-6 col-lg-4">
-                        <div class="d-flex align-items-center p-3 bg-light rounded">
+                        <div class="d-flex align-items-center p-2 bg-light rounded">
                             <div class="flex-shrink-0">
                                 <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
                                      style="width: 40px; height: 40px; font-weight: 600;">
                                     {{ cm.student.full_name[0]|upper }}
                                 </div>
                             </div>
-                            <div class="flex-grow-1 ms-3">
+                            <div class="flex-grow-1 ms-2">
                                 <strong class="d-block">{{ cm.student.full_name }}</strong>
                                 <small class="text-muted">Đăng ký: {{ cm.enrolled_at.strftime('%d/%m/%Y') }}</small>
                             </div>

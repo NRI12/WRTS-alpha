@@ -113,6 +113,13 @@ class ClassService:
         if not class_obj:
             return {'success': False, 'message': 'Không tìm thấy lớp học'}
 
+        if 'class_code' in data and data['class_code'] != class_obj.class_code:
+            existing = Class.query.filter_by(class_code=data['class_code']).first()
+            if existing and existing.class_id != class_id:
+                return {'success': False, 'message': 'Mã lớp đã tồn tại'}
+
+        if 'class_code' in data:
+            class_obj.class_code = data['class_code']
         class_obj.class_name = data['class_name']
         class_obj.description = data.get('description')
         class_obj.level = data['level']
@@ -163,7 +170,8 @@ class ClassService:
         if existing:
             return {'success': False, 'message': 'Học viên đã đăng ký lớp này'}
 
-        if class_obj.current_students >= class_obj.max_students:
+        current_count = ClassEnrollment.query.filter_by(class_id=class_id).count()
+        if current_count >= class_obj.max_students:
             return {'success': False, 'message': 'Lớp đã đầy'}
 
         new_schedules = ClassSchedule.query.filter_by(
@@ -224,6 +232,65 @@ class ClassService:
         db.session.add(enrollment)
         db.session.commit()
         return {'success': True, 'enrollment': enrollment}
+    
+    @staticmethod
+    def enroll_multiple_students(class_id: int, student_ids: list, notes: str | None = None):
+        class_obj = Class.query.get(class_id)
+        if not class_obj:
+            return {'success': False, 'message': 'Không tìm thấy lớp học', 'results': []}
+        
+        current_count = ClassEnrollment.query.filter_by(class_id=class_id).count()
+        available_slots = class_obj.max_students - current_count
+        
+        if available_slots <= 0:
+            return {'success': False, 'message': 'Lớp đã đầy', 'results': []}
+        
+        if len(student_ids) > available_slots:
+            return {
+                'success': False, 
+                'message': f'Chỉ còn {available_slots} chỗ trống, không thể thêm {len(student_ids)} học viên',
+                'results': []
+            }
+        
+        results = []
+        success_count = 0
+        failed_count = 0
+        
+        for student_id in student_ids:
+            if current_count >= class_obj.max_students:
+                results.append({
+                    'student_id': student_id,
+                    'success': False,
+                    'message': 'Lớp đã đầy'
+                })
+                failed_count += 1
+                continue
+            
+            result = ClassService.enroll_student(class_id, student_id, notes)
+            if result['success']:
+                current_count += 1
+                success_count += 1
+                results.append({
+                    'student_id': student_id,
+                    'success': True,
+                    'message': 'Thêm thành công'
+                })
+            else:
+                failed_count += 1
+                results.append({
+                    'student_id': student_id,
+                    'success': False,
+                    'message': result['message']
+                })
+        
+        return {
+            'success': success_count > 0,
+            'message': f'Đã thêm {success_count} học viên thành công' + (f', {failed_count} thất bại' if failed_count > 0 else ''),
+            'success_count': success_count,
+            'failed_count': failed_count,
+            'results': results
+        }
+    
     @staticmethod
     def remove_student(enrollment_id: int):
         enrollment = ClassEnrollment.query.get(enrollment_id)
@@ -279,3 +346,40 @@ class ClassService:
             return ScheduleService.format_schedules(class_obj.schedules)
         
         return "Chưa có lịch học"
+
+    @staticmethod
+    def get_enrollment_by_id(enrollment_id: int):
+        """Get enrollment by ID"""
+        return ClassEnrollment.query.get(enrollment_id)
+
+    @staticmethod
+    def verify_enrollment_access(enrollment_id: int, instructor_id: int):
+        """Verify if instructor has access to enrollment"""
+        enrollment = ClassEnrollment.query.get(enrollment_id)
+        if not enrollment:
+            return {'success': False, 'message': 'Không tìm thấy đăng ký', 'enrollment': None}
+        
+        if enrollment.class_obj.instructor_id != instructor_id:
+            return {'success': False, 'message': 'Bạn không có quyền thực hiện', 'enrollment': None}
+        
+        return {'success': True, 'enrollment': enrollment}
+
+    @staticmethod
+    def get_students_for_assignment_form(instructor_id: int):
+        """Get students and classes for assignment form population"""
+        instructor_classes = ClassService.get_approved_classes_by_instructor(instructor_id)
+        student_ids = set()
+        
+        for cls in instructor_classes:
+            enrollments = ClassEnrollment.query.filter_by(
+                class_id=cls.class_id, 
+                enrollment_status='active'
+            ).all()
+            student_ids.update([e.student_id for e in enrollments])
+        
+        students = User.query.filter(User.user_id.in_(student_ids)).all() if student_ids else []
+        
+        return {
+            'students': students,
+            'classes': instructor_classes
+        }

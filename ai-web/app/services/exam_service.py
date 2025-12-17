@@ -2,6 +2,7 @@ from app.models import db
 from app.models.exam import Exam
 from app.models.exam_result import ExamResult
 from app.models.class_enrollment import ClassEnrollment
+from app.models.class_model import Class
 from app.utils.helpers import get_vietnam_time, get_vietnam_time_naive, vietnam_to_utc
 from app.utils.storage_service import StorageService
 from datetime import datetime
@@ -155,6 +156,83 @@ class ExamService:
     @staticmethod
     def get_exam_by_id(exam_id: int):
         return Exam.query.get(exam_id)
+    
+    @staticmethod
+    def verify_exam_access(exam_id: int, instructor_id: int):
+        exam = Exam.query.get(exam_id)
+        if not exam:
+            return {'success': False, 'message': 'Không tìm thấy bài kiểm tra', 'exam': None}
+        if exam.instructor_id != instructor_id:
+            return {'success': False, 'message': 'Bạn không có quyền truy cập bài kiểm tra này', 'exam': None}
+        return {'success': True, 'exam': exam}
+    
+    @staticmethod
+    def get_edit_form_data(exam_id: int, instructor_id: int):
+        from app.services.routine_service import RoutineService
+        from app.services.class_service import ClassService
+        
+        access_result = ExamService.verify_exam_access(exam_id, instructor_id)
+        if not access_result['success']:
+            return access_result
+        
+        exam = access_result['exam']
+        
+        routines = RoutineService.get_routines_by_instructor(instructor_id, {'is_published': True})
+        classes = ClassService.get_classes_by_instructor(instructor_id)
+        
+        form_data = {
+            'exam': exam,
+            'routines': routines,
+            'classes': classes,
+            'video_source': exam.video_upload_method if exam.video_upload_method else 'routine',
+            'routine_id': exam.routine_id if exam.video_upload_method == 'routine' else None
+        }
+        
+        return {'success': True, **form_data}
+
+    @staticmethod
+    def update_exam(exam_id: int, data: dict, instructor_id: int, video_file=None):
+        exam = Exam.query.get(exam_id)
+        if not exam:
+            return {'success': False, 'message': 'Không tìm thấy bài kiểm tra'}
+        if exam.instructor_id != instructor_id:
+            return {'success': False, 'message': 'Bạn không có quyền sửa bài kiểm tra này'}
+        
+        if data['exam_code'] != exam.exam_code:
+            if Exam.query.filter_by(exam_code=data['exam_code']).first():
+                return {'success': False, 'message': 'Mã bài kiểm tra đã tồn tại'}
+        
+        try:
+            exam.exam_code = data['exam_code']
+            exam.exam_name = data['exam_name']
+            exam.description = data.get('description')
+            exam.class_id = data.get('class_id')
+            exam.exam_type = data['exam_type']
+            exam.start_time = data['start_time']
+            exam.end_time = data['end_time']
+            exam.pass_score = data.get('pass_score', exam.pass_score)
+            
+            if data['video_source'] == 'routine':
+                exam.video_upload_method = 'routine'
+                exam.routine_id = data.get('routine_id')
+                exam.reference_video_path = None
+                exam.video_duration = None
+            elif data['video_source'] == 'upload':
+                exam.video_upload_method = 'upload'
+                exam.routine_id = None
+                
+                if video_file:
+                    video_url, duration = ExamService._save_video_file(video_file, exam.exam_id)
+                    if video_url is None:
+                        return {'success': False, 'message': duration}
+                    exam.reference_video_path = video_url
+                    exam.video_duration = duration
+            
+            db.session.commit()
+            return {'success': True, 'exam': exam}
+        except Exception as e:
+            db.session.rollback()
+            return {'success': False, 'message': f'Lỗi khi cập nhật: {str(e)}'}
 
     @staticmethod
     def publish_exam(exam_id: int, instructor_id: int):
@@ -192,6 +270,68 @@ class ExamService:
     @staticmethod
     def get_exam_results(exam_id: int):
         return ExamResult.query.filter_by(exam_id=exam_id).order_by(ExamResult.submitted_at.desc()).all()
+    
+    @staticmethod
+    def get_exam_result_by_id(result_id: int):
+        return ExamResult.query.get(result_id)
+    
+    @staticmethod
+    def verify_exam_result_access(result_id: int, instructor_id: int):
+        result = ExamResult.query.get(result_id)
+        if not result:
+            return {'success': False, 'message': 'Không tìm thấy kết quả', 'result': None}
+        
+        exam = Exam.query.get(result.exam_id)
+        if not exam or exam.instructor_id != instructor_id:
+            return {'success': False, 'message': 'Bạn không có quyền truy cập kết quả này', 'result': None}
+        
+        return {'success': True, 'result': result, 'exam': exam}
+    
+    @staticmethod
+    def grade_exam_result(result_id: int, score: float, instructor_id: int):
+        access_result = ExamService.verify_exam_result_access(result_id, instructor_id)
+        if not access_result['success']:
+            return access_result
+        
+        result = access_result['result']
+        exam = access_result['exam']
+        
+        try:
+            result.score = score
+            result.graded_at = get_vietnam_time()
+            if score >= exam.pass_score:
+                result.result_status = 'passed'
+            else:
+                result.result_status = 'failed'
+            
+            db.session.commit()
+            return {'success': True, 'result': result}
+        except Exception as e:
+            db.session.rollback()
+            return {'success': False, 'message': f'Lỗi khi chấm điểm: {str(e)}'}
+    
+    @staticmethod
+    def grade_exam_result_from_evaluation(result_id: int, overall_score: float, instructor_id: int):
+        access_result = ExamService.verify_exam_result_access(result_id, instructor_id)
+        if not access_result['success']:
+            return access_result
+        
+        result = access_result['result']
+        exam = access_result['exam']
+        
+        try:
+            result.score = overall_score
+            result.graded_at = get_vietnam_time()
+            if overall_score >= exam.pass_score:
+                result.result_status = 'passed'
+            else:
+                result.result_status = 'failed'
+            
+            db.session.commit()
+            return {'success': True, 'result': result}
+        except Exception as e:
+            db.session.rollback()
+            return {'success': False, 'message': f'Lỗi khi cập nhật điểm: {str(e)}'}
 
     @staticmethod
     def get_exams_for_student(student_id: int):
@@ -320,4 +460,34 @@ class ExamService:
                 'success': False,
                 'message': f'Lỗi khi nộp bài: {str(e)}'
             }
+
+    @staticmethod
+    def get_form_prefill_data_for_class(class_id: int, instructor_id: int):
+        """Get pre-fill data for exam form when creating from class context"""
+        if not class_id:
+            return None
+        
+        class_obj = Class.query.get(class_id)
+        if not class_obj or class_obj.instructor_id != instructor_id:
+            return None
+        
+        return {
+            'class_id': class_id
+        }
+
+    @staticmethod
+    def get_upcoming_class_exams(class_id: int, limit: int = 3):
+        """Get upcoming exams for a class"""
+        from app.utils.helpers import get_vietnam_time_naive
+        now = get_vietnam_time_naive()
+        return Exam.query.filter_by(
+            class_id=class_id
+        ).filter(Exam.start_time > now).order_by(Exam.start_time.asc()).limit(limit).all()
+
+    @staticmethod
+    def get_recent_class_exams(class_id: int, limit: int = 3):
+        """Get recent exams for a class"""
+        return Exam.query.filter_by(
+            class_id=class_id
+        ).order_by(Exam.created_at.desc()).limit(limit).all()
 

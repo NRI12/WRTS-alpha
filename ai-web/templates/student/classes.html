@@ -69,7 +69,7 @@
                     </span>
                 </div>
                 <div class="student-info-item">
-                    <span><strong>Học viên:</strong> {{ e.class_obj.current_students }}/{{ e.class_obj.max_students }}</span>
+                    <span><strong>Học viên:</strong> {{ e.class_obj.actual_students_count }}/{{ e.class_obj.max_students }}</span>
                 </div>
                 <div class="student-info-item">
                     <span><strong>Đăng ký:</strong> {{ e.enrolled_at.strftime('%d/%m/%Y') }}</span>

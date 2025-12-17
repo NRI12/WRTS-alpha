@@ -34,12 +34,12 @@ class StorageService:
             region_name='auto'
         )
         
-        return s3_client, bucket_name
+        return s3_client, bucket_name, endpoint_url
     
     @staticmethod
     def upload_file(file, folder='uploads', filename=None):
         try:
-            s3_client, bucket_name = StorageService._get_s3_client()
+            s3_client, bucket_name, endpoint_url = StorageService._get_s3_client()
             
             if not filename:
                 original_filename = secure_filename(file.filename) if file.filename else 'file'
@@ -63,7 +63,7 @@ class StorageService:
                     }
                 )
                 
-                public_url = f"https://storage.railway.app/{bucket_name}/{s3_key}"
+                public_url = f"{endpoint_url.rstrip('/')}/{bucket_name}/{s3_key}"
                 
                 return public_url
             finally:
@@ -76,7 +76,7 @@ class StorageService:
     @staticmethod
     def upload_file_from_path(file_path, folder='uploads', filename=None):
         try:
-            s3_client, bucket_name = StorageService._get_s3_client()
+            s3_client, bucket_name, endpoint_url = StorageService._get_s3_client()
             
             if not os.path.exists(file_path):
                 raise FileNotFoundError(f"File not found: {file_path}")
@@ -106,7 +106,7 @@ class StorageService:
                 }
             )
             
-            public_url = f"https://storage.railway.app/{bucket_name}/{s3_key}"
+            public_url = f"{endpoint_url.rstrip('/')}/{bucket_name}/{s3_key}"
             
             return public_url
                     
@@ -116,7 +116,7 @@ class StorageService:
     @staticmethod
     def delete_file(file_url):
         try:
-            s3_client, bucket_name = StorageService._get_s3_client()
+            s3_client, bucket_name, _ = StorageService._get_s3_client()
             
             if bucket_name in file_url:
                 s3_key = file_url.split(f"{bucket_name}/", 1)[1]
@@ -137,7 +137,7 @@ class StorageService:
     @staticmethod
     def download_file_to_temp(file_url):
         try:
-            s3_client, bucket_name = StorageService._get_s3_client()
+            s3_client, bucket_name, _ = StorageService._get_s3_client()
             
             if bucket_name in file_url:
                 s3_key = file_url.split(f"{bucket_name}/", 1)[1]
@@ -158,7 +158,7 @@ class StorageService:
     @staticmethod
     def get_presigned_url(file_url, expiration=3600):
         try:
-            s3_client, bucket_name = StorageService._get_s3_client()
+            s3_client, bucket_name, _ = StorageService._get_s3_client()
             
             if bucket_name in file_url:
                 s3_key = file_url.split(f"{bucket_name}/", 1)[1]

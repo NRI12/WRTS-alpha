@@ -1,8 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, session
-from app.forms.video_forms import VideoFilterForm
 from app.services.video_service import VideoService
-from app.services.weapon_detection_service import WeaponDetectionService
-from app.models.martial_routine import MartialRoutine
 from functools import wraps
 
 student_videos_bp = Blueprint('student_videos', __name__, url_prefix='/student/videos')
@@ -28,51 +25,6 @@ def student_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-@student_videos_bp.route('/history')
-@student_required
-def history():
-    """Lịch sử nộp bài"""
-    filter_form = VideoFilterForm()
-    
-    # Load danh sách bài võ cho filter (dùng 0 cho "Tất cả")
-    routines = MartialRoutine.query.filter_by(is_published=True).all()
-    filter_form.routine_id.choices = [(0, 'Tất cả')] + [(r.routine_id, r.routine_name) for r in routines]
-    
-    # Set choices cho status
-    filter_form.status.choices = [
-        ('', 'Tất cả'),
-        ('pending', 'Đang xử lý'),
-        ('completed', 'Hoàn thành'),
-        ('failed', 'Thất bại')
-    ]
-    
-    # Lấy filter params
-    routine_id = request.args.get('routine_id', type=int)
-    status = request.args.get('status')
-    
-    # Nếu routine_id = 0 thì bỏ filter
-    if routine_id == 0:
-        routine_id = None
-    
-    # Nếu status = '' thì bỏ filter
-    if status == '':
-        status = None
-    
-    # Gán lại giá trị vào form để giữ trạng thái đã chọn
-    filter_form.routine_id.data = routine_id if routine_id is not None else 0
-    filter_form.status.data = status if status is not None else ''
-
-    # Lấy danh sách video
-    videos = VideoService.get_student_videos(
-        student_id=session.get('user_id'),
-        routine_id=routine_id,
-        status=status
-    )
-    
-    return render_template('student/video_history.html', 
-                         videos=videos, 
-                         filter_form=filter_form)
-
 @student_videos_bp.route('/result/<int:video_id>')
 @student_required
 def view_result(video_id):
@@ -94,17 +46,17 @@ def video_detail(video_id):
     
     if not result:
         flash('Video không tồn tại', 'danger')
-        return redirect(url_for('student_videos.history'))
+        return redirect(url_for('student.my_assignments'))
     
     video = result.get('video')
     
     # Kiểm tra quyền truy cập
     if video.student_id != session.get('user_id'):
         flash('Bạn không có quyền xem video này', 'danger')
-        return redirect(url_for('student_videos.history'))
+        return redirect(url_for('student.my_assignments'))
     
-    # Lấy video mẫu chuẩn
-    reference_video = video.routine.reference_video_url if video.routine else None
+    # Lấy video mẫu chuẩn: luôn dùng video demo giảng viên gắn với assignment
+    reference_video = video.assignment.instructor_video_url if video.assignment and video.assignment.instructor_video_url else None
     
     # Chuẩn bị dữ liệu cho template
     template_data = {

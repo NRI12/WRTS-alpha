@@ -43,34 +43,42 @@ class VideoService:
             except Exception as e:
                 raise Exception(f"Save file error: {repr(e)}")
             
+            file_size_bytes = os.path.getsize(temp_filepath)
+            file_size_mb = round(file_size_bytes / (1024 * 1024), 2)
+            
             try:
                 metadata = VideoService.extract_video_metadata(temp_filepath)
-                thumbnail_path = VideoService.generate_thumbnail(temp_filepath)
             except:
-                file_size_bytes = os.path.getsize(temp_filepath)
-                file_size_mb = round(file_size_bytes / (1024 * 1024), 2)
                 metadata = {
                     'duration_seconds': random.randint(30, 180),
                     'file_size_mb': file_size_mb,
                     'resolution': '1920x1080',
                     'fps': 30
                 }
-                thumbnail_path = None
             
             try:
-                file.seek(0)
-                video_url = StorageService.upload_file(file, folder='videos', filename=unique_filename)
+                video_url = StorageService.upload_file_from_path(temp_filepath, folder='videos', filename=unique_filename)
             except Exception as e:
                 raise Exception(f"Error uploading video to storage: {str(e)}")
             
+            thumbnail_path = None
+            try:
+                thumbnail_path = VideoService.generate_thumbnail(temp_filepath)
+            except:
+                pass
+            
             thumbnail_url = None
-            if thumbnail_path:
+            if thumbnail_path and os.path.exists(thumbnail_path):
                 try:
                     thumbnail_url = StorageService.upload_file_from_path(thumbnail_path, folder='thumbnails')
-                    if os.path.exists(thumbnail_path):
-                        os.remove(thumbnail_path)
                 except Exception as e:
                     print(f"Warning: Could not upload thumbnail: {str(e)}")
+                finally:
+                    try:
+                        if os.path.exists(thumbnail_path):
+                            os.remove(thumbnail_path)
+                    except:
+                        pass
             
             video = TrainingVideo(
                 student_id=student_id,

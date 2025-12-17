@@ -104,42 +104,38 @@
 {% endblock %}
 
 {% block instructor_content %}
-<div class="page-header-modern">
-    <div class="page-header-content">
-        <div class="page-header-icon">
-            <i class="fas fa-edit"></i>
-        </div>
-        <div class="page-header-text">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb mb-1">
-                    <li class="breadcrumb-item"><a href="{{ url_for('instructor.routines') }}">Bài võ</a></li>
-                    <li class="breadcrumb-item"><a href="{{ url_for('instructor.routine_detail', routine_id=routine.routine_id) }}">{{ routine.routine_name }}</a></li>
-                    <li class="breadcrumb-item active">Chỉnh sửa</li>
-                </ol>
-            </nav>
-            <h1 class="page-header-title">Chỉnh sửa bài võ</h1>
-            <p class="page-header-subtitle">
-                Cập nhật thông tin, video demo và cấu hình bài võ hiện có
+<div class="routine-header-modern">
+    <div class="routine-header-content">
+        <div class="routine-header-text">
+            <h1 class="routine-header-title">{{ routine.routine_name }}</h1>
+            <p class="routine-header-subtitle mb-0">
+                <span class="badge bg-primary me-2">{{ routine.routine_code }}</span>
+                <span class="badge bg-info me-2">{{ routine.weapon.weapon_name if routine.weapon else 'N/A' }}</span>
+                {% if routine.is_published %}
+                    <span class="badge bg-success">Đã xuất bản</span>
+                {% else %}
+                    <span class="badge bg-warning text-dark">Bản nháp</span>
+                {% endif %}
             </p>
         </div>
     </div>
 </div>
 
-<form method="POST" enctype="multipart/form-data">
+<form method="POST" enctype="multipart/form-data" id="routineEditForm">
     {{ form.hidden_tag() }}
     
-    <div class="row g-4">
+    <div class="row g-3">
         <div class="col-lg-8">
             <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white py-3">
-                    <h5 class="mb-0"><i class="fas fa-info-circle text-primary me-2"></i>Thông tin cơ bản</h5>
-                </div>
                 <div class="card-body">
+                    <h6 class="mb-3 fw-bold">Thông tin cơ bản</h6>
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Mã bài võ</label>
-                            {{ form.routine_code(class="form-control", readonly=true) }}
-                            <small class="form-text text-muted">Không thể thay đổi</small>
+                            <label class="form-label required">Mã bài võ</label>
+                            {{ form.routine_code(class="form-control") }}
+                            {% if form.routine_code.errors %}
+                            <div class="invalid-feedback d-block">{{ form.routine_code.errors[0] }}</div>
+                            {% endif %}
                         </div>
                         
                         <div class="col-md-6">
@@ -161,8 +157,8 @@
                         </div>
                         
                         <div class="col-md-4">
-                            <label class="form-label required">Thời lượng (giây)</label>
-                            {{ form.duration_seconds(class="form-control", type="number") }}
+                            <label class="form-label">Số động tác</label>
+                            {{ form.total_moves(class="form-control", type="number", min="1") }}
                         </div>
                         
                         <div class="col-12">
@@ -174,13 +170,10 @@
             </div>
             
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white py-3">
-                    <h5 class="mb-0"><i class="fas fa-video text-danger me-2"></i>Video demo</h5>
-                </div>
                 <div class="card-body">
+                    <h6 class="mb-3 fw-bold">Video demo</h6>
                     {% if routine.reference_video_url %}
                     <div class="alert alert-info mb-3">
-                        <i class="fas fa-check-circle me-2"></i>
                         Video hiện tại: <a href="{{ routine.reference_video_url }}" target="_blank">Xem video</a>
                     </div>
                     {% endif %}
@@ -213,7 +206,6 @@
                     </div>
                     
                     <div class="alert alert-warning">
-                        <i class="fas fa-info-circle me-2"></i>
                         <strong>Lưu ý:</strong> Nếu bạn upload file video mới, nó sẽ thay thế video hiện tại.
                     </div>
                 </div>
@@ -222,15 +214,8 @@
         
         <div class="col-lg-4">
             <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white py-3">
-                    <h5 class="mb-0"><i class="fas fa-cog text-success me-2"></i>Cài đặt</h5>
-                </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <label class="form-label">Số động tác</label>
-                        {{ form.total_moves(class="form-control", type="number", min="1") }}
-                    </div>
-                    
+                    <h6 class="mb-3 fw-bold">Cài đặt</h6>
                     <div class="mb-3">
                         <label class="form-label">Điểm đạt (0-100)</label>
                         {{ form.pass_threshold(class="form-control", type="number", step="0.01") }}
@@ -246,10 +231,8 @@
             </div>
             
             <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white py-3">
-                    <h5 class="mb-0"><i class="fas fa-chart-bar text-info me-2"></i>Thống kê</h5>
-                </div>
                 <div class="card-body">
+                    <h6 class="mb-3 fw-bold">Thống kê</h6>
                     
                     
                     <div class="mb-3">
@@ -266,13 +249,10 @@
             
             <div class="card border-0 shadow-sm bg-light">
                 <div class="card-body">
-                    <h6 class="mb-3">
-                        <i class="fas fa-link text-primary me-2"></i>
-                        Liên kết
-                    </h6>
+                    <h6 class="mb-3 fw-bold">Liên kết</h6>
                     <div class="d-grid gap-2">
                         <a href="{{ url_for('instructor.routine_detail', routine_id=routine.routine_id) }}" class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-eye me-1"></i>Xem chi tiết
+                            Xem chi tiết
                         </a>
                         
                     </div>
@@ -284,10 +264,10 @@
     <div class="card border-0 shadow-sm mt-4">
         <div class="card-body d-flex justify-content-between">
             <a href="{{ url_for('instructor.routine_detail', routine_id=routine.routine_id) }}" class="btn btn-secondary">
-                <i class="fas fa-times me-2"></i>Hủy
+                Hủy
             </a>
             <button type="submit" class="btn btn-primary btn-lg">
-                <i class="fas fa-save me-2"></i>Lưu thay đổi
+                Lưu thay đổi
             </button>
         </div>
     </div>
@@ -297,6 +277,77 @@
 .form-label.required::after {
     content: " *";
     color: #dc2626;
+}
+
+.routine-header-modern {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 1.75rem 2rem;
+    color: white;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.routine-header-modern::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.routine-header-modern::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -5%;
+    width: 200px;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 50%;
+}
+
+.routine-header-content {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    position: relative;
+    z-index: 1;
+}
+
+.routine-header-text {
+    position: relative;
+    z-index: 1;
+}
+
+.routine-header-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: white;
+}
+
+.routine-header-subtitle {
+    font-size: 0.95rem;
+    margin: 0.25rem 0 0 0;
+    opacity: 0.9;
+    color: white;
+}
+
+.routine-header-modern .badge {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white !important;
+    font-weight: 500;
 }
 </style>
 

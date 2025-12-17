@@ -23,7 +23,7 @@
         font-weight: 600;
     }
     .tab-content {
-        padding-top: 1.5rem;
+        padding-top: 0.75rem;
     }
     .video-header-info {
         display: flex;
@@ -36,52 +36,49 @@
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
+<div class="container-fluid py-2">
     {% set current_video = video if video else student_video %}
     
     <!-- Page Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h3 mb-1">{{ current_video.routine.routine_name }}</h1>
-            <div class="video-header-info">
-                <span class="badge bg-secondary">{{ current_video.routine.routine_code }}</span>
-                <span class="student-level-badge 
-                    {% if current_video.routine.level == 'beginner' %}student-level-beginner
-                    {% elif current_video.routine.level == 'intermediate' %}student-level-intermediate
-                    {% elif current_video.routine.level == 'advanced' %}student-level-advanced
-                    {% endif %}">
-                    {% if current_video.routine.level == 'beginner' %}Sơ cấp
-                    {% elif current_video.routine.level == 'intermediate' %}Trung cấp
-                    {% elif current_video.routine.level == 'advanced' %}Nâng cao
+    <div class="page-header-modern mb-3">
+        <div class="page-header-content">
+            <div class="page-header-text">
+                <h1 class="page-header-title">{{ current_video.routine.routine_name }}</h1>
+                <div class="d-flex flex-wrap gap-2 align-items-center mt-2">
+                    <span class="badge bg-secondary">{{ current_video.routine.routine_code }}</span>
+                    <span class="student-level-badge 
+                        {% if current_video.routine.level == 'beginner' %}student-level-beginner
+                        {% elif current_video.routine.level == 'intermediate' %}student-level-intermediate
+                        {% elif current_video.routine.level == 'advanced' %}student-level-advanced
+                        {% endif %}">
+                        {% if current_video.routine.level == 'beginner' %}Sơ cấp
+                        {% elif current_video.routine.level == 'intermediate' %}Trung cấp
+                        {% elif current_video.routine.level == 'advanced' %}Nâng cao
+                        {% endif %}
+                    </span>
+                    {% if current_video.assignment %}
+                    <span class="badge bg-primary">Bài tập</span>
                     {% endif %}
-                </span>
-                {% if current_video.routine.weapon %}
-                <span class="student-weapon-badge">
-                    <i class="fas fa-shield-alt me-1"></i>{{ current_video.routine.weapon.weapon_name }}
-                </span>
-                {% endif %}
-                {% if current_video.assignment %}
-                <span class="badge bg-primary">
-                    <i class="fas fa-tasks me-1"></i>Bài tập
-                </span>
-                {% endif %}
+                </div>
             </div>
         </div>
-        <a href="{{ url_for('student_videos.history') }}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left me-2"></i>Lịch sử
-        </a>
+        <div class="page-header-actions">
+            <a href="{{ url_for('student.my_assignments') }}" class="btn btn-light btn-sm">
+                Quay lại
+            </a>
+        </div>
     </div>
 
     <!-- Tabs Navigation -->
-    <ul class="nav nav-tabs mb-4" id="videoTabs" role="tablist">
+    <ul class="nav nav-tabs mb-2" id="videoTabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="result-tab" data-bs-toggle="tab" data-bs-target="#result" type="button" role="tab">
-                <i class="fas fa-star me-2"></i>Kết Quả Đánh Giá
+                Kết Quả Đánh Giá
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="compare-tab" data-bs-toggle="tab" data-bs-target="#compare" type="button" role="tab">
-                <i class="fas fa-columns me-2"></i>So Sánh Video
+                So Sánh Video
             </button>
         </li>
     </ul>
@@ -91,91 +88,75 @@
         <!-- Result Tab -->
         <div class="tab-pane fade show active" id="result" role="tabpanel">
             {% if video %}
-            <!-- Video Section -->
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white border-0 py-3">
-                    <h5 class="mb-0">
-                        <i class="fas fa-play-circle text-primary me-2"></i>
-                        Video Của Bạn
-                    </h5>
-                </div>
-                <div class="card-body p-0">
-                    <div class="ratio ratio-16x9">
-                        <video controls playsinline preload="metadata" style="object-fit: contain;">
-                            <source src="{{ get_video_url(video.video_url) }}" type="video/mp4">
-                        </video>
+            <!-- Video and Info Combined -->
+            <div class="row g-2 mb-2">
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white border-0 py-2">
+                            <h5 class="mb-0">Video Của Bạn</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="ratio ratio-16x9">
+                                <video controls playsinline preload="metadata" style="object-fit: contain;">
+                                    <source src="{{ get_video_url(video.video_url) }}" type="video/mp4">
+                                </video>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Video Info Grid -->
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white border-0 py-3">
-                    <h5 class="mb-0">
-                        <i class="fas fa-info-circle text-info me-2"></i>
-                        Thông Tin Video
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="student-info-grid">
-                        <div class="student-info-item">
-                            <i class="fas fa-calendar"></i>
-                            <div>
-                                <small class="text-muted d-block">Ngày upload</small>
-                                <strong>{{ video.uploaded_at.strftime('%d/%m/%Y %H:%M') }}</strong>
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white border-0 py-2">
+                            <h5 class="mb-0">Thông Tin Video</h5>
+                        </div>
+                        <div class="card-body p-3">
+                            <div class="student-info-grid">
+                                <div class="student-info-item">
+                                    <div>
+                                        <small class="text-muted d-block">Ngày upload</small>
+                                        <strong>{{ video.uploaded_at.strftime('%d/%m/%Y %H:%M') }}</strong>
+                                    </div>
+                                </div>
+                                <div class="student-info-item">
+                                    <div>
+                                        <small class="text-muted d-block">Thời lượng</small>
+                                        <strong>{{ (video.duration_seconds / 60)|round(1) }} phút</strong>
+                                    </div>
+                                </div>
+                                <div class="student-info-item">
+                                    <div>
+                                        <small class="text-muted d-block">Kích thước</small>
+                                        <strong>{{ video.file_size_mb }} MB</strong>
+                                    </div>
+                                </div>
+                                {% if video.detected_weapon %}
+                                <div class="student-info-item">
+                                    <div>
+                                        <small class="text-muted d-block">Binh khí nhận diện</small>
+                                        <strong><span class="badge bg-info">{{ video.detected_weapon }}</span></strong>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if video.processing_status %}
+                                <div class="student-info-item">
+                                    <div>
+                                        <small class="text-muted d-block">Trạng thái</small>
+                                        <strong>
+                                            {% if video.processing_status == 'completed' %}
+                                                <span class="badge bg-success">Hoàn thành</span>
+                                            {% elif video.processing_status == 'processing' %}
+                                                <span class="badge bg-info">Đang xử lý</span>
+                                            {% elif video.processing_status == 'pending' %}
+                                                <span class="badge bg-secondary">Chờ xử lý</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Thất bại</span>
+                                            {% endif %}
+                                        </strong>
+                                    </div>
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
-                        <div class="student-info-item">
-                            <i class="fas fa-clock"></i>
-                            <div>
-                                <small class="text-muted d-block">Thời lượng</small>
-                                <strong>{{ (video.duration_seconds / 60)|round(1) }} phút</strong>
-                            </div>
-                        </div>
-                        <div class="student-info-item">
-                            <i class="fas fa-hdd"></i>
-                            <div>
-                                <small class="text-muted d-block">Kích thước</small>
-                                <strong>{{ video.file_size_mb }} MB</strong>
-                            </div>
-                        </div>
-                        {% if video.detected_weapon %}
-                        <div class="student-info-item">
-                            <i class="fas fa-shield-alt"></i>
-                            <div>
-                                <small class="text-muted d-block">Binh khí nhận diện</small>
-                                <strong><span class="badge bg-info">{{ video.detected_weapon }}</span></strong>
-                            </div>
-                        </div>
-                        {% endif %}
-                        {% if video.assignment %}
-                        <div class="student-info-item">
-                            <i class="fas fa-tasks"></i>
-                            <div>
-                                <small class="text-muted d-block">Bài tập</small>
-                                <strong>{{ video.assignment.routine.routine_name }}</strong>
-                            </div>
-                        </div>
-                        {% endif %}
-                        {% if video.processing_status %}
-                        <div class="student-info-item">
-                            <i class="fas fa-cog"></i>
-                            <div>
-                                <small class="text-muted d-block">Trạng thái</small>
-                                <strong>
-                                    {% if video.processing_status == 'completed' %}
-                                        <span class="badge bg-success">Hoàn thành</span>
-                                    {% elif video.processing_status == 'processing' %}
-                                        <span class="badge bg-info">Đang xử lý</span>
-                                    {% elif video.processing_status == 'pending' %}
-                                        <span class="badge bg-secondary">Chờ xử lý</span>
-                                    {% else %}
-                                        <span class="badge bg-danger">Thất bại</span>
-                                    {% endif %}
-                                </strong>
-                            </div>
-                        </div>
-                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -183,34 +164,24 @@
             {% if manual_evaluations %}
             {% set evaluation = manual_evaluations[0] %}
             <!-- Scores and Evaluation Combined -->
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="fas fa-star text-warning me-2"></i>
-                        Kết Quả Đánh Giá
-                    </h5>
+            <div class="card border-0 shadow-sm mb-2">
+                <div class="card-header bg-white border-0 py-2 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Kết Quả Đánh Giá</h5>
                     <div>
                         {% if evaluation.evaluation_method == 'ai' %}
-                        <span class="badge bg-info">
-                            <i class="fas fa-robot me-1"></i>AI Tự Động
-                        </span>
+                        <span class="badge bg-info">AI Tự Động</span>
                         {% elif evaluation.evaluation_method == 'both' %}
-                        <span class="badge bg-primary">
-                            <i class="fas fa-user-robot me-1"></i>AI + Giảng Viên
-                        </span>
+                        <span class="badge bg-primary">AI + Giảng Viên</span>
                         {% else %}
-                        <span class="badge bg-secondary">
-                            <i class="fas fa-user me-1"></i>Giảng Viên Chấm
-                        </span>
+                        <span class="badge bg-secondary">Giảng Viên Chấm</span>
                         {% endif %}
                     </div>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-3">
                     <!-- Scores Grid -->
-                    <div class="row g-3 mb-4">
+                    <div class="row g-2 mb-3">
                         <div class="col-md-3 col-6">
                             <div class="text-center p-2 bg-light rounded">
-                                <i class="fas fa-star text-warning mb-1" style="font-size: 1.5rem;"></i>
                                 <div class="fw-bold fs-5">{{ evaluation.overall_score }}/100</div>
                                 <small class="text-muted">Điểm tổng</small>
                             </div>
@@ -218,7 +189,6 @@
                         {% if evaluation.technique_score %}
                         <div class="col-md-3 col-6">
                             <div class="text-center p-2 bg-light rounded">
-                                <i class="fas fa-wrench text-primary mb-1" style="font-size: 1.5rem;"></i>
                                 {% if evaluation.evaluation_method == 'ai' or evaluation.evaluation_method == 'both' %}
                                 <div class="fw-bold fs-5">{{ evaluation.technique_score }}/50</div>
                                 <small class="text-muted">Kỹ thuật (Độ chính xác)</small>
@@ -232,7 +202,6 @@
                         {% if evaluation.posture_score %}
                         <div class="col-md-3 col-6">
                             <div class="text-center p-2 bg-light rounded">
-                                <i class="fas fa-user-friends text-success mb-1" style="font-size: 1.5rem;"></i>
                                 {% if evaluation.evaluation_method == 'ai' or evaluation.evaluation_method == 'both' %}
                                 <div class="fw-bold fs-5">{{ evaluation.posture_score }}/20</div>
                                 <small class="text-muted">Tư thế (Ổn định)</small>
@@ -246,13 +215,12 @@
                         {% if evaluation.spirit_score %}
                         <div class="col-md-3 col-6">
                             <div class="text-center p-2 bg-light rounded">
-                                <i class="fas fa-heart text-danger mb-1" style="font-size: 1.5rem;"></i>
                                 {% if evaluation.evaluation_method == 'ai' or evaluation.evaluation_method == 'both' %}
                                 <div class="fw-bold fs-5">{{ evaluation.spirit_score }}/30</div>
-                                <small class="text-muted">Tinh thần (Tốc độ)</small>
+                                <small class="text-muted">Tốc độ</small>
                                 {% else %}
                                 <div class="fw-bold fs-5">{{ evaluation.spirit_score }}/100</div>
-                                <small class="text-muted">Tinh thần</small>
+                                <small class="text-muted">Tốc độ</small>
                                 {% endif %}
                             </div>
                         </div>
@@ -260,36 +228,27 @@
                     </div>
 
                     <!-- Evaluation Details Compact -->
-                    <div class="row g-3">
+                    <div class="row g-2">
                         {% if evaluation.strengths %}
                         <div class="col-lg-6">
-                            <div class="p-3 bg-light rounded">
-                                <h6 class="mb-2">
-                                    <i class="fas fa-thumbs-up text-success me-2"></i>
-                                    Điểm Mạnh
-                                </h6>
+                            <div class="p-2 bg-light rounded">
+                                <h6 class="mb-2">Điểm Mạnh</h6>
                                 <p class="mb-0 small" style="white-space: pre-wrap; line-height: 1.6;">{{ evaluation.strengths }}</p>
                             </div>
                         </div>
                         {% endif %}
                         {% if evaluation.improvements_needed %}
                         <div class="col-lg-6">
-                            <div class="p-3 bg-light rounded">
-                                <h6 class="mb-2">
-                                    <i class="fas fa-exclamation-triangle text-danger me-2"></i>
-                                    Cần Cải Thiện
-                                </h6>
+                            <div class="p-2 bg-light rounded">
+                                <h6 class="mb-2">Cần Cải Thiện</h6>
                                 <p class="mb-0 small" style="white-space: pre-wrap; line-height: 1.6;">{{ evaluation.improvements_needed }}</p>
                             </div>
                         </div>
                         {% endif %}
                         {% if evaluation.comments %}
                         <div class="col-12">
-                            <div class="p-3 bg-light rounded">
-                                <h6 class="mb-2">
-                                    <i class="fas fa-comment-alt text-primary me-2"></i>
-                                    Nhận Xét
-                                </h6>
+                            <div class="p-2 bg-light rounded">
+                                <h6 class="mb-2">Nhận Xét</h6>
                                 <p class="mb-0 small" style="white-space: pre-wrap; line-height: 1.6;">{{ evaluation.comments }}</p>
                             </div>
                         </div>
@@ -297,20 +256,8 @@
                     </div>
 
                     <!-- Evaluation Info Compact -->
-                    <div class="mt-3 pt-3 border-top">
-                        <div class="d-flex flex-wrap gap-3">
-                            <div>
-                                <small class="text-muted d-block">Phương thức</small>
-                                <strong>
-                                    {% if evaluation.evaluation_method == 'ai' %}
-                                        <span class="badge bg-info">AI Tự Động</span>
-                                    {% elif evaluation.evaluation_method == 'both' %}
-                                        <span class="badge bg-primary">AI + Giảng Viên</span>
-                                    {% else %}
-                                        <span class="badge bg-secondary">Giảng Viên</span>
-                                    {% endif %}
-                                </strong>
-                            </div>
+                    <div class="mt-2 pt-2 border-top">
+                        <div class="d-flex flex-wrap" style="gap: 2rem;">
                             <div>
                                 <small class="text-muted d-block">Ngày chấm</small>
                                 <strong>{{ evaluation.evaluated_at.strftime('%d/%m/%Y %H:%M') }}</strong>
@@ -330,14 +277,12 @@
                 </div>
             </div>
             {% else %}
-                <div class="alert alert-warning">
-                    <i class="fas fa-hourglass-half me-2"></i>
+                <div class="alert alert-warning mb-0">
                     Video chưa được giảng viên chấm điểm. Vui lòng chờ giảng viên đánh giá.
                 </div>
             {% endif %}
             {% else %}
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
+                <div class="alert alert-info mb-0">
                     Vui lòng chọn tab "So Sánh Video" để xem chi tiết.
                 </div>
             {% endif %}
@@ -346,26 +291,31 @@
         <!-- Compare Tab -->
         <div class="tab-pane fade" id="compare" role="tabpanel">
             {% if current_video %}
-            <div class="row g-4 mb-4">
+            <div class="row g-2 mb-2">
                 <div class="col-lg-6">
                     <div class="card border-0 shadow-sm h-100">
-                        <div class="card-header bg-white border-0 py-3">
-                            <h5 class="mb-0">
-                                <i class="fas fa-video text-info me-2"></i>
-                                Video Mẫu Chuẩn
-                            </h5>
+                        <div class="card-header bg-white border-0 py-2">
+                            <h5 class="mb-0">Video Mẫu Chuẩn</h5>
                         </div>
                         <div class="card-body p-0">
                             {% if reference_video %}
-                            <div class="ratio ratio-16x9">
-                                <video controls playsinline preload="metadata" style="object-fit: contain;">
-                                    <source src="{{ get_video_url(reference_video) }}" type="video/mp4">
-                                </video>
+                            {% set ref_url = reference_video %}
+                            {% if ref_url.startswith('http') and ('youtube.com' in ref_url or 'youtu.be' in ref_url) %}
+                            <div class="p-3 text-center">
+                                <a href="{{ ref_url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                    Mở video mẫu
+                                </a>
                             </div>
                             {% else %}
-                            <div class="p-4 text-center text-muted">
-                                <i class="fas fa-video-slash" style="font-size: 3rem; opacity: 0.3;"></i>
-                                <p class="mt-3 mb-0">Chưa có video mẫu</p>
+                            <div class="ratio ratio-16x9">
+                                <video controls playsinline preload="metadata" style="object-fit: contain;">
+                                    <source src="{{ ref_url }}" type="video/mp4">
+                                </video>
+                            </div>
+                            {% endif %}
+                            {% else %}
+                            <div class="p-3 text-center text-muted">
+                                <p class="mb-0">Chưa có video mẫu</p>
                             </div>
                             {% endif %}
                         </div>
@@ -373,11 +323,8 @@
                 </div>
                 <div class="col-lg-6">
                     <div class="card border-0 shadow-sm h-100">
-                        <div class="card-header bg-white border-0 py-3">
-                            <h5 class="mb-0">
-                                <i class="fas fa-user text-primary me-2"></i>
-                                Video Của Bạn
-                            </h5>
+                        <div class="card-header bg-white border-0 py-2">
+                            <h5 class="mb-0">Video Của Bạn</h5>
                         </div>
                         <div class="card-body p-0">
                             <div class="ratio ratio-16x9">
@@ -391,37 +338,30 @@
             </div>
 
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-0 py-3">
-                    <h5 class="mb-0">
-                        <i class="fas fa-info-circle text-secondary me-2"></i>
-                        Thông Tin Video
-                    </h5>
+                <div class="card-header bg-white border-0 py-2">
+                    <h5 class="mb-0">Thông Tin Video</h5>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-3">
                     <div class="student-info-grid">
                         <div class="student-info-item">
-                            <i class="fas fa-book-open"></i>
                             <div>
                                 <small class="text-muted d-block">Bài võ</small>
                                 <strong>{{ current_video.routine.routine_name }}</strong>
                             </div>
                         </div>
                         <div class="student-info-item">
-                            <i class="fas fa-clock"></i>
                             <div>
                                 <small class="text-muted d-block">Thời lượng</small>
                                 <strong>{{ (current_video.duration_seconds / 60)|round(1) }} phút</strong>
                             </div>
                         </div>
                         <div class="student-info-item">
-                            <i class="fas fa-hdd"></i>
                             <div>
                                 <small class="text-muted d-block">Kích thước</small>
                                 <strong>{{ current_video.file_size_mb }} MB</strong>
                             </div>
                         </div>
                         <div class="student-info-item">
-                            <i class="fas fa-calendar"></i>
                             <div>
                                 <small class="text-muted d-block">Ngày upload</small>
                                 <strong>{{ current_video.uploaded_at.strftime('%d/%m/%Y %H:%M') }}</strong>
@@ -431,8 +371,7 @@
                 </div>
             </div>
             {% else %}
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
+                <div class="alert alert-info mb-0">
                     Không có thông tin video để so sánh.
                 </div>
             {% endif %}

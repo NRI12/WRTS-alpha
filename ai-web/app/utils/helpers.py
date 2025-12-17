@@ -1,6 +1,7 @@
 from datetime import datetime, timezone, timedelta
 from markupsafe import Markup, escape
 from flask import url_for
+from app.utils.storage_service import StorageService
 
 def get_vietnam_time():
     """
@@ -52,36 +53,16 @@ def nl2br(value: str) -> Markup:
     return Markup(escaped.replace("\n", "<br>\n"))
 
 def get_video_url(video_url):
-    """Helper function để lấy video URL, tự động dùng presigned URL nếu là Railway storage URL"""
     if not video_url:
         return ""
-    
+
     if video_url.startswith('https://storage.railway.app'):
         try:
-            from app.utils.storage_service import StorageService
-            from flask import url_for, current_app
-            
-            # Ưu tiên dùng proxy route thay vì presigned URL trực tiếp
-            try:
-                s3_client, bucket_name = StorageService._get_s3_client()
-                if bucket_name in video_url:
-                    file_path = video_url.split(f"{bucket_name}/", 1)[1]
-                    proxy_url = url_for('shared.serve_storage_file', file_path=file_path, _external=True)
-                    return proxy_url
-            except Exception as e:
-                print(f"[get_video_url] Error getting proxy URL: {e}", flush=True)
-            
-            # Fallback: dùng presigned URL
-            try:
-                presigned_url = StorageService.get_presigned_url(video_url, expiration=3600)
-                return presigned_url
-            except Exception as e:
-                print(f"[get_video_url] Error getting presigned URL: {e}", flush=True)
-                return video_url
-        except Exception as e:
-            print(f"[get_video_url] Error: {e}", flush=True)
+            return StorageService.get_presigned_url(video_url)
+        except Exception:
             return video_url
-    elif video_url.startswith('/static/'):
+
+    if video_url.startswith('/static/'):
         return video_url
-    else:
-        return video_url
+
+    return video_url

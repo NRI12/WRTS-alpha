@@ -5,13 +5,13 @@ from app.models.class_enrollment import ClassEnrollment
 from app.models.class_model import Class
 from app.models.class_schedule import ClassSchedule
 from app.models.user import User
+from app.models import db
 from sqlalchemy import and_
 from app.services.routine_service import RoutineService
 from app.services.assignment_service import AssignmentService
 from app.services.exam_service import ExamService
 from app.services.video_service import VideoService
 from app.services.weapon_detection_service import WeaponDetectionService
-from app.services.analytics_service import AnalyticsService
 from werkzeug.utils import secure_filename
 import tempfile
 import os
@@ -77,15 +77,43 @@ def dashboard():
         elif now <= exam.end_time:
             exams_available += 1
 
-    # Assignments stats: only class assignments
-    assignments = AssignmentService.get_active_class_assignments_for_student(student_id)
+    # Assignments stats: get all assignments (individual + class) - same logic as my_assignments
+    from app.models.assignment import Assignment
     try:
         from app.models.training_video import TrainingVideo
+        from app.models.manual_evaluation import ManualEvaluation
+        from app.models.training_history import TrainingHistory
+        from sqlalchemy import func, case
+        from datetime import timedelta
     except Exception:
         TrainingVideo = None
+        ManualEvaluation = None
+        TrainingHistory = None
+    
+    # Get individual assignments
+    individual = Assignment.query.filter_by(
+        assigned_to_student=student_id,
+        assignment_type='individual'
+    ).all()
+    
+    # Get class assignments
+    enrollments = ClassEnrollment.query.filter_by(
+        student_id=student_id,
+        enrollment_status='active'
+    ).all()
+    class_ids = [e.class_id for e in enrollments]
+    
+    class_assignments = Assignment.query.filter(
+        Assignment.assigned_to_class.in_(class_ids),
+        Assignment.assignment_type == 'class'
+    ).all() if class_ids else []
+    
+    # Combine all assignments (don't filter expired - show all)
+    all_assignments = individual + class_assignments
+    
     assignments_pending = 0
     assignments_completed = 0
-    for a in assignments:
+    for a in all_assignments:
         submitted = None
         if TrainingVideo is not None:
             submitted = TrainingVideo.query.filter_by(
@@ -96,6 +124,58 @@ def dashboard():
             assignments_completed += 1
         else:
             assignments_pending += 1
+    
+    # Chart data: Score progression (30 days)
+    score_timeline_labels = []
+    score_timeline_values = []
+    if TrainingVideo is not None and ManualEvaluation is not None:
+        thirty_days_ago = today - timedelta(days=30)
+        
+        # Get all videos with evaluations in the last 30 days
+        # Join with ManualEvaluation to ensure we only get videos with scores
+        videos_with_scores = db.session.query(TrainingVideo, ManualEvaluation).join(
+            ManualEvaluation, TrainingVideo.video_id == ManualEvaluation.video_id
+        ).filter(
+            TrainingVideo.student_id == student_id,
+            TrainingVideo.uploaded_at >= thirty_days_ago
+        ).order_by(TrainingVideo.uploaded_at).all()
+        
+        # Group by date and calculate average score
+        from collections import defaultdict
+        daily_scores = defaultdict(list)
+        for video, evaluation in videos_with_scores:
+            if evaluation and evaluation.overall_score is not None:
+                date_str = video.uploaded_at.strftime('%d/%m')
+                score = float(evaluation.overall_score)
+                daily_scores[date_str].append(score)
+        
+        # Calculate average per day
+        if daily_scores:
+            for date_str in sorted(daily_scores.keys()):
+                scores = daily_scores[date_str]
+                if scores:
+                    avg_score = sum(scores) / len(scores)
+                    score_timeline_labels.append(date_str)
+                    score_timeline_values.append(round(avg_score, 1))
+    
+    # Chart data: Assignment status distribution
+    status_distribution_labels = ['Đã nộp', 'Chưa nộp']
+    status_distribution_values = [assignments_completed, assignments_pending]
+    
+    # Overall statistics
+    total_videos = 0
+    avg_score = 0.0
+    if TrainingVideo is not None:
+        total_videos = TrainingVideo.query.filter_by(student_id=student_id).count()
+        if ManualEvaluation is not None:
+            # Calculate average score from all manual evaluations
+            avg_result = db.session.query(func.avg(ManualEvaluation.overall_score)).join(
+                TrainingVideo, ManualEvaluation.video_id == TrainingVideo.video_id
+            ).filter(TrainingVideo.student_id == student_id).scalar()
+            if avg_result:
+                avg_score = round(float(avg_result), 1)
+    
+    total_assignments = assignments_pending + assignments_completed
 
     return render_template('student/dashboard.html',
                          active_classes=active_classes,
@@ -105,7 +185,14 @@ def dashboard():
                          exams_available=exams_available,
                          exams_completed=exams_completed,
                          assignments_pending=assignments_pending,
-                         assignments_completed=assignments_completed)
+                         assignments_completed=assignments_completed,
+                         score_timeline_labels=score_timeline_labels,
+                         score_timeline_values=score_timeline_values,
+                         status_distribution_labels=status_distribution_labels,
+                         status_distribution_values=status_distribution_values,
+                         total_videos=total_videos,
+                         avg_score=avg_score,
+                         total_assignments=total_assignments)
 
 
 @student_bp.route('/classes')
@@ -239,21 +326,47 @@ def routine_detail(routine_id: int):
 @login_required
 @role_required('STUDENT')
 def my_assignments():
-    # Use the new method that filters out expired assignments
-    assignments = AssignmentService.get_active_assignments_for_student(session['user_id'])
-    from datetime import datetime
+    # Get all assignments (including expired) so students can see what they missed
+    student_id = session['user_id']
+    
+    # Get individual assignments
+    from app.models.assignment import Assignment
+    from app.models.class_enrollment import ClassEnrollment
+    from app.models.training_video import TrainingVideo
+    
+    individual = Assignment.query.filter_by(
+        assigned_to_student=student_id,
+        assignment_type='individual'
+    ).all()
+    
+    # Get class assignments
+    enrollments = ClassEnrollment.query.filter_by(
+        student_id=student_id,
+        enrollment_status='active'
+    ).all()
+    class_ids = [e.class_id for e in enrollments]
+    
+    class_assignments = Assignment.query.filter(
+        Assignment.assigned_to_class.in_(class_ids),
+        Assignment.assignment_type == 'class'
+    ).all() if class_ids else []
+    
+    # Combine all assignments (don't filter expired - show all)
+    all_assignments = individual + class_assignments
+    
+    # Separate into pending and completed
     pending = []
     completed = []
-    for assignment in assignments:
-        from app.models.training_video import TrainingVideo
+    for assignment in all_assignments:
         submitted = TrainingVideo.query.filter_by(
-            student_id=session['user_id'],
+            student_id=student_id,
             assignment_id=assignment.assignment_id,
         ).first()
         if submitted:
             completed.append({'assignment': assignment, 'video': submitted})
         else:
             pending.append(assignment)
+    
     now = get_vietnam_time_naive()
     return render_template('student/my_assignments.html', pending=pending, completed=completed, now=now)
 
@@ -351,11 +464,20 @@ def my_exams():
     
     for exam in exams:
         results = ExamService.get_student_exam_result(exam.exam_id, session['user_id'])
+        attempts_used = len(results)
+        
+        # Check if can attempt: must be within time window AND have attempts left
+        can_attempt = (
+            attempts_used < exam.max_attempts and 
+            now >= exam.start_time and 
+            now <= exam.end_time
+        )
+        
         exam_info = {
             'exam': exam,
             'results': results,
-            'attempts_used': len(results),
-            'can_attempt': len(results) < exam.max_attempts and now < exam.end_time,
+            'attempts_used': attempts_used,
+            'can_attempt': can_attempt,
         }
         
         # Phân loại exam theo thời gian
@@ -363,10 +485,10 @@ def my_exams():
             # Chưa đến giờ thi
             upcoming.append(exam_info)
         elif now <= exam.end_time:
-            # Đang trong thời gian thi
+            # Đang trong thời gian thi (start_time <= now <= end_time)
             active.append(exam_info)
         else:
-            # Đã hết hạn thi
+            # Đã hết hạn thi (now > end_time)
             past.append(exam_info)
     
     return render_template('student/my_exams.html', 
@@ -375,111 +497,6 @@ def my_exams():
                          past=past, 
                          now=now)
 
-
-# ============ ANALYTICS & GOALS ============
-
-@student_bp.route('/analytics')
-@login_required
-@role_required('STUDENT')
-def analytics():
-    """Dashboard phân tích học viên"""
-    student_id = session['user_id']
-    
-    # Base analytics from service
-    overview = AnalyticsService.get_student_overview(student_id) or {}
-    score_list = AnalyticsService.get_score_progression(student_id, days=30) or []
-    completion_stats = AnalyticsService.get_routine_completion(student_id) or {}
-    strengths_raw = AnalyticsService.get_strengths_weaknesses(student_id) or {}
-
-    # Derive additional overview fields expected by template
-    try:
-        from app.models.training_video import TrainingVideo
-    except Exception:
-        TrainingVideo = None
-    
-    # avg_score preference: manual then AI
-    avg_score = overview.get('avg_manual_score') or overview.get('avg_ai_score') or 0
-    
-    routines_practiced = 0
-    practice_days = 0
-    if TrainingVideo is not None:
-        try:
-            from sqlalchemy import func
-            # distinct routines
-            routines_practiced = (
-                TrainingVideo.query
-                .with_entities(func.count(func.distinct(TrainingVideo.routine_id)))
-                .filter(TrainingVideo.student_id == student_id)
-                .scalar() or 0
-            )
-            # distinct practice days
-            distinct_days = (
-                TrainingVideo.query
-                .with_entities(func.date(TrainingVideo.uploaded_at))
-                .filter(TrainingVideo.student_id == student_id)
-                .distinct()
-                .all()
-            )
-            practice_days = len(distinct_days)
-        except Exception:
-            pass
-    
-    overview_mapped = {
-        **overview,
-        'avg_score': round(float(avg_score), 1) if isinstance(avg_score, (int, float)) else 0,
-        'routines_practiced': int(routines_practiced),
-        'practice_days': int(practice_days),
-    }
-    
-    # Build chart-friendly score data { dates: [...], scores: [...] }
-    dates = []
-    scores = []
-    for item in score_list:
-        score_val = item.get('manual_score') if item.get('manual_score') is not None else item.get('ai_score')
-        if score_val is not None:
-            dates.append(item.get('date'))
-            # Normalize to percentage-like scale if needed
-            scores.append(float(score_val))
-    score_chart = { 'dates': dates, 'scores': scores }
-    
-    # Map completion stats to the template's expected list items
-    completion_list = []
-    if completion_stats:
-        completion_list.append({
-            'routine_name': 'Tất cả bài võ',
-            'completion_rate': completion_stats.get('completion_rate', 0),
-            'completed': completion_stats.get('completed', 0),
-            'total': completion_stats.get('total_routines', 0),
-        })
-    
-    # Synthesize strengths/weaknesses lists from technique/posture/timing
-    sw_mapped = { 'strengths': [], 'weaknesses': [] }
-    if strengths_raw:
-        crits = [
-            { 'criteria_name': 'Kỹ thuật', 'key': 'technique', 'avg_score': strengths_raw.get('technique') },
-            { 'criteria_name': 'Tư thế', 'key': 'posture', 'avg_score': strengths_raw.get('posture') },
-            { 'criteria_name': 'Nhịp điệu', 'key': 'timing', 'avg_score': strengths_raw.get('timing') },
-        ]
-        for c in crits:
-            val = c.get('avg_score')
-            if val is None:
-                continue
-            entry = { 'criteria_name': c['criteria_name'], 'avg_score': round(float(val), 1) }
-            # Simple heuristic thresholds
-            if val >= 70:
-                sw_mapped['strengths'].append(entry)
-            elif val <= 50:
-                sw_mapped['weaknesses'].append(entry)
-    
-    return render_template(
-        'student/analytics.html',
-        overview=overview_mapped,
-        score_data=score_chart,
-        completion=completion_list,
-        strengths=sw_mapped
-    )
-
- 
 
 
 # ============ EXAM TAKING (THÊM MỚI) ============
@@ -613,46 +630,20 @@ def weapon_detect():
                             if detected_weapon is None:
                                 detected_weapon = 'Không xác định'
                             
-                            annotated_image_b64 = detection_result.get('annotated_image')
-                            annotated_video_b64 = detection_result.get('annotated_video')
+                            annotated_image_url = detection_result.get('annotated_image_url')
+                            annotated_video_url = detection_result.get('annotated_video_url')
                             
                             result_image_url = None
                             result_video_url = None
                             
                             if ext in ['jpg', 'jpeg', 'png']:
                                 file_type = 'image'
-                                if annotated_image_b64:
-                                    try:
-                                        import base64
-                                        image_bytes = base64.b64decode(annotated_image_b64)
-                                        result_image_path = temp_path.replace(f'.{ext}', f'_result.{ext}')
-                                        with open(result_image_path, 'wb') as f:
-                                            f.write(image_bytes)
-                                        
-                                        result_image_filename = f"{uuid.uuid4().hex}_result.{ext}"
-                                        result_image_url = StorageService.upload_file_from_path(result_image_path, folder='weapon_detect', filename=result_image_filename)
-                                        
-                                        if os.path.exists(result_image_path):
-                                            os.remove(result_image_path)
-                                    except Exception:
-                                        pass
+                                if annotated_image_url:
+                                    result_image_url = annotated_image_url
                             else:
                                 file_type = 'video'
-                                if annotated_video_b64:
-                                    try:
-                                        import base64
-                                        video_bytes = base64.b64decode(annotated_video_b64)
-                                        result_video_path = temp_path.replace(f'.{ext}', f'_result.{ext}')
-                                        with open(result_video_path, 'wb') as f:
-                                            f.write(video_bytes)
-                                        
-                                        result_video_filename = f"{uuid.uuid4().hex}_result.{ext}"
-                                        result_video_url = StorageService.upload_file_from_path(result_video_path, folder='weapon_detect', filename=result_video_filename)
-                                        
-                                        if os.path.exists(result_video_path):
-                                            os.remove(result_video_path)
-                                    except Exception:
-                                        pass
+                                if annotated_video_url:
+                                    result_video_url = annotated_video_url
                             
                             unique_filename = f"{uuid.uuid4().hex}.{ext}"
                             try:

@@ -142,40 +142,6 @@
         </ul>
     </li>
     <li class="nav-item">
-        <a href="{{ url_for('instructor.pending_evaluations') }}" class="nav-link {% if
-            request.endpoint.startswith('instructor.pending_evaluations') or
-            request.endpoint.startswith('instructor.evaluate_video')
-        %}active{% endif %}">
-            <i class="nav-icon fas fa-star"></i>
-            <p>Đánh giá</p>
-        </a>
-    </li>
-    <li class="nav-item has-treeview {% if
-            request.endpoint.startswith('instructor.analytics') or
-            request.endpoint.startswith('instructor.class_analytics') or
-            request.endpoint.startswith('instructor.report')
-        %}menu-open{% endif %}">
-        <a href="#" class="nav-link {% if
-            request.endpoint.startswith('instructor.analytics') or
-            request.endpoint.startswith('instructor.class_analytics') or
-            request.endpoint.startswith('instructor.report')
-        %}active{% endif %}">
-            <i class="nav-icon fas fa-chart-bar"></i>
-            <p>
-                Báo cáo
-                <i class="fas fa-angle-left right"></i>
-            </p>
-        </a>
-        <ul class="nav nav-treeview">
-            <li class="nav-item">
-                <a href="{{ url_for('instructor.analytics') }}" class="nav-link {% if request.endpoint == 'instructor.analytics' %}active{% endif %}">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>Phân tích tổng quan</p>
-                </a>
-            </li>
-        </ul>
-    </li>
-    <li class="nav-item">
         <a href="{{ url_for('auth.profile') }}" class="nav-link {% if
             request.endpoint.startswith('auth.profile') or
             request.endpoint.startswith('auth.edit_profile') or

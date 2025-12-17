@@ -1,0 +1,467 @@
+{% extends "base/instructor_base.html" %}
+
+{% block title %}Chỉnh sửa bài tập{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/instructor.css') }}" rel="stylesheet">
+<style>
+.form-label {
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.form-label.required::after {
+    content: " *";
+    color: #dc2626;
+}
+
+.form-control, .form-select {
+    border: 2px solid #e5e7eb;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.assignment-type-group {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.assignment-type-option {
+    flex: 1;
+    position: relative;
+}
+
+.assignment-type-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.assignment-type-option label {
+    display: block;
+    padding: 0.75rem 1rem;
+    text-align: center;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    background: white;
+    color: #6b7280;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 0;
+}
+
+.assignment-type-option label:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+    background: #eff6ff;
+}
+
+.assignment-type-option input[type="radio"]:checked + label {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.drag-drop-zone {
+    border: 2px dashed #d1d5db;
+    border-radius: 12px;
+    padding: 2.5rem;
+    text-align: center;
+    background: #f9fafb;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.drag-drop-zone:hover {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.drag-drop-zone.drag-over {
+    border-color: #3b82f6;
+    background: #dbeafe;
+    transform: scale(1.02);
+}
+
+.drag-drop-content {
+    transition: opacity 0.3s ease;
+}
+
+.drag-drop-zone.has-file .drag-drop-content {
+    display: none;
+}
+
+.drag-drop-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.preview-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.preview-info {
+    flex: 1;
+    text-align: left;
+}
+
+.preview-name {
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.25rem;
+    word-break: break-all;
+}
+
+.preview-size {
+    font-size: 0.875rem;
+}
+
+.remove-file {
+    padding: 0.5rem;
+}
+
+.assignment-header-modern {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 1.75rem 2rem;
+    color: white;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.assignment-header-modern::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.assignment-header-modern::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -5%;
+    width: 200px;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 50%;
+}
+
+.assignment-header-content {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    position: relative;
+    z-index: 1;
+}
+
+.assignment-header-text {
+    position: relative;
+    z-index: 1;
+}
+
+.assignment-header-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: white;
+}
+
+.assignment-header-subtitle {
+    font-size: 0.95rem;
+    margin: 0.25rem 0 0 0;
+    opacity: 0.9;
+    color: white;
+}
+</style>
+{% endblock %}
+
+{% block instructor_content %}
+<div class="assignment-header-modern">
+    <div class="assignment-header-content">
+        <div class="assignment-header-text">
+            <h1 class="assignment-header-title">{{ assignment.routine.routine_name }}</h1>
+            <p class="assignment-header-subtitle mb-0">
+                {% if assignment.assignment_type == 'individual' %}
+                <span class="badge bg-info me-2">Cá nhân</span>
+                {% else %}
+                <span class="badge bg-primary me-2">Lớp học</span>
+                {% endif %}
+                {% if assignment.is_mandatory %}
+                <span class="badge bg-danger me-2">Bắt buộc</span>
+                {% endif %}
+            </p>
+        </div>
+    </div>
+</div>
+
+<form method="POST" id="assignmentEditForm" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+    
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h6 class="mb-3 fw-bold">Thông tin cơ bản</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label required">Bài võ</label>
+                            {{ form.routine_id(class="form-select") }}
+                            {% if form.routine_id.errors %}
+                            <div class="invalid-feedback d-block">{{ form.routine_id.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label required">Loại bài tập</label>
+                            <div class="assignment-type-group">
+                                <div class="assignment-type-option">
+                                    <input type="radio" name="assignment_type" id="typeIndividual" value="individual" {% if form.assignment_type.data == 'individual' or assignment.assignment_type == 'individual' %}checked{% endif %}>
+                                    <label for="typeIndividual">Cá nhân</label>
+                                </div>
+                                <div class="assignment-type-option">
+                                    <input type="radio" name="assignment_type" id="typeClass" value="class" {% if form.assignment_type.data == 'class' or assignment.assignment_type == 'class' %}checked{% endif %}>
+                                    <label for="typeClass">Lớp học</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12" id="individualSelect" {% if form.assignment_type.data == 'class' or (not form.assignment_type.data and assignment.assignment_type == 'class') %}style="display:none;"{% endif %}>
+                            <label class="form-label required">Học viên</label>
+                            {{ form.assigned_to_student(class="form-select") }}
+                            {% if form.assigned_to_student.errors %}
+                            <div class="invalid-feedback d-block">{{ form.assigned_to_student.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-12" id="classSelect" {% if form.assignment_type.data == 'individual' or (not form.assignment_type.data and assignment.assignment_type == 'individual') %}style="display:none;"{% endif %}>
+                            <label class="form-label required">Lớp học</label>
+                            {{ form.assigned_to_class(class="form-select") }}
+                            {% if form.assigned_to_class.errors %}
+                            <div class="invalid-feedback d-block">{{ form.assigned_to_class.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Hướng dẫn</label>
+                            {{ form.instructions(class="form-control", rows="5") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="mb-3 fw-bold">Video demo</h6>
+                    {% if assignment.instructor_video_url %}
+                    <div class="alert alert-info mb-3">
+                        Video hiện tại: <a href="{{ assignment.instructor_video_url }}" target="_blank">Xem video</a>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Upload video mới</label>
+                        <div class="drag-drop-zone" id="assignmentEditVideoUploadZone">
+                            <input type="file" name="instructor_video_file" id="instructor_video_file" class="d-none" accept="video/*">
+                            <div class="drag-drop-content">
+                                <div class="drag-drop-icon"></div>
+                                <h5 class="drag-drop-title">Kéo thả video vào đây</h5>
+                                <p class="drag-drop-text">hoặc <span class="text-primary">click để chọn file</span></p>
+                                <small class="text-muted">MP4, AVI, MOV, MKV - Tối đa 100MB</small>
+                            </div>
+                            <div class="drag-drop-preview" style="display: none;">
+                                <div class="preview-content">
+                                    <div class="preview-info">
+                                        <div class="preview-name"></div>
+                                        <div class="preview-size text-muted"></div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-danger remove-file">
+                                        Xóa
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <strong>Lưu ý:</strong> Nếu bạn upload file video mới, nó sẽ thay thế video hiện tại.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h6 class="mb-3 fw-bold">Cài đặt</h6>
+                    <div class="mb-3">
+                        <label class="form-label">Deadline</label>
+                        {{ form.deadline(class="form-control", type="datetime-local") }}
+                        {% if form.deadline.errors %}
+                        <div class="invalid-feedback d-block">{{ form.deadline.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required">Độ ưu tiên</label>
+                        {{ form.priority(class="form-select") }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required">Phương thức chấm điểm</label>
+                        {{ form.grading_method(class="form-select") }}
+                    </div>
+                    <div class="form-check form-switch">
+                        {{ form.is_mandatory(class="form-check-input") }}
+                        <label class="form-check-label" for="is_mandatory">
+                            Bắt buộc hoàn thành
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h6 class="mb-3 fw-bold">Thống kê</h6>
+                    <div class="mb-3">
+                        <label class="text-muted small">Ngày tạo</label>
+                        <div>{{ assignment.created_at.strftime('%d/%m/%Y') }}</div>
+                    </div>
+                    <div>
+                        <label class="text-muted small">Cập nhật lần cuối</label>
+                        <div>{{ assignment.updated_at.strftime('%d/%m/%Y %H:%M') if assignment.updated_at else 'N/A' }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body">
+                    <h6 class="mb-3 fw-bold">Liên kết</h6>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('instructor.assignment_detail', assignment_id=assignment.assignment_id) }}" class="btn btn-sm btn-outline-primary">
+                            Xem chi tiết
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-body d-flex justify-content-between">
+            <a href="{{ url_for('instructor.assignment_detail', assignment_id=assignment.assignment_id) }}" class="btn btn-secondary">
+                Hủy
+            </a>
+            <button type="submit" class="btn btn-primary btn-lg">
+                Lưu thay đổi
+            </button>
+        </div>
+    </div>
+</form>
+
+<script>
+document.querySelectorAll('input[name="assignment_type"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        if (this.value === 'individual') {
+            document.getElementById('individualSelect').style.display = 'block';
+            document.getElementById('classSelect').style.display = 'none';
+        } else {
+            document.getElementById('individualSelect').style.display = 'none';
+            document.getElementById('classSelect').style.display = 'block';
+        }
+    });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    initDragDrop('assignmentEditVideoUploadZone', 'instructor_video_file', 100 * 1024 * 1024);
+});
+
+function initDragDrop(zoneId, inputId, maxSize) {
+    const zone = document.getElementById(zoneId);
+    if (!zone) return;
+    
+    const input = document.getElementById(inputId);
+    const preview = zone.querySelector('.drag-drop-preview');
+    const content = zone.querySelector('.drag-drop-content');
+    const previewName = preview.querySelector('.preview-name');
+    const previewSize = preview.querySelector('.preview-size');
+    const removeBtn = preview.querySelector('.remove-file');
+    
+    const maxSizeMB = maxSize / (1024 * 1024);
+    
+    zone.addEventListener('click', () => input.click());
+    
+    zone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        zone.classList.add('drag-over');
+    });
+    
+    zone.addEventListener('dragleave', () => {
+        zone.classList.remove('drag-over');
+    });
+    
+    zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('drag-over');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFile(files[0]);
+        }
+    });
+    
+    input.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleFile(e.target.files[0]);
+        }
+    });
+    
+    removeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        input.value = '';
+        zone.classList.remove('has-file');
+        preview.style.display = 'none';
+        content.style.display = 'block';
+    });
+    
+    function handleFile(file) {
+        if (file.size > maxSize) {
+            alert(`File video quá lớn! Vui lòng chọn file nhỏ hơn ${maxSizeMB}MB.`);
+            return;
+        }
+        
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        previewName.textContent = file.name;
+        previewSize.textContent = `${sizeMB} MB`;
+        
+        zone.classList.add('has-file');
+        preview.style.display = 'flex';
+        content.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}
+

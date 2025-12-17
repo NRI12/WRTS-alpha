@@ -5,16 +5,7 @@
 {% block instructor_content %}
 <div class="page-header-modern">
     <div class="page-header-content">
-        <div class="page-header-icon">
-            <i class="fas fa-plus-circle"></i>
-        </div>
         <div class="page-header-text">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb mb-1">
-                    <li class="breadcrumb-item"><a href="{{ url_for('instructor.my_proposals') }}">Đề xuất</a></li>
-                    <li class="breadcrumb-item active">Tạo đề xuất</li>
-                </ol>
-            </nav>
             <h1 class="page-header-title">Đề xuất lớp học mới</h1>
             <p class="page-header-subtitle">Gửi đề xuất mở lớp học mới cho quản lý phê duyệt</p>
         </div>
@@ -65,10 +56,10 @@
 
             <div class="mt-4 d-flex gap-2">
                 <a href="{{ url_for('instructor.my_proposals') }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-2"></i>Quay lại
+                    Quay lại
                 </a>
                 <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-paper-plane me-2"></i>Gửi đề xuất
+                    Gửi đề xuất
                 </button>
             </div>
         </form>

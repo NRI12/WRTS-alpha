@@ -2,9 +2,6 @@
 
 {% block title %}Dashboard Học Viên{% endblock %}
 
-{% block page_title %}Dashboard Học Viên{% endblock %}
-{% block breadcrumb_active %}Dashboard{% endblock %}
-
 {% block extra_css %}
 <link href="{{ url_for('static', filename='css/student.css') }}" rel="stylesheet">
 {% endblock %}
@@ -22,8 +19,8 @@
             </div>
         </div>
         <div class="page-header-actions">
-            <a href="{{ url_for('student_videos.history') }}" class="btn btn-light btn-sm">
-                <i class="fas fa-chart-line me-2"></i>Kết quả
+            <a href="{{ url_for('student.my_assignments') }}" class="btn btn-light btn-sm">
+                Bài tập
             </a>
         </div>
     </div>
@@ -79,6 +76,94 @@
         </div>
     </div>
     
+    <!-- Statistics Overview Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-1">Tổng video đã nộp</h6>
+                            <h3 class="mb-0 fw-bold" style="color: #667eea;">{{ total_videos }}</h3>
+                        </div>
+                        <i class="fas fa-video text-primary" style="font-size: 2rem; opacity: 0.3;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-1">Điểm trung bình</h6>
+                            <h3 class="mb-0 fw-bold" style="color: #10b981;">{{ avg_score }}{% if avg_score > 0 %}<small class="text-muted" style="font-size: 0.6em;">/100</small>{% endif %}</h3>
+                        </div>
+                        <i class="fas fa-star text-success" style="font-size: 2rem; opacity: 0.3;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-1">Tỷ lệ hoàn thành</h6>
+                            <h3 class="mb-0 fw-bold" style="color: #f59e0b;">
+                                {% if total_assignments > 0 %}
+                                    {{ "%.0f"|format((assignments_completed / total_assignments * 100)|float) }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </h3>
+                        </div>
+                        <i class="fas fa-check-circle text-warning" style="font-size: 2rem; opacity: 0.3;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Section -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="mb-3 fw-bold">Xu hướng điểm số (30 ngày qua)</h6>
+                    {% if score_timeline_labels and score_timeline_labels|length > 0 %}
+                    <div style="position: relative; height: 300px;">
+                        <canvas id="scoreTimelineChart"></canvas>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-chart-line text-muted" style="font-size: 3rem; opacity: 0.3;"></i>
+                        <p class="text-muted mt-3 mb-0">Chưa có dữ liệu điểm số trong 30 ngày qua</p>
+                        <small class="text-muted">Nộp bài tập và được chấm điểm để xem biểu đồ</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="mb-3 fw-bold">Phân bố trạng thái bài tập</h6>
+                    {% if total_assignments > 0 %}
+                    <div style="position: relative; height: 300px;">
+                        <canvas id="statusDistributionChart"></canvas>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-chart-pie text-muted" style="font-size: 3rem; opacity: 0.3;"></i>
+                        <p class="text-muted mt-3 mb-0">Chưa có bài tập nào</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Today's Schedule -->
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white border-0 py-3">
@@ -124,4 +209,140 @@
 
 {% block extra_js %}
 <script src="{{ url_for('static', filename='js/student.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Score Timeline Chart
+    const scoreTimelineCtx = document.getElementById('scoreTimelineChart');
+    const scoreLabels = {{ score_timeline_labels | tojson }};
+    const scoreValues = {{ score_timeline_values | tojson }};
+    if (scoreTimelineCtx && scoreLabels && scoreLabels.length > 0) {
+        new Chart(scoreTimelineCtx, {
+            type: 'line',
+            data: {
+                labels: scoreLabels,
+                datasets: [{
+                    label: 'Điểm trung bình',
+                    data: scoreValues,
+                    borderColor: 'rgb(102, 126, 234)',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: 'rgb(102, 126, 234)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    spanGaps: true
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        titleFont: {
+                            size: 14,
+                            weight: 'bold'
+                        },
+                        bodyFont: {
+                            size: 13
+                        },
+                        callbacks: {
+                            label: function(context) {
+                                if (context.parsed.y === null) {
+                                    return 'Chưa có dữ liệu';
+                                }
+                                return 'Điểm TB: ' + context.parsed.y + ' điểm';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        min: 0,
+                        max: 100,
+                        ticks: {
+                            stepSize: 10,
+                            callback: function(value) {
+                                return value + ' điểm';
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Status Distribution Chart
+    const statusDistributionCtx = document.getElementById('statusDistributionChart');
+    if (statusDistributionCtx && {{ total_assignments }} > 0) {
+        new Chart(statusDistributionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ status_distribution_labels | tojson }},
+                datasets: [{
+                    data: {{ status_distribution_values | tojson }},
+                    backgroundColor: [
+                        'rgba(16, 185, 129, 0.8)',
+                        'rgba(245, 158, 11, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgb(16, 185, 129)',
+                        'rgb(245, 158, 11)'
+                    ],
+                    borderWidth: 2,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            usePointStyle: true,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return label + ': ' + value + ' (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

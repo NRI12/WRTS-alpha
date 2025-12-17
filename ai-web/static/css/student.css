@@ -133,20 +133,14 @@
 .student-info-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    margin-top: 1rem;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
 }
 
 .student-info-item {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
     font-size: 0.95rem;
-}
-
-.student-info-item i {
-    color: #667eea;
-    width: 20px;
 }
 
 .student-level-badge {
@@ -204,27 +198,62 @@
     display: block;
 }
 
-.student-filter-select {
+.student-routine-filter-select {
     border: 2px solid #dee2e6;
     border-radius: 8px;
     padding: 0.5rem 1rem;
     font-size: 0.95rem;
     transition: all 0.3s ease;
     background-color: #ffffff !important;
-    color: #212529 !important; /* ensure readable text */
+    background-image: none !important;
+    color: #212529 !important;
     -webkit-text-fill-color: #212529 !important; /* Safari */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
 }
 
-.student-filter-select:focus {
+.student-routine-filter-select:focus {
     border-color: #667eea;
     box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
     outline: none;
+    background-color: #ffffff !important;
+    color: #212529 !important;
+    -webkit-text-fill-color: #212529 !important;
+}
+
+.student-routine-filter-select:hover {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+    -webkit-text-fill-color: #212529 !important;
 }
 
 /* Ensure options are visible on all themes */
-.student-filter-select option {
+.student-routine-filter-select option {
     background-color: #ffffff !important;
     color: #212529 !important;
+    padding: 0.5rem;
+    -webkit-text-fill-color: #212529 !important;
+}
+
+.student-routine-filter-select option[value]:not([value=""]) {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+    -webkit-text-fill-color: #212529 !important;
+}
+
+.student-routine-filter-select option:checked,
+.student-routine-filter-select option:selected {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+    -webkit-text-fill-color: #212529 !important;
+}
+
+/* Force text color for all options in the dropdown */
+select.student-routine-filter-select option {
+    color: #212529 !important;
+    background-color: #ffffff !important;
+    -webkit-text-fill-color: #212529 !important;
 }
 
 .student-weapon-badge {

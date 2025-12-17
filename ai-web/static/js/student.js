@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
      * Auto-submit filter form on change
      */
     function initFilterAutoSubmit() {
-        const filterSelects = document.querySelectorAll('.student-filter-select');
+        const filterSelects = document.querySelectorAll('.student-routine-filter-select');
         filterSelects.forEach(select => {
             select.addEventListener('change', function() {
                 this.closest('form').submit();

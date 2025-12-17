@@ -104,14 +104,11 @@
 {% endblock %}
 
 {% block instructor_content %}
-<div class="page-header-modern">
-    <div class="page-header-content">
-        <div class="page-header-icon">
-            <i class="fas fa-plus-circle"></i>
-        </div>
-        <div class="page-header-text">
-            <h1 class="page-header-title">Tạo bài võ mới</h1>
-            <p class="page-header-subtitle">Thêm bài võ mới vào hệ thống</p>
+<div class="routine-header-modern">
+    <div class="routine-header-content">
+        <div class="routine-header-text">
+            <h1 class="routine-header-title">Tạo bài võ mới</h1>
+            <p class="routine-header-subtitle mb-0">Thêm bài võ mới vào hệ thống</p>
         </div>
     </div>
 </div>
@@ -119,7 +116,7 @@
 <!-- Form Errors Display -->
 {% if form.errors %}
 <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-    <h5 class="alert-heading"><i class="fas fa-exclamation-circle me-2"></i>Có lỗi xảy ra!</h5>
+    <h5 class="alert-heading">Có lỗi xảy ra!</h5>
     <ul class="mb-0">
         {% for field, errors in form.errors.items() %}
             {% for error in errors %}
@@ -162,13 +159,8 @@
     <!-- Step 1: Basic Info -->
     <div class="form-step active" id="step1">
         <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-0 py-3">
-                <h5 class="mb-0">
-                    <i class="fas fa-info-circle text-primary me-2"></i>
-                    Bước 1: Thông tin cơ bản
-                </h5>
-            </div>
             <div class="card-body">
+                <h6 class="mb-3 fw-bold">Bước 1: Thông tin cơ bản</h6>
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label required">Mã bài võ</label>
@@ -200,22 +192,12 @@
                         {% endif %}
                     </div>
                     
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <label class="form-label required">Vũ khí</label>
                         {{ form.weapon_id(class="form-select") }}
                         {% if form.weapon_id.errors %}
                         <div class="invalid-feedback d-block">
                             {{ form.weapon_id.errors[0] }}
-                        </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="col-md-4">
-                        <label class="form-label required">Thời lượng (giây)</label>
-                        {{ form.duration_seconds(class="form-control", type="number", min="1", max="3600", placeholder="120") }}
-                        {% if form.duration_seconds.errors %}
-                        <div class="invalid-feedback d-block">
-                            {{ form.duration_seconds.errors[0] }}
                         </div>
                         {% endif %}
                     </div>
@@ -238,7 +220,7 @@
             </div>
             <div class="card-footer bg-white border-0 py-3">
                 <button type="button" class="btn btn-primary" onclick="nextStep(2)">
-                    Tiếp theo <i class="fas fa-arrow-right ms-2"></i>
+                    Tiếp theo
                 </button>
             </div>
         </div>
@@ -247,13 +229,8 @@
     <!-- Step 2: Video Demo -->
     <div class="form-step" id="step2">
         <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-0 py-3">
-                <h5 class="mb-0">
-                    <i class="fas fa-video text-danger me-2"></i>
-                    Bước 2: Video demo
-                </h5>
-            </div>
             <div class="card-body">
+                <h6 class="mb-3 fw-bold">Bước 2: Video demo</h6>
                 <div class="row g-3">
                     <div class="col-12">
                         <label class="form-label">Upload Video</label>
@@ -261,7 +238,6 @@
                             <input type="file" name="reference_video_file" id="reference_video_file" class="d-none" accept="video/*">
                             <div class="drag-drop-content">
                                 <div class="drag-drop-icon">
-                                    <i class="fas fa-cloud-upload-alt"></i>
                                 </div>
                                 <h5 class="drag-drop-title">Kéo thả video vào đây</h5>
                                 <p class="drag-drop-text">hoặc <span class="text-primary">click để chọn file</span></p>
@@ -269,13 +245,12 @@
                             </div>
                             <div class="drag-drop-preview" style="display: none;">
                                 <div class="preview-content">
-                                    <i class="fas fa-file-video text-primary"></i>
                                     <div class="preview-info">
                                         <div class="preview-name"></div>
                                         <div class="preview-size text-muted"></div>
                                     </div>
                                     <button type="button" class="btn btn-sm btn-danger remove-file">
-                                        <i class="fas fa-times"></i>
+                                        Xóa
                                     </button>
                                 </div>
                             </div>
@@ -290,10 +265,10 @@
             </div>
             <div class="card-footer bg-white border-0 py-3 d-flex justify-content-between">
                 <button type="button" class="btn btn-secondary" onclick="prevStep(1)">
-                    <i class="fas fa-arrow-left me-2"></i> Quay lại
+                    Quay lại
                 </button>
                 <button type="button" class="btn btn-primary" onclick="nextStep(3)">
-                    Tiếp theo <i class="fas fa-arrow-right ms-2"></i>
+                    Tiếp theo
                 </button>
             </div>
         </div>
@@ -302,15 +277,9 @@
     <!-- Step 3: Review & Submit -->
     <div class="form-step" id="step3">
         <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-0 py-3">
-                <h5 class="mb-0">
-                    <i class="fas fa-check-circle text-success me-2"></i>
-                    Bước 3: Xác nhận
-                </h5>
-            </div>
             <div class="card-body">
+                <h6 class="mb-3 fw-bold">Bước 3: Xác nhận</h6>
                 <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
                     Sau khi tạo bài võ, bạn có thể thêm tiêu chí đánh giá chi tiết.
                 </div>
                 
@@ -323,10 +292,10 @@
             </div>
             <div class="card-footer bg-white border-0 py-3 d-flex justify-content-between">
                 <button type="button" class="btn btn-secondary" onclick="prevStep(2)">
-                    <i class="fas fa-arrow-left me-2"></i> Quay lại
+                    Quay lại
                 </button>
                 <button type="submit" class="btn btn-success">
-                    <i class="fas fa-save me-2"></i> Tạo bài võ
+                    Tạo bài võ
                 </button>
             </div>
         </div>
@@ -509,4 +478,69 @@ function initDragDrop(zoneId, inputId, maxSize) {
     }
 }
 </script>
+
+<style>
+.routine-header-modern {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 1.75rem 2rem;
+    color: white;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.routine-header-modern::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.routine-header-modern::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -5%;
+    width: 200px;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 50%;
+}
+
+.routine-header-content {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    position: relative;
+    z-index: 1;
+}
+
+.routine-header-text {
+    position: relative;
+    z-index: 1;
+}
+
+.routine-header-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: white;
+}
+
+.routine-header-subtitle {
+    font-size: 0.95rem;
+    margin: 0.25rem 0 0 0;
+    opacity: 0.9;
+    color: white;
+}
+</style>
 {% endblock %}

@@ -5,9 +5,6 @@
 {% block instructor_content %}
 <div class="page-header-modern">
     <div class="page-header-content">
-        <div class="page-header-icon">
-            <i class="fas fa-file-alt"></i>
-        </div>
         <div class="page-header-text">
             <h1 class="page-header-title">Đề xuất lớp học của tôi</h1>
             <p class="page-header-subtitle">Theo dõi trạng thái duyệt các đề xuất lớp học đã gửi</p>
@@ -15,7 +12,7 @@
     </div>
     <div class="page-header-actions">
         <a href="{{ url_for('instructor.propose_class') }}" class="btn btn-light btn-sm">
-            <i class="fas fa-plus me-2"></i>Tạo đề xuất mới
+            Tạo đề xuất mới
         </a>
     </div>
 </div>
@@ -71,10 +68,9 @@
         </div>
         {% else %}
         <div class="text-center py-5">
-            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
             <h5 class="text-muted">Chưa có đề xuất nào</h5>
             <a href="{{ url_for('instructor.propose_class') }}" class="btn btn-primary mt-2">
-                <i class="fas fa-plus me-2"></i>Tạo đề xuất đầu tiên
+                Tạo đề xuất đầu tiên
             </a>
         </div>
         {% endif %}

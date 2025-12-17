@@ -65,3 +65,53 @@ class AssignmentCreateForm(FlaskForm):
             return False
         
         return True
+
+
+class AssignmentEditForm(FlaskForm):
+    routine_id = SelectField('Bài võ (*)', coerce=int, validators=[DataRequired()])
+    
+    assignment_type = SelectField('Loại bài tập (*)', 
+        choices=[('individual', 'Cá nhân'), ('class', 'Lớp học')],
+        validators=[DataRequired()]
+    )
+    
+    assigned_to_student = SelectField('Học viên', coerce=int, validators=[Optional()])
+    assigned_to_class = SelectField('Lớp học', coerce=int, validators=[Optional()])
+    
+    deadline = DateTimeField('Hạn nộp', format='%Y-%m-%dT%H:%M', validators=[Optional()])
+    
+    instructions = TextAreaField('Hướng dẫn')
+    
+    priority = SelectField('Độ ưu tiên (*)',
+        choices=[
+            ('low', 'Thấp'),
+            ('normal', 'Bình thường'),
+            ('high', 'Cao'),
+            ('urgent', 'Khẩn cấp')
+        ],
+        default='normal',
+        validators=[DataRequired()]
+    )
+    
+    is_mandatory = BooleanField('Bắt buộc', default=True)
+    
+    grading_method = SelectField('Phương thức chấm điểm (*)',
+        choices=[
+            ('manual', 'Chấm tay'),
+            ('ai', 'AI tự động'),
+            ('both', 'Cả hai (AI + Chấm tay)')
+        ],
+        default='manual',
+        validators=[DataRequired()]
+    )
+    
+    instructor_video_url = StringField('Link Video Demo', validators=[Optional()])
+    
+    instructor_video_file = FileField('Upload Video Demo', 
+        validators=[
+            Optional(),
+            FileAllowed(['mp4', 'mov', 'avi', 'mkv'], 'Chỉ chấp nhận video!')
+        ]
+    )
+    
+    submit = SubmitField('Lưu thay đổi')

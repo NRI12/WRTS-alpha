@@ -7,20 +7,22 @@ from app.services.class_service import ClassService
 from app.services.routine_service import RoutineService
 from app.services.assignment_service import AssignmentService
 from app.services.exam_service import ExamService
-from app.services.evaluation_service import EvaluationService
-from app.services.analytics_service import AnalyticsService
-from app.services.report_service import ReportService
 from app.utils.decorators import login_required, role_required
 from app.utils.storage_service import StorageService
 from app.forms.class_forms import ClassCreateForm, ClassEditForm, EnrollStudentForm
 from app.forms.routine_forms import RoutineCreateForm, RoutineEditForm
-from app.forms.assignment_forms import AssignmentCreateForm
+from app.forms.assignment_forms import AssignmentCreateForm, AssignmentEditForm
 from app.forms.exam_forms import ExamCreateForm
 from app.forms.class_forms import ClassCreateForm, ClassEditForm, EnrollStudentForm
 from app.forms.schedule_forms import ScheduleForm
 from app.forms.evaluation_forms import ManualEvaluationForm
 from app.services.schedule_service import ScheduleService
 from app.models.class_enrollment import ClassEnrollment
+from app.models import db
+from app.models.assignment import Assignment
+from app.models.manual_evaluation import ManualEvaluation
+from app.models.training_video import TrainingVideo
+from sqlalchemy import func
 
 
 instructor_bp = Blueprint('instructor', __name__, url_prefix='/instructor')
@@ -30,9 +32,99 @@ instructor_bp = Blueprint('instructor', __name__, url_prefix='/instructor')
 @login_required
 @role_required('INSTRUCTOR')
 def dashboard():
-    approved_classes = ClassService.get_approved_classes_by_instructor(session['user_id'])
-    my_proposals = ClassService.get_my_proposals(session['user_id'])
-    return render_template('instructor/dashboard.html', approved_classes=approved_classes, my_proposals=my_proposals)
+    instructor_id = session['user_id']
+    
+    approved_classes = ClassService.get_approved_classes_by_instructor(instructor_id)
+    my_proposals = ClassService.get_my_proposals(instructor_id)
+    
+    assignments_data = AssignmentService.get_assignments_with_stats(instructor_id)
+    assignment_stats = assignments_data['stats']
+    recent_assignments = assignments_data['assignments'][:5] if assignments_data['assignments'] else []
+    
+    from app.utils.helpers import get_vietnam_time_naive
+    exams = ExamService.get_exams_by_instructor(instructor_id)
+    now = get_vietnam_time_naive()
+    upcoming_exams = [e for e in exams if e.end_time and e.end_time > now][:5]
+    
+    pending_count = assignment_stats.get('submitted', 0)
+    
+    from app.models.manual_evaluation import ManualEvaluation
+    from app.models.training_video import TrainingVideo
+    from sqlalchemy import func
+    avg_score_result = db.session.query(func.avg(ManualEvaluation.overall_score)).join(
+        TrainingVideo, ManualEvaluation.video_id == TrainingVideo.video_id
+    ).join(
+        Assignment, TrainingVideo.assignment_id == Assignment.assignment_id
+    ).filter(
+        Assignment.assigned_by == instructor_id
+    ).scalar()
+    
+    avg_score = round(float(avg_score_result), 1) if avg_score_result else None
+    
+    from datetime import timedelta
+    from collections import defaultdict
+    from sqlalchemy import func, and_
+    
+    score_timeline_data = defaultdict(list)
+    
+    evaluations = db.session.query(
+        ManualEvaluation.overall_score,
+        ManualEvaluation.evaluated_at
+    ).join(
+        TrainingVideo, ManualEvaluation.video_id == TrainingVideo.video_id
+    ).join(
+        Assignment, TrainingVideo.assignment_id == Assignment.assignment_id
+    ).filter(
+        and_(
+            Assignment.assigned_by == instructor_id,
+            ManualEvaluation.evaluation_method == 'manual',
+            ManualEvaluation.evaluated_at >= datetime.utcnow() - timedelta(days=30)
+        )
+    ).order_by(
+        ManualEvaluation.evaluated_at
+    ).all()
+    
+    for eval in evaluations:
+        eval_date = eval.evaluated_at.date() if hasattr(eval.evaluated_at, 'date') else eval.evaluated_at
+        if isinstance(eval_date, str):
+            from datetime import datetime as dt
+            try:
+                eval_date = dt.strptime(eval_date, '%Y-%m-%d').date()
+            except:
+                continue
+        score_timeline_data[eval_date].append(float(eval.overall_score))
+    
+    score_timeline_labels = []
+    score_timeline_values = []
+    for i in range(30):
+        date = (datetime.utcnow() - timedelta(days=29-i)).date()
+        date_str = date.strftime('%d/%m')
+        score_timeline_labels.append(date_str)
+        if date in score_timeline_data:
+            avg_score = sum(score_timeline_data[date]) / len(score_timeline_data[date])
+            score_timeline_values.append(round(avg_score, 1))
+        else:
+            score_timeline_values.append(None)
+    
+    status_distribution_labels = ['Chưa nộp', 'Đã nộp', 'Đã chấm']
+    status_distribution_values = [
+        assignment_stats.get('pending', 0),
+        assignment_stats.get('submitted', 0),
+        assignment_stats.get('graded', 0)
+    ]
+    
+    return render_template('instructor/dashboard.html', 
+                         approved_classes=approved_classes, 
+                         my_proposals=my_proposals,
+                         assignment_stats=assignment_stats,
+                         recent_assignments=recent_assignments,
+                         upcoming_exams=upcoming_exams,
+                         pending_count=pending_count,
+                         avg_score=avg_score,
+                         score_timeline_labels=score_timeline_labels,
+                         score_timeline_values=score_timeline_values,
+                         status_distribution_labels=status_distribution_labels,
+                         status_distribution_values=status_distribution_values)
 
 
 @instructor_bp.route('/classes')
@@ -65,64 +157,23 @@ def class_detail(class_id: int):
         return redirect(url_for('instructor.classes'))
 
     enrollments = ClassService.get_enrolled_students(class_id)
-    
-    class_overview = AnalyticsService.get_class_overview(class_id)
-    
-    student_scores = {}
-    for enrollment in enrollments:
-        student_scores[enrollment.student_id] = AnalyticsService.get_student_avg_for_class(enrollment.student_id, class_id)
-    from datetime import timedelta
-    from app.models.training_video import TrainingVideo
-    now = datetime.now()
-    cutoff = now - timedelta(days=30)
-    start_of_week = (now - timedelta(days=now.weekday())).date()
-    week_starts = [start_of_week - timedelta(weeks=3), start_of_week - timedelta(weeks=2), start_of_week - timedelta(weeks=1), start_of_week]
-    week_labels = [f"Tuần {i+1}" for i in range(4)]
-    week_student_scores = {i: {} for i in range(4)}
 
-    student_ids = [e.student_id for e in enrollments]
-    if student_ids:
-        from app.models.assignment import Assignment
-        videos = (
-            TrainingVideo.query
-            .join(Assignment, TrainingVideo.assignment_id == Assignment.assignment_id)
-            .filter(
-                TrainingVideo.student_id.in_(student_ids),
-                TrainingVideo.uploaded_at >= cutoff,
-                Assignment.assigned_to_class == class_id
-            ).all()
-        )
-        for v in videos:
-            manual_score = v.manual_evaluations[0].overall_score if v.manual_evaluations else None
-            if manual_score is None:
-                continue
-            score_val = manual_score
-            vid_date = v.uploaded_at.date()
-            idx = None
-            for i, ws in enumerate(week_starts):
-                we = ws + timedelta(days=6)
-                if ws <= vid_date <= we:
-                    idx = i
-                    break
-            if idx is not None and 0 <= idx < 4:
-                sid = v.student_id
-                week_student_scores[idx].setdefault(sid, []).append(float(score_val))
+    # Fetch recent assignments with stats
+    assignments_data = AssignmentService.get_recent_class_assignments(class_id, limit=5)
+    recent_assignments = assignments_data['assignments']
+    assignment_stats = assignments_data['stats']
 
-    class_progress_scores = []
-    for i in range(4):
-        per_student = []
-        for sid, vals in week_student_scores[i].items():
-            if vals:
-                per_student.append(sum(vals) / len(vals))
-        class_progress_scores.append(round(sum(per_student) / len(per_student), 1) if per_student else 0)
+    # Fetch upcoming and recent exams
+    upcoming_exams = ExamService.get_upcoming_class_exams(class_id, limit=3)
+    recent_exams = ExamService.get_recent_class_exams(class_id, limit=3)
 
     return render_template('instructor/class_detail.html', 
                          class_obj=class_obj, 
                          enrollments=enrollments, 
-                         class_overview=class_overview,
-                         student_scores=student_scores,
-                         class_progress_labels=week_labels,
-                         class_progress_scores=class_progress_scores,
+                         recent_assignments=recent_assignments,
+                         assignment_stats=assignment_stats,
+                         upcoming_exams=upcoming_exams,
+                         recent_exams=recent_exams,
                          ClassService=ClassService)
 
 
@@ -262,9 +313,11 @@ def edit_class(class_id: int):
         return redirect(url_for('instructor.classes'))
 
     form = ClassEditForm(obj=class_obj)
+    enrollments = ClassService.get_enrolled_students(class_id)
 
     if form.validate_on_submit():
         data = {
+            'class_code': form.class_code.data,
             'class_name': form.class_name.data,
             'description': form.description.data,
             'level': form.level.data,
@@ -280,7 +333,7 @@ def edit_class(class_id: int):
         else:
             flash(result['message'], 'error')
 
-    return render_template('instructor/class_edit.html', form=form, class_obj=class_obj)
+    return render_template('instructor/class_edit.html', form=form, class_obj=class_obj, enrollments=enrollments)
 
 
 @instructor_bp.route('/classes/<int:class_id>/delete', methods=['POST'])
@@ -315,31 +368,52 @@ def add_student(class_id: int):
     form.student_id.choices = [(0, '-- Chọn học viên --')] + [
         (s.user_id, f'{s.full_name} ({s.username})') for s in available_students
     ]
+    form.student_ids.choices = [
+        (s.user_id, f'{s.full_name} ({s.username})') for s in available_students
+    ]
+    enrollments = ClassService.get_enrolled_students(class_id)
 
     if form.validate_on_submit():
-        result = ClassService.enroll_student(class_id, form.student_id.data, form.notes.data)
-        if result['success']:
-            flash('Thêm học viên thành công!', 'success')
-            return redirect(url_for('instructor.class_detail', class_id=class_id))
+        student_ids = form.student_ids.data if form.student_ids.data else []
+        if form.student_id.data and form.student_id.data != 0:
+            student_ids.append(form.student_id.data)
+        
+        if not student_ids:
+            flash('Vui lòng chọn ít nhất một học viên', 'error')
+        elif len(student_ids) == 1:
+            result = ClassService.enroll_student(class_id, student_ids[0], form.notes.data)
+            if result['success']:
+                flash('Thêm học viên thành công!', 'success')
+                return redirect(url_for('instructor.class_detail', class_id=class_id))
+            else:
+                flash(result['message'], 'error')
         else:
-            flash(result['message'], 'error')
+            result = ClassService.enroll_multiple_students(class_id, student_ids, form.notes.data)
+            if result['success']:
+                flash(result['message'], 'success')
+                if result['failed_count'] > 0:
+                    flash(f'{result["failed_count"]} học viên không thể thêm', 'warning')
+                return redirect(url_for('instructor.class_detail', class_id=class_id))
+            else:
+                flash(result['message'], 'error')
 
-    return render_template('instructor/class_add_student.html', form=form, class_obj=class_obj)
+    return render_template('instructor/class_add_student.html', 
+                         form=form, 
+                         class_obj=class_obj, 
+                         enrollments=enrollments,
+                         available_students=available_students)
 
 
 @instructor_bp.route('/enrollments/<int:enrollment_id>/remove', methods=['POST'])
 @login_required
 @role_required('INSTRUCTOR')
 def remove_student(enrollment_id: int):
-    enrollment = ClassEnrollment.query.get(enrollment_id)
-    if not enrollment:
-        flash('Không tìm thấy đăng ký', 'error')
+    access_result = ClassService.verify_enrollment_access(enrollment_id, session['user_id'])
+    if not access_result['success']:
+        flash(access_result['message'], 'error')
         return redirect(url_for('instructor.classes'))
 
-    if enrollment.class_obj.instructor_id != session['user_id']:
-        flash('Bạn không có quyền thực hiện', 'error')
-        return redirect(url_for('instructor.classes'))
-
+    enrollment = access_result['enrollment']
     class_id = enrollment.class_id
     result = ClassService.remove_student(enrollment_id)
 
@@ -425,7 +499,6 @@ def create_routine():
             'weapon_id': form.weapon_id.data,
             'level': form.level.data,
             'difficulty_score': form.difficulty_score.data,
-            'duration_seconds': form.duration_seconds.data,
             'total_moves': form.total_moves.data,
             'pass_threshold': form.pass_threshold.data,
             'reference_video_url': video_url
@@ -483,12 +556,12 @@ def edit_routine(routine_id: int):
             video_url = form.reference_video_url.data
         
         data = {
+            'routine_code': form.routine_code.data,
             'routine_name': form.routine_name.data,
             'description': form.description.data,
             'weapon_id': form.weapon_id.data,
             'level': form.level.data,
             'difficulty_score': form.difficulty_score.data,
-            'duration_seconds': form.duration_seconds.data,
             'total_moves': form.total_moves.data,
             'pass_threshold': form.pass_threshold.data,
             'reference_video_url': video_url
@@ -549,39 +622,10 @@ def assignments():
     if priority in ['low', 'normal', 'high', 'urgent']:
         filters['priority'] = priority
 
-    assignments = AssignmentService.get_assignments_by_instructor(session['user_id'], filters)
-
-    assignment_stats = {}
-    total_pending = 0
-    total_submitted = 0
-    total_graded = 0
-
-    for assignment in assignments:
-        status_list = AssignmentService.get_submission_status(assignment.assignment_id)
-        total_students = len(status_list)
-        pending = sum(1 for s in status_list if s['status'] == 'pending')
-        submitted = sum(1 for s in status_list if s['status'] == 'submitted')
-        graded = sum(1 for s in status_list if s['status'] == 'graded')
-
-        total_pending += pending
-        total_submitted += submitted
-        total_graded += graded
-
-        completion_percent = int((graded / total_students) * 100) if total_students else 0
-
-        assignment_stats[assignment.assignment_id] = {
-            'total_students': total_students,
-            'pending': pending,
-            'submitted': submitted,
-            'graded': graded,
-            'completion_percent': completion_percent,
-        }
-
-    stats = {
-        'pending': total_pending,
-        'submitted': total_submitted,
-        'graded': total_graded,
-    }
+    assignments_data = AssignmentService.get_assignments_with_stats(session['user_id'], filters)
+    assignments = assignments_data['assignments']
+    assignment_stats = assignments_data['assignment_stats']
+    stats = assignments_data['stats']
 
     return render_template(
         'instructor/assignments.html',
@@ -600,16 +644,17 @@ def create_assignment():
     form = AssignmentCreateForm()
     routines = RoutineService.get_routines_by_instructor(session['user_id'], {'is_published': True})
     form.routine_id.choices = [(0, '-- Chọn bài võ --')] + [(r.routine_id, r.routine_name) for r in routines]
-    from app.models.class_enrollment import ClassEnrollment
-    instructor_classes = ClassService.get_approved_classes_by_instructor(session['user_id'])
-    student_ids = set()
-    for cls in instructor_classes:
-        enrollments = ClassEnrollment.query.filter_by(class_id=cls.class_id, enrollment_status='active').all()
-        student_ids.update([e.student_id for e in enrollments])
-    from app.models.user import User
-    students = User.query.filter(User.user_id.in_(student_ids)).all() if student_ids else []
-    form.assigned_to_student.choices = [(0, '-- Chọn học viên --')] + [(s.user_id, s.full_name) for s in students]
-    form.assigned_to_class.choices = [(0, '-- Chọn lớp --')] + [(c.class_id, c.class_name) for c in instructor_classes]
+    
+    form_data = ClassService.get_students_for_assignment_form(session['user_id'])
+    form.assigned_to_student.choices = [(0, '-- Chọn học viên --')] + [(s.user_id, s.full_name) for s in form_data['students']]
+    form.assigned_to_class.choices = [(0, '-- Chọn lớp --')] + [(c.class_id, c.class_name) for c in form_data['classes']]
+    
+    # Auto-fill class_id from query parameter
+    class_id_param = request.args.get('class_id', type=int)
+    prefill_data = AssignmentService.get_form_prefill_data_for_class(class_id_param, session['user_id'])
+    if prefill_data:
+        form.assignment_type.data = prefill_data['assignment_type']
+        form.assigned_to_class.data = prefill_data['assigned_to_class']
     if form.validate_on_submit():
         instructor_video_url = None
         
@@ -677,6 +722,66 @@ def assignment_detail(assignment_id: int):
     return render_template('instructor/assignment_detail.html', assignment=assignment, status_list=status_list)
 
 
+@instructor_bp.route('/assignments/<int:assignment_id>/edit', methods=['GET', 'POST'])
+@login_required
+@role_required('INSTRUCTOR')
+def edit_assignment(assignment_id: int):
+    assignment = AssignmentService.get_assignment_by_id(assignment_id)
+    if not assignment or assignment.assigned_by != session['user_id']:
+        flash('Không tìm thấy bài tập', 'error')
+        return redirect(url_for('instructor.assignments'))
+    
+    form = AssignmentEditForm(obj=assignment)
+    routines = RoutineService.get_routines_by_instructor(session['user_id'], {'is_published': True})
+    form.routine_id.choices = [(0, '-- Chọn bài võ --')] + [(r.routine_id, r.routine_name) for r in routines]
+    
+    form_data = ClassService.get_students_for_assignment_form(session['user_id'])
+    form.assigned_to_student.choices = [(0, '-- Chọn học viên --')] + [(s.user_id, s.full_name) for s in form_data['students']]
+    form.assigned_to_class.choices = [(0, '-- Chọn lớp --')] + [(c.class_id, c.class_name) for c in form_data['classes']]
+    
+    if form.validate_on_submit():
+        instructor_video_url = assignment.instructor_video_url
+        
+        if form.instructor_video_file.data:
+            video_file = form.instructor_video_file.data
+            filename = secure_filename(video_file.filename)
+            ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else 'mp4'
+            unique_filename = f"{uuid.uuid4().hex}.{ext}"
+            
+            try:
+                instructor_video_url = StorageService.upload_file(video_file, folder='assignments', filename=unique_filename)
+            except Exception as e:
+                flash(f'Lỗi khi upload video: {str(e)}', 'error')
+                return render_template('instructor/assignment_edit.html', form=form, assignment=assignment)
+        
+        elif form.instructor_video_url.data:
+            instructor_video_url = form.instructor_video_url.data
+        
+        data = {
+            'routine_id': form.routine_id.data,
+            'assignment_type': form.assignment_type.data,
+            'assigned_to_student': form.assigned_to_student.data if form.assignment_type.data == 'individual' else None,
+            'assigned_to_class': form.assigned_to_class.data if form.assignment_type.data == 'class' else None,
+            'deadline': form.deadline.data,
+            'instructions': form.instructions.data,
+            'priority': form.priority.data,
+            'is_mandatory': form.is_mandatory.data,
+            'grading_method': form.grading_method.data,
+        }
+        
+        if instructor_video_url:
+            data['instructor_video_url'] = instructor_video_url
+        
+        result = AssignmentService.update_assignment(assignment_id, data, session['user_id'])
+        if result['success']:
+            flash('Cập nhật bài tập thành công!', 'success')
+            return redirect(url_for('instructor.assignment_detail', assignment_id=assignment_id))
+        else:
+            flash(result['message'], 'error')
+    
+    return render_template('instructor/assignment_edit.html', form=form, assignment=assignment)
+
+
 @instructor_bp.route('/assignments/<int:assignment_id>/delete', methods=['POST'])
 @login_required
 @role_required('INSTRUCTOR')
@@ -739,6 +844,12 @@ def create_exam():
     classes = ClassService.get_classes_by_instructor(session['user_id'])
     form.class_id.choices = [(0, '-- Không chọn (tất cả) --')] + [(c.class_id, c.class_name) for c in classes]
     
+    # Auto-fill class_id from query parameter
+    class_id_param = request.args.get('class_id', type=int)
+    prefill_data = ExamService.get_form_prefill_data_for_class(class_id_param, session['user_id'])
+    if prefill_data:
+        form.class_id.data = prefill_data['class_id']
+    
     if form.validate_on_submit():
         data = {
             'exam_code': form.exam_code.data,
@@ -787,106 +898,100 @@ def publish_exam(exam_id: int):
     return redirect(url_for('instructor.exam_detail', exam_id=exam_id))
 
 
-@instructor_bp.route('/exams/<int:exam_id>/delete', methods=['POST'])
+@instructor_bp.route('/exams/<int:exam_id>/edit', methods=['GET', 'POST'])
 @login_required
 @role_required('INSTRUCTOR')
-def delete_exam(exam_id: int):
-    result = ExamService.delete_exam(exam_id, session['user_id'])
-    if result['success']:
-        flash('Xóa bài kiểm tra thành công!', 'success')
+def edit_exam(exam_id: int):
+    form_data_result = ExamService.get_edit_form_data(exam_id, session['user_id'])
+    if not form_data_result['success']:
+        flash(form_data_result['message'], 'error')
         return redirect(url_for('instructor.exams'))
-    else:
-        flash(result['message'], 'error')
+    
+    exam = form_data_result['exam']
+    routines = form_data_result['routines']
+    classes = form_data_result['classes']
+    
+    from app.forms.exam_forms import ExamCreateForm
+    form = ExamCreateForm(obj=exam)
+    
+    form.routine_id.choices = [(0, '-- Chọn bài võ --')] + [(r.routine_id, r.routine_name) for r in routines]
+    form.class_id.choices = [(0, '-- Không chọn (tất cả) --')] + [(c.class_id, c.class_name) for c in classes]
+    
+    form.video_source.data = form_data_result['video_source']
+    if form_data_result.get('routine_id'):
+        form.routine_id.data = form_data_result['routine_id']
+    
+    if form.validate_on_submit():
+        data = {
+            'exam_code': form.exam_code.data,
+            'exam_name': form.exam_name.data,
+            'description': form.description.data,
+            'class_id': form.class_id.data if form.class_id.data else None,
+            'routine_id': form.routine_id.data if form.routine_id.data else None,
+            'exam_type': form.exam_type.data,
+            'start_time': form.start_time.data,
+            'end_time': form.end_time.data,
+            'pass_score': form.pass_score.data,
+            'video_source': form.video_source.data,
+        }
+        
+        video_file = form.reference_video.data if form.video_source.data == 'upload' and form.reference_video.data else None
+        
+        result = ExamService.update_exam(exam_id, data, session['user_id'], video_file)
+        
+        if result['success']:
+            flash('Cập nhật bài kiểm tra thành công!', 'success')
+            return redirect(url_for('instructor.exam_detail', exam_id=exam_id))
+        else:
+            flash(result['message'], 'error')
+    
+    return render_template('instructor/exam_edit.html', form=form, exam=exam)
+
+
+@instructor_bp.route('/exams/<int:exam_id>/results/<int:result_id>/grade', methods=['GET', 'POST'])
+@login_required
+@role_required('INSTRUCTOR')
+def grade_exam_result(exam_id: int, result_id: int):
+    access_result = ExamService.verify_exam_result_access(result_id, session['user_id'])
+    if not access_result['success']:
+        flash(access_result['message'], 'error')
         return redirect(url_for('instructor.exam_detail', exam_id=exam_id))
-
-
-
-@instructor_bp.route('/evaluations/pending')
-@login_required
-@role_required('INSTRUCTOR')
-def pending_evaluations():
-    from flask import request
-    from datetime import datetime, timedelta
     
-    show_all = request.args.get('show_all', 'false').lower() == 'true'
+    result = access_result['result']
+    exam = access_result['exam']
     
-    if show_all:
-        videos = EvaluationService.get_all_submissions(session['user_id'])
-    else:
-        videos = EvaluationService.get_pending_submissions(session['user_id'])
+    if not result.video_id:
+        flash('Kết quả này chưa có video', 'error')
+        return redirect(url_for('instructor.exam_detail', exam_id=exam_id))
     
-    all_videos = EvaluationService.get_all_submissions(session['user_id'])
-    
-    pending_count = len([v for v in all_videos if not v.manual_evaluations])
-    
-    today = datetime.now().date()
-    evaluated_today = len([v for v in all_videos 
-                          if v.manual_evaluations and 
-                          v.manual_evaluations[0].evaluated_at.date() == today])
-    
-    week_start = today - timedelta(days=today.weekday())
-    evaluated_this_week = len([v for v in all_videos 
-                              if v.manual_evaluations and 
-                              v.manual_evaluations[0].evaluated_at.date() >= week_start])
-    
-    evaluated_videos = [v for v in all_videos if v.manual_evaluations]
-    if evaluated_videos:
-        avg_score = sum(v.manual_evaluations[0].overall_score for v in evaluated_videos) / len(evaluated_videos)
-        avg_score = round(avg_score, 1)
-    else:
-        avg_score = None
-    
-    stats = {
-        'pending_count': pending_count,
-        'evaluated_today': evaluated_today,
-        'evaluated_this_week': evaluated_this_week,
-        'average_score': avg_score
-    }
-    
-    return render_template('instructor/pending_evaluations.html', 
-                         videos=videos, 
-                         show_all=show_all,
-                         stats=stats)
-
-@instructor_bp.route('/videos/<int:video_id>/evaluate', methods=['GET', 'POST'])
-@login_required
-@role_required('INSTRUCTOR')
-def evaluate_video(video_id):
     from app.services.video_service import VideoService
+    from app.services.evaluation_service import EvaluationService
+    from app.forms.evaluation_forms import ManualEvaluationForm
     
-    video_data = VideoService.get_video_with_analysis(video_id)
+    video_data = VideoService.get_video_with_analysis(result.video_id)
     if not video_data:
         flash('Không tìm thấy video', 'error')
-        return redirect(url_for('instructor.pending_evaluations'))
+        return redirect(url_for('instructor.exam_detail', exam_id=exam_id))
     
     video = video_data['video']
     
-    if not video.assignment_id or not video.assignment:
-        flash('Video này không thuộc assignment nào!', 'error')
-        return redirect(url_for('instructor.pending_evaluations'))
+    reference_video_url = None
+    video_source = ""
     
-    assignment = video.assignment
-    
-    has_permission = False
-    
-    if assignment.assignment_type == 'individual':
-        has_permission = assignment.assigned_by == session['user_id']
-    elif assignment.assignment_type == 'class':
-        if assignment.assigned_to_class and assignment.class_obj:
-            has_permission = assignment.class_obj.instructor_id == session['user_id']
-    
-    if not has_permission:
-        flash('Bạn không có quyền chấm điểm video này', 'error')
-        return redirect(url_for('instructor.pending_evaluations'))
-    
-    if not video.assignment.instructor_video_url:
-        flash('Assignment này chưa có video demo!', 'error')
-        return redirect(url_for('instructor.pending_evaluations'))
-    
-    reference_video_url = video.assignment.instructor_video_url
-    video_source = f"Video demo Assignment #{video.assignment.assignment_id}"
+    if exam.video_upload_method == 'routine' and exam.routine and exam.routine.reference_video_url:
+        reference_video_url = exam.routine.reference_video_url
+        video_source = f"Video mẫu: {exam.routine.routine_name}"
+    elif exam.video_upload_method == 'upload' and exam.reference_video_path:
+        reference_video_url = exam.get_video_url()
+        video_source = "Video mẫu bài kiểm tra"
     
     existing_eval = EvaluationService.get_evaluation_for_instructor(video.video_id, session['user_id'])
+    
+    from app.models.manual_evaluation import ManualEvaluation
+    ai_eval = ManualEvaluation.query.filter_by(
+        video_id=video.video_id,
+        evaluation_method='ai'
+    ).first()
     
     if request.method == 'GET' and existing_eval:
         form = ManualEvaluationForm(
@@ -901,6 +1006,11 @@ def evaluate_video(video_id):
         )
     else:
         form = ManualEvaluationForm()
+        if ai_eval:
+            form.overall_score.data = ai_eval.overall_score
+            form.technique_score.data = ai_eval.technique_score
+            form.posture_score.data = ai_eval.posture_score
+            form.spirit_score.data = ai_eval.spirit_score
     
     if form.validate_on_submit():
         data = {
@@ -916,74 +1026,48 @@ def evaluate_video(video_id):
         }
         
         if existing_eval:
-            result = EvaluationService.update_evaluation(existing_eval, data)
-            success_message = 'Cập nhật đánh giá thành công! Đã gửi thông báo cho học viên.'
+            eval_result = EvaluationService.update_evaluation(existing_eval, data)
+            success_message = 'Cập nhật đánh giá thành công!'
         else:
-            result = EvaluationService.create_evaluation(
-                video_id, 
+            eval_result = EvaluationService.create_evaluation(
+                video.video_id, 
                 session['user_id'], 
                 data
             )
-            success_message = 'Chấm điểm thành công! Đã gửi thông báo cho học viên.'
+            success_message = 'Chấm điểm thành công!'
         
-        if result['success']:
-            flash(success_message, 'success')
-            return redirect(url_for('instructor.pending_evaluations'))
+        if eval_result['success']:
+            grade_result = ExamService.grade_exam_result_from_evaluation(result_id, form.overall_score.data, session['user_id'])
+            if grade_result['success']:
+                flash(success_message, 'success')
+                return redirect(url_for('instructor.exam_detail', exam_id=exam_id))
+            else:
+                flash(grade_result['message'], 'error')
         else:
-            flash(result['message'], 'error')
+            flash(eval_result['message'], 'error')
     
-    return render_template('instructor/evaluate_video.html',
+    return render_template('instructor/exam_grade.html', 
+                         exam=exam, 
+                         result=result, 
                          video=video,
-                         form=form,
                          reference_video_url=reference_video_url,
-                         video_source=video_source)
+                         video_source=video_source,
+                         form=form,
+                         existing_eval=existing_eval,
+                         ai_eval=ai_eval)
 
 
-
-@instructor_bp.route('/analytics')
+@instructor_bp.route('/exams/<int:exam_id>/delete', methods=['POST'])
 @login_required
 @role_required('INSTRUCTOR')
-def analytics():
-    instructor_id = session['user_id']
-    
-    classes = ClassService.get_approved_classes_by_instructor(instructor_id)
-    
-    routine_stats = AnalyticsService.get_routine_usage_stats(instructor_id)
-    
-    return render_template('instructor/analytics.html',
-                         classes=classes,
-                         routine_stats=routine_stats)
+def delete_exam(exam_id: int):
+    result = ExamService.delete_exam(exam_id, session['user_id'])
+    if result['success']:
+        flash('Xóa bài kiểm tra thành công!', 'success')
+        return redirect(url_for('instructor.exams'))
+    else:
+        flash(result['message'], 'error')
+        return redirect(url_for('instructor.exam_detail', exam_id=exam_id))
 
-@instructor_bp.route('/classes/<int:class_id>/analytics')
-@login_required
-@role_required('INSTRUCTOR')
-def class_analytics(class_id):
-    class_obj = ClassService.get_class_by_id(class_id)
-    
-    if not class_obj or class_obj.instructor_id != session['user_id']:
-        flash('Không tìm thấy lớp học', 'error')
-        return redirect(url_for('instructor.classes'))
-    
-    overview = AnalyticsService.get_class_overview(class_id)
-    rankings = AnalyticsService.get_student_ranking(class_id)
-    
-    return render_template('instructor/class_analytics.html',
-                         class_obj=class_obj,
-                         overview=overview,
-                         rankings=rankings)
 
-@instructor_bp.route('/classes/<int:class_id>/report')
-@login_required
-@role_required('INSTRUCTOR')
-def export_class_report(class_id):
-    from flask import jsonify
-    
-    class_obj = ClassService.get_class_by_id(class_id)
-    
-    if not class_obj or class_obj.instructor_id != session['user_id']:
-        flash('Không tìm thấy lớp học', 'error')
-        return redirect(url_for('instructor.classes'))
-    
-    report = ReportService.generate_class_report(class_id)
-    
-    return jsonify(report)
+

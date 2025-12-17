@@ -4,9 +4,6 @@ from datetime import timedelta
 
 class TestConfig:
     """Configuration for testing environment"""
-    # Database - Use MySQL for production-like testing
-    # IMPORTANT: Test on real MySQL to catch ENUM, constraint, and MySQL-specific issues
-    # SQLite was only a temporary workaround for concurrent DDL errors
     SQLALCHEMY_DATABASE_URI = os.getenv(
         'TEST_DATABASE_URL',
         'mysql+pymysql://root:password@localhost/AI_WRTS_TEST'  # Real MySQL test database

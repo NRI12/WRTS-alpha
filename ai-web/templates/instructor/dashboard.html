@@ -2,35 +2,95 @@
 
 {% block title %}Dashboard - Giảng viên{% endblock %}
 
-{% block page_title %}Dashboard Giảng viên{% endblock %}
-{% block breadcrumb_active %}Dashboard{% endblock %}
-
 {% block extra_css %}
 <link href="{{ url_for('static', filename='css/instructor.css') }}" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
-<!-- Modern Header -->
-<div class="page-header-modern dashboard">
-    <div class="page-header-content">
-        <div class="page-header-text">
-            <h1 class="page-header-title">Xin chào, <strong>{{ session.full_name }}</strong></h1>
-            <p class="page-header-subtitle">Dashboard quản lý lớp học và bài giảng</p>
+<div class="container-fluid px-3">
+    <div class="dashboard-header-modern">
+        <div class="dashboard-header-content">
+            <div class="dashboard-header-text">
+                <h1 class="dashboard-header-title">Xin chào, <strong>{{ session.full_name }}</strong></h1>
+                <p class="dashboard-header-subtitle mb-0">Dashboard quản lý lớp học và bài giảng</p>
+            </div>
         </div>
-    </div>
-    <div class="page-header-actions">
-        <a href="{{ url_for('instructor.propose_class') }}" class="btn btn-outline-primary btn-sm">
-            Đề xuất lớp
-        </a>
-        <a href="{{ url_for('instructor.create_routine') }}" class="btn btn-outline-primary btn-sm">
-            Tạo bài võ
-        </a>
-        <a href="{{ url_for('instructor.create_assignment') }}" class="btn btn-primary btn-sm">
-            Gán bài tập
-        </a>
+        <div class="dashboard-header-actions">
+            <a href="{{ url_for('instructor.propose_class') }}" class="btn btn-light btn-sm">Đề xuất lớp</a>
+            <a href="{{ url_for('instructor.create_routine') }}" class="btn btn-light btn-sm">Tạo bài võ</a>
+            <a href="{{ url_for('instructor.create_assignment') }}" class="btn btn-light btn-sm">Gán bài tập</a>
+        </div>
     </div>
 </div>
 
+<style>
+.dashboard-header-modern {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-header-modern::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.dashboard-header-content {
+    flex: 1;
+    position: relative;
+    z-index: 1;
+}
+
+.dashboard-header-title {
+    color: white;
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.dashboard-header-subtitle {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.95rem;
+    margin: 0.25rem 0 0 0;
+}
+
+.dashboard-header-actions {
+    display: flex;
+    gap: 0.75rem;
+    position: relative;
+    z-index: 1;
+}
+
+.dashboard-header-actions .btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+}
+
+.dashboard-header-actions .btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: white;
+}
+</style>
+
+<div class="container-fluid px-3">
 <!-- Overview Cards -->
 <div class="stats-grid">
     <div class="stat-card" style="border-left: 4px solid #3b82f6;">
@@ -52,132 +112,177 @@
     
     <div class="stat-card" style="border-left: 4px solid #f59e0b;">
         <div class="stat-content">
-            <div class="stat-value" style="color: #f59e0b;">0</div>
+            <div class="stat-value" style="color: #f59e0b;">{{ pending_count }}</div>
             <div class="stat-label">Bài tập chờ chấm</div>
         </div>
     </div>
     
     <div class="stat-card" style="border-left: 4px solid #8b5cf6;">
         <div class="stat-content">
-            <div class="stat-value" style="color: #8b5cf6;">--</div>
+            <div class="stat-value" style="color: #8b5cf6;">{{ avg_score if avg_score else '--' }}</div>
             <div class="stat-label">Điểm TB</div>
         </div>
     </div>
 </div>
 
-<!-- Quick Links Section -->
-<div class="row g-3 mb-4">
-    <div class="col-md-3 col-sm-6">
-        <a href="{{ url_for('instructor.routines') }}" class="quick-link-card" style="text-align: center; padding: 1.5rem;">
-            <div style="font-weight: 600; font-size: 1.1rem; color: #1f2937;">Quản lý bài võ</div>
-        </a>
-    </div>
-    <div class="col-md-3 col-sm-6">
-        <a href="{{ url_for('instructor.assignments') }}" class="quick-link-card" style="text-align: center; padding: 1.5rem;">
-            <div style="font-weight: 600; font-size: 1.1rem; color: #1f2937;">Quản lý bài tập</div>
-        </a>
-    </div>
-    <div class="col-md-3 col-sm-6">
-        <a href="{{ url_for('instructor.exams') }}" class="quick-link-card" style="text-align: center; padding: 1.5rem;">
-            <div style="font-weight: 600; font-size: 1.1rem; color: #1f2937;">Quản lý kiểm tra</div>
-        </a>
-    </div>
-    <div class="col-md-3 col-sm-6">
-        <a href="{{ url_for('instructor.pending_evaluations') }}" class="quick-link-card" style="text-align: center; padding: 1.5rem;">
-            <div style="font-weight: 600; font-size: 1.1rem; color: #1f2937;">Chấm điểm video</div>
-        </a>
-    </div>
-</div>
-
-<!-- Classes Section -->
-<div class="data-table-wrapper mb-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="mb-0" style="font-weight: 600; color: #1f2937;">
-            Lớp học đã duyệt ({{ approved_classes|length }})
-        </h5>
-        <div class="d-flex gap-2">
-            <a href="{{ url_for('instructor.propose_class') }}" class="btn btn-sm btn-outline-primary">
-                Đề xuất lớp mới
-            </a>
-            <a href="{{ url_for('instructor.my_proposals') }}" class="btn btn-sm btn-outline-secondary">
-                Đề xuất của tôi
-            </a>
+<div class="row g-3 mb-3">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h6 class="mb-3 fw-bold">Xu hướng điểm số (30 ngày qua)</h6>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="scoreTimelineChart"></canvas>
+                </div>
+            </div>
         </div>
     </div>
-    {% if approved_classes %}
-    <div class="table-responsive">
-        <table class="table data-table table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>Mã lớp</th>
-                    <th>Tên lớp</th>
-                    <th>Cấp độ</th>
-                    <th>Học viên</th>
-                    <th>Trạng thái</th>
-                    <th class="text-end">Thao tác</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for class in approved_classes %}
-                <tr>
-                    <td>
-                        <span class="badge bg-primary">{{ class.class_code }}</span>
-                    </td>
-                    <td>
-                        <strong>{{ class.class_name }}</strong>
-                    </td>
-                    <td>
-                        <span class="badge bg-info">{{ class.level }}</span>
-                    </td>
-                    <td>
-                        <span style="color: #374151;">{{ class.actual_students_count }}/{{ class.max_students }}</span>
-                    </td>
-                    <td>
-                        {% if class.is_active %}
-                        <span class="badge bg-success">Hoạt động</span>
-                        {% else %}
-                        <span class="badge bg-warning">Tạm dừng</span>
-                        {% endif %}
-                    </td>
-                    <td class="text-end">
-                        <a href="{{ url_for('instructor.class_detail', class_id=class.class_id) }}" 
-                           class="btn btn-sm btn-outline-primary">
-                            Chi tiết
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h6 class="mb-3 fw-bold">Phân bố trạng thái bài tập</h6>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="statusDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
     </div>
-    {% else %}
-    <div class="empty-state-compact">
-        <p class="mb-0" style="font-size: 1.1rem; color: #6b7280;">Chưa có lớp học nào được duyệt</p>
-        <a href="{{ url_for('instructor.propose_class') }}" class="btn btn-primary btn-sm mt-3">
-            Đề xuất lớp mới
-        </a>
-    </div>
-    {% endif %}
 </div>
 
-<!-- Recent Proposals Section -->
-<div class="data-table-wrapper">
-    <h5 class="mb-3" style="font-weight: 600; color: #1f2937;">
-        Đề xuất gần đây
-    </h5>
-    <div class="table-responsive">
-        <table class="table data-table table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>Tên lớp</th>
-                    <th>Cấp độ</th>
-                    <th>Ngày đề xuất</th>
-                    <th>Trạng thái</th>
-                    <th class="text-end">Thao tác</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% if my_proposals and my_proposals|length > 0 %}
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0 fw-bold">Lớp học đã duyệt ({{ approved_classes|length }})</h6>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('instructor.propose_class') }}" class="btn btn-sm btn-outline-primary">Đề xuất lớp mới</a>
+                <a href="{{ url_for('instructor.my_proposals') }}" class="btn btn-sm btn-outline-secondary">Đề xuất của tôi</a>
+            </div>
+        </div>
+        {% if approved_classes %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Mã lớp</th>
+                        <th>Tên lớp</th>
+                        <th>Cấp độ</th>
+                        <th>Học viên</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for class in approved_classes %}
+                    <tr>
+                        <td><span class="badge bg-primary">{{ class.class_code }}</span></td>
+                        <td><strong>{{ class.class_name }}</strong></td>
+                        <td><span class="badge bg-info">{{ class.level }}</span></td>
+                        <td>{{ class.actual_students_count }}/{{ class.max_students }}</td>
+                        <td>
+                            {% if class.is_active %}
+                            <span class="badge bg-success">Hoạt động</span>
+                            {% else %}
+                            <span class="badge bg-warning">Tạm dừng</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{{ url_for('instructor.class_detail', class_id=class.class_id) }}" class="btn btn-sm btn-outline-primary">Chi tiết</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <p class="mb-0 text-muted">Chưa có lớp học nào được duyệt</p>
+            <a href="{{ url_for('instructor.propose_class') }}" class="btn btn-primary btn-sm mt-3">Đề xuất lớp mới</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if recent_assignments and recent_assignments|length > 0 %}
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0 fw-bold">Bài tập gần đây</h6>
+            <a href="{{ url_for('instructor.assignments') }}" class="btn btn-sm btn-outline-primary">Xem tất cả</a>
+        </div>
+        <div class="list-group list-group-flush">
+            {% for assignment in recent_assignments %}
+            <div class="list-group-item px-0 py-2 border-0 border-bottom">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>{{ assignment.routine.routine_name if assignment.routine else 'N/A' }}</strong>
+                        <div class="text-muted small">
+                            {% if assignment.assigned_to_class %}
+                                Lớp: {{ assignment.class_obj.class_name if assignment.class_obj else 'N/A' }}
+                            {% else %}
+                                Cá nhân
+                            {% endif %}
+                            {% if assignment.deadline %}
+                                • Hạn: {{ assignment.deadline.strftime('%d/%m/%Y') }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <a href="{{ url_for('instructor.assignment_detail', assignment_id=assignment.assignment_id) }}" class="btn btn-sm btn-outline-primary">Chi tiết</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if upcoming_exams and upcoming_exams|length > 0 %}
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0 fw-bold">Bài kiểm tra sắp tới</h6>
+            <a href="{{ url_for('instructor.exams') }}" class="btn btn-sm btn-outline-primary">Xem tất cả</a>
+        </div>
+        <div class="list-group list-group-flush">
+            {% for exam in upcoming_exams %}
+            <div class="list-group-item px-0 py-2 border-0 border-bottom">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>{{ exam.exam_name }}</strong>
+                        <div class="text-muted small">
+                            {% if exam.class_obj %}
+                                Lớp: {{ exam.class_obj.class_name }}
+                            {% else %}
+                                Tất cả lớp
+                            {% endif %}
+                            {% if exam.start_time %}
+                                • Bắt đầu: {{ exam.start_time.strftime('%d/%m/%Y %H:%M') }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <a href="{{ url_for('instructor.exam_detail', exam_id=exam.exam_id) }}" class="btn btn-sm btn-outline-primary">Chi tiết</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body">
+        <h6 class="mb-3 fw-bold">Đề xuất gần đây</h6>
+        {% if my_proposals and my_proposals|length > 0 %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Tên lớp</th>
+                        <th>Cấp độ</th>
+                        <th>Ngày đề xuất</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
                     {% for p in my_proposals[:5] %}
                     <tr>
                         <td class="fw-semibold">{{ p.class_name }}</td>
@@ -206,26 +311,159 @@
                         </td>
                         <td class="text-end">
                             {% if p.approval_status == 'approved' %}
-                            <a href="{{ url_for('instructor.class_detail', class_id=p.class_id) }}" class="btn btn-sm btn-outline-primary">
-                                Chi tiết
-                            </a>
+                            <a href="{{ url_for('instructor.class_detail', class_id=p.class_id) }}" class="btn btn-sm btn-outline-primary">Chi tiết</a>
                             {% else %}
-                            <a href="{{ url_for('instructor.my_proposals') }}" class="btn btn-sm btn-outline-secondary">
-                                Xem đề xuất
-                            </a>
+                            <a href="{{ url_for('instructor.my_proposals') }}" class="btn btn-sm btn-outline-secondary">Xem đề xuất</a>
                             {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
-                {% else %}
-                    <tr>
-                        <td colspan="5" class="text-center text-muted py-4">
-                            Chưa có đề xuất mới
-                        </td>
-                    </tr>
-                {% endif %}
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <p class="mb-0 text-muted">Chưa có đề xuất mới</p>
+        </div>
+        {% endif %}
     </div>
 </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const scoreTimelineCtx = document.getElementById('scoreTimelineChart');
+    if (scoreTimelineCtx) {
+        new Chart(scoreTimelineCtx, {
+            type: 'line',
+            data: {
+                labels: {{ score_timeline_labels | tojson }},
+                datasets: [{
+                    label: 'Điểm trung bình',
+                    data: {{ score_timeline_values | tojson }},
+                    borderColor: 'rgb(16, 185, 129)',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: 'rgb(16, 185, 129)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    spanGaps: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        titleFont: {
+                            size: 14,
+                            weight: 'bold'
+                        },
+                        bodyFont: {
+                            size: 13
+                        },
+                        callbacks: {
+                            label: function(context) {
+                                if (context.parsed.y === null) {
+                                    return 'Chưa có dữ liệu';
+                                }
+                                return 'Điểm TB: ' + context.parsed.y + ' điểm';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        min: 0,
+                        max: 100,
+                        ticks: {
+                            stepSize: 10,
+                            callback: function(value) {
+                                return value + ' điểm';
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    const statusDistributionCtx = document.getElementById('statusDistributionChart');
+    if (statusDistributionCtx) {
+        new Chart(statusDistributionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ status_distribution_labels | tojson }},
+                datasets: [{
+                    data: {{ status_distribution_values | tojson }},
+                    backgroundColor: [
+                        'rgba(156, 163, 175, 0.8)',
+                        'rgba(245, 158, 11, 0.8)',
+                        'rgba(16, 185, 129, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgb(156, 163, 175)',
+                        'rgb(245, 158, 11)',
+                        'rgb(16, 185, 129)'
+                    ],
+                    borderWidth: 2,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            usePointStyle: true,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return label + ': ' + value + ' (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

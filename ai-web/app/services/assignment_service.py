@@ -156,6 +156,43 @@ class AssignmentService:
         return status_list
 
     @staticmethod
+    def update_assignment(assignment_id: int, data: dict, instructor_id: int):
+        """Cập nhật assignment"""
+        assignment = Assignment.query.get(assignment_id)
+        if not assignment:
+            return {'success': False, 'message': 'Không tìm thấy bài tập'}
+        if assignment.assigned_by != instructor_id:
+            return {'success': False, 'message': 'Bạn không có quyền sửa bài tập này'}
+        
+        try:
+            if 'routine_id' in data:
+                assignment.routine_id = data['routine_id']
+            if 'assignment_type' in data:
+                assignment.assignment_type = data['assignment_type']
+            if 'assigned_to_student' in data:
+                assignment.assigned_to_student = data.get('assigned_to_student')
+            if 'assigned_to_class' in data:
+                assignment.assigned_to_class = data.get('assigned_to_class')
+            if 'deadline' in data:
+                assignment.deadline = data.get('deadline')
+            if 'instructions' in data:
+                assignment.instructions = data.get('instructions')
+            if 'priority' in data:
+                assignment.priority = data.get('priority', 'normal')
+            if 'is_mandatory' in data:
+                assignment.is_mandatory = data.get('is_mandatory', True)
+            if 'instructor_video_url' in data and data['instructor_video_url']:
+                assignment.instructor_video_url = data['instructor_video_url']
+            if 'grading_method' in data:
+                assignment.grading_method = data.get('grading_method', 'manual')
+            
+            db.session.commit()
+            return {'success': True, 'assignment': assignment}
+        except Exception as e:
+            db.session.rollback()
+            return {'success': False, 'message': str(e)}
+
+    @staticmethod
     def delete_assignment(assignment_id: int, instructor_id: int):
         assignment = Assignment.query.get(assignment_id)
         if not assignment:
@@ -245,5 +282,89 @@ class AssignmentService:
             Assignment.assigned_to_class.in_(class_ids)
         ).all()
         return [a for a in class_assignments if not a.is_expired]
+
+    @staticmethod
+    def get_form_prefill_data_for_class(class_id: int, instructor_id: int):
+        """Get pre-fill data for assignment form when creating from class context"""
+        if not class_id:
+            return None
+        
+        class_obj = Class.query.get(class_id)
+        if not class_obj or class_obj.instructor_id != instructor_id:
+            return None
+        
+        return {
+            'assignment_type': 'class',
+            'assigned_to_class': class_id
+        }
+
+    @staticmethod
+    def get_recent_class_assignments(class_id: int, limit: int = 5):
+        """Get recent assignments for a class with stats"""
+        assignments = Assignment.query.filter_by(
+            assigned_to_class=class_id
+        ).order_by(Assignment.created_at.desc()).limit(limit).all()
+        
+        assignment_stats = {}
+        for assignment in assignments:
+            status_list = AssignmentService.get_submission_status(assignment.assignment_id)
+            total_students = len(status_list)
+            graded = sum(1 for s in status_list if s['status'] == 'graded')
+            submitted = sum(1 for s in status_list if s['status'] == 'submitted')
+            pending = sum(1 for s in status_list if s['status'] == 'pending')
+            assignment_stats[assignment.assignment_id] = {
+                'total': total_students,
+                'graded': graded,
+                'submitted': submitted,
+                'pending': pending
+            }
+        
+        return {
+            'assignments': assignments,
+            'stats': assignment_stats
+        }
+
+    @staticmethod
+    def get_assignments_with_stats(instructor_id: int, filters: dict = None):
+        """Get assignments with stats for instructor"""
+        assignments = AssignmentService.get_assignments_by_instructor(instructor_id, filters)
+        
+        assignment_stats = {}
+        total_pending = 0
+        total_submitted = 0
+        total_graded = 0
+
+        for assignment in assignments:
+            status_list = AssignmentService.get_submission_status(assignment.assignment_id)
+            total_students = len(status_list)
+            pending = sum(1 for s in status_list if s['status'] == 'pending')
+            submitted = sum(1 for s in status_list if s['status'] == 'submitted')
+            graded = sum(1 for s in status_list if s['status'] == 'graded')
+
+            total_pending += pending
+            total_submitted += submitted
+            total_graded += graded
+
+            completion_percent = int((graded / total_students) * 100) if total_students else 0
+
+            assignment_stats[assignment.assignment_id] = {
+                'total_students': total_students,
+                'pending': pending,
+                'submitted': submitted,
+                'graded': graded,
+                'completion_percent': completion_percent,
+            }
+
+        stats = {
+            'pending': total_pending,
+            'submitted': total_submitted,
+            'graded': total_graded,
+        }
+
+        return {
+            'assignments': assignments,
+            'assignment_stats': assignment_stats,
+            'stats': stats
+        }
 
 

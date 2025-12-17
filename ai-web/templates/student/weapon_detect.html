@@ -217,9 +217,41 @@
     object-fit: contain;
 }
 
+.preview-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 1rem;
+    background: white;
+    border-radius: 8px;
+}
+
+.preview-info {
+    flex: 1;
+    margin-left: 1rem;
+}
+
+.preview-name {
+    font-weight: 600;
+    color: #374151;
+    word-break: break-all;
+}
+
 @media (max-width: 768px) {
     .comparison-container {
         grid-template-columns: 1fr;
+    }
+    
+    .preview-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .preview-info {
+        margin-left: 0;
+        margin-top: 0.75rem;
+        width: 100%;
     }
 }
 </style>
@@ -261,13 +293,15 @@
                                 <small class="text-muted">Video: MP4, AVI, MOV | Ảnh: JPG, PNG</small>
                             </div>
                             <div class="drag-drop-preview" style="display: none;">
-                                <div class="preview-content">
-                                    <i class="fas fa-file-video text-primary" id="previewIcon"></i>
-                                    <div class="preview-info">
-                                        <div class="preview-name" id="previewName"></div>
-                                        <div class="preview-size text-muted" id="previewSize"></div>
+                                <div class="preview-content d-flex align-items-center justify-content-between w-100">
+                                    <div class="d-flex align-items-center flex-grow-1">
+                                        <i class="fas fa-file-video text-primary me-3" id="previewIcon" style="font-size: 2rem;"></i>
+                                        <div class="preview-info flex-grow-1">
+                                            <div class="preview-name fw-bold mb-1" id="previewName" style="font-size: 1rem; color: #374151;"></div>
+                                            <div class="preview-size text-muted" id="previewSize" style="font-size: 0.875rem;"></div>
+                                        </div>
                                     </div>
-                                    <button type="button" class="btn btn-sm btn-danger remove-file" style="border-radius: 8px;">
+                                    <button type="button" class="btn btn-sm btn-danger remove-file ms-3" style="border-radius: 8px;">
                                         Xóa
                                     </button>
                                 </div>
@@ -476,7 +510,7 @@ document.addEventListener('DOMContentLoaded', function() {
         overlay.innerHTML = `
             <div class="loading-content">
                 <div style="font-size: 3rem; color: #667eea; margin-bottom: 1rem;">
-                    <i class="fas fa-shield-alt fa-spin"></i>
+                    <i class="fas fa-shield-alt"></i>
                 </div>
                 <h5 style="color: #374151; margin-bottom: 0.5rem;">Đang nhận diện vũ khí...</h5>
                 <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1rem;">Vui lòng đợi trong giây lát</p>

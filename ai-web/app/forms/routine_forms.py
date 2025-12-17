@@ -26,18 +26,14 @@ class RoutineCreateForm(FlaskForm):
         Optional(),
         NumberRange(min=1.0, max=10.0, message='Độ khó từ 1.0 đến 10.0'),
     ], default=1.0)
-    duration_seconds = IntegerField('Thời lượng (giây)', validators=[
-        DataRequired(message='Vui lòng nhập thời lượng'),
-        NumberRange(min=1, max=3600, message='Thời lượng từ 1-3600 giây'),
-    ])
-    total_moves = IntegerField('Số động tác', validators=[
-        Optional(),
-        NumberRange(min=1, message='Số động tác tối thiểu 1'),
-    ], default=1)
     pass_threshold = DecimalField('Ngưỡng đạt (%)', validators=[
         Optional(),
         NumberRange(min=0, max=100, message='Ngưỡng từ 0-100%'),
     ], default=70.00)
+    total_moves = IntegerField('Số động tác', validators=[
+        Optional(),
+        NumberRange(min=1, message='Số động tác tối thiểu 1'),
+    ], default=1)
     # GIỮ LẠI cả 2 options
     reference_video_url = StringField('URL video mẫu (YouTube, Vimeo...)', validators=[
         Optional(),
@@ -82,18 +78,14 @@ class RoutineEditForm(FlaskForm):
         Optional(),
         NumberRange(min=1.0, max=10.0, message='Độ khó từ 1.0 đến 10.0'),
     ], default=1.0)
-    duration_seconds = IntegerField('Thời lượng (giây)', validators=[
-        DataRequired(message='Vui lòng nhập thời lượng'),
-        NumberRange(min=1, max=3600, message='Thời lượng từ 1-3600 giây'),
-    ])
-    total_moves = IntegerField('Số động tác', validators=[
-        Optional(),
-        NumberRange(min=1, message='Số động tác tối thiểu 1'),
-    ], default=1)
     pass_threshold = DecimalField('Ngưỡng đạt (%)', validators=[
         Optional(),
         NumberRange(min=0, max=100, message='Ngưỡng từ 0-100%'),
     ], default=70.00)
+    total_moves = IntegerField('Số động tác', validators=[
+        Optional(),
+        NumberRange(min=1, message='Số động tác tối thiểu 1'),
+    ], default=1)
     
     # Video fields - both optional for editing
     reference_video_url = StringField('URL video mẫu (YouTube, Vimeo...)', validators=[

@@ -7,13 +7,10 @@
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
+<div class="container-fluid py-2">
     <!-- Modern Header -->
-    <div class="page-header-modern mb-4">
+    <div class="page-header-modern mb-3">
         <div class="page-header-content">
-            <div class="page-header-icon">
-                <i class="fas fa-tasks"></i>
-            </div>
             <div class="page-header-text">
                 <h1 class="page-header-title">Bài Tập</h1>
                 <p class="page-header-subtitle">Quản lý bài tập và deadline</p>
@@ -21,7 +18,7 @@
         </div>
         <div class="page-header-actions">
             <a href="{{ url_for('student.dashboard') }}" class="btn btn-light btn-sm">
-                <i class="fas fa-arrow-left me-2"></i>Quay lại
+                Quay lại
             </a>
         </div>
     </div>
@@ -30,13 +27,13 @@
     <ul class="nav assignment-tabs" role="tablist">
         <li class="nav-item">
             <a class="nav-link active" data-bs-toggle="tab" href="#pending" role="tab">
-                <i class="fas fa-hourglass-half"></i> Đang chờ
+                Đang chờ
                 <span class="badge bg-warning text-dark ms-2">{{ pending|length }}</span>
             </a>
         </li>
         <li class="nav-item">
             <a class="nav-link" data-bs-toggle="tab" href="#completed" role="tab">
-                <i class="fas fa-check-circle"></i> Đã nộp
+                Đã nộp
                 <span class="badge bg-success ms-2">{{ completed|length }}</span>
             </a>
         </li>
@@ -82,8 +79,7 @@
                     <div class="assignment-info-inline">
                         {% if a.deadline %}
                         <div>
-                            <i class="fas fa-calendar-times"></i>
-                            <span>{{ a.deadline.strftime('%d/%m/%Y %H:%M') }}</span>
+                            <span><strong>Hạn nộp:</strong> {{ a.deadline.strftime('%d/%m/%Y %H:%M') }}</span>
                             {% if not a.is_expired %}
                             {% set time_left = (a.deadline - now) if now else None %}
                             {% if time_left %}
@@ -102,21 +98,19 @@
                         {% endif %}
                         {% if a.routine.duration_seconds %}
                         <div>
-                            <i class="fas fa-clock"></i>
-                            <span>{{ (a.routine.duration_seconds / 60)|round(1) }} phút</span>
+                            <span><strong>Thời lượng:</strong> {{ (a.routine.duration_seconds / 60)|round(1) }} phút</span>
                         </div>
                         {% endif %}
                         {% if a.routine.total_moves %}
                         <div>
-                            <i class="fas fa-list-ol"></i>
-                            <span>{{ a.routine.total_moves }} động tác</span>
+                            <span><strong>Động tác:</strong> {{ a.routine.total_moves }}</span>
                         </div>
                         {% endif %}
                     </div>
                     
                     {% if a.instructions %}
                     <div class="assignment-instructions-compact">
-                        <strong><i class="fas fa-info-circle me-1"></i>Hướng dẫn:</strong>
+                        <strong>Hướng dẫn:</strong>
                         <div style="white-space: pre-wrap; margin-top: 0.25rem;">{{ a.instructions }}</div>
                     </div>
                     {% endif %}
@@ -125,19 +119,19 @@
                         <div class="d-flex gap-2 flex-wrap">
                             <a href="{{ url_for('student.routine_detail', routine_id=a.routine_id) }}" 
                                class="btn btn-sm btn-outline-primary">
-                                <i class="fas fa-book-open"></i> Xem bài võ
+                                Xem bài võ
                             </a>
                             {% if a.instructor_video_url %}
                             <a href="{{ a.instructor_video_url }}" target="_blank" 
                                class="btn btn-sm btn-outline-success">
-                                <i class="fas fa-video"></i> Demo
+                                Demo
                             </a>
                             {% endif %}
                         </div>
                         {% if not a.is_expired %}
                         <a href="{{ url_for('student.submit_assignment', assignment_id=a.assignment_id) }}" 
                            class="btn btn-sm btn-primary">
-                            <i class="fas fa-upload"></i> Nộp bài
+                            Nộp bài
                         </a>
                         {% endif %}
                     </div>
@@ -145,7 +139,6 @@
                 {% endfor %}
             {% else %}
                 <div class="empty-state-compact">
-                    <i class="fas fa-check-double"></i>
                     <p class="mb-0">Không có bài tập nào đang chờ</p>
                 </div>
             {% endif %}
@@ -178,8 +171,7 @@
                     
                     <div class="assignment-info-inline">
                         <div>
-                            <i class="fas fa-calendar-check"></i>
-                            <span>Nộp: {{ item.video.uploaded_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                            <span><strong>Nộp:</strong> {{ item.video.uploaded_at.strftime('%d/%m/%Y %H:%M') }}</span>
                         </div>
                     </div>
                     
@@ -198,36 +190,53 @@
                         {% if eval.technique_score %}
                         <div class="score-item-compact">
                             <span class="score-label">Kỹ thuật:</span>
-                            <span class="score-value">{{ eval.technique_score }}/100</span>
+                            <span class="score-value">
+                                {% if eval.evaluation_method == 'ai' or eval.evaluation_method == 'both' %}
+                                    {{ eval.technique_score }}/50
+                                {% else %}
+                                    {{ eval.technique_score }}/100
+                                {% endif %}
+                            </span>
                         </div>
                         {% endif %}
                         {% if eval.posture_score %}
                         <div class="score-item-compact">
                             <span class="score-label">Tư thế:</span>
-                            <span class="score-value">{{ eval.posture_score }}/100</span>
+                            <span class="score-value">
+                                {% if eval.evaluation_method == 'ai' or eval.evaluation_method == 'both' %}
+                                    {{ eval.posture_score }}/20
+                                {% else %}
+                                    {{ eval.posture_score }}/100
+                                {% endif %}
+                            </span>
                         </div>
                         {% endif %}
                         {% if eval.spirit_score %}
                         <div class="score-item-compact">
-                            <span class="score-label">Tinh thần:</span>
-                            <span class="score-value">{{ eval.spirit_score }}/100</span>
+                            <span class="score-label">Tốc độ:</span>
+                            <span class="score-value">
+                                {% if eval.evaluation_method == 'ai' or eval.evaluation_method == 'both' %}
+                                    {{ eval.spirit_score }}/30
+                                {% else %}
+                                    {{ eval.spirit_score }}/100
+                                {% endif %}
+                            </span>
                         </div>
                         {% endif %}
                     </div>
                     {% else %}
                     <div class="alert alert-warning mb-0 py-2">
                         {% if item.assignment.grading_method == 'ai' or item.assignment.grading_method == 'both' %}
-                        <i class="fas fa-robot me-1"></i>Đang chấm điểm AI...
+                        Đang chấm điểm AI...
                         {% else %}
-                        <i class="fas fa-hourglass-half me-2"></i>Đang chờ chấm điểm
+                        Đang chờ chấm điểm
                         {% endif %}
                     </div>
                     {% endif %}
                     {% if item.video.detected_weapon %}
                     <div class="mt-2">
                         <small class="text-muted">
-                            <i class="fas fa-shield-alt me-1"></i>
-                            Vũ khí phát hiện: <strong>{{ item.video.detected_weapon }}</strong>
+                            <strong>Vũ khí phát hiện:</strong> {{ item.video.detected_weapon }}
                             {% if item.video.weapon_match_status == 'matched' %}
                             <span class="badge bg-success badge-sm ms-1">✓ Khớp</span>
                             {% elif item.video.weapon_match_status == 'mismatched' %}
@@ -242,14 +251,14 @@
                             {% if item.assignment.instructor_video_url %}
                             <a href="{{ get_video_url(item.assignment.instructor_video_url) }}" target="_blank" 
                                class="btn btn-sm btn-outline-success">
-                                <i class="fas fa-video"></i> Demo
+                                Demo
                             </a>
                             {% endif %}
                         </div>
                         {% if item.video.manual_evaluations %}
                         <a href="{{ url_for('student_videos.video_detail', video_id=item.video.video_id) }}" 
                            class="btn btn-sm btn-primary">
-                            <i class="fas fa-chart-bar"></i> Xem kết quả
+                            Xem kết quả
                         </a>
                         {% endif %}
                     </div>
@@ -257,7 +266,6 @@
                 {% endfor %}
             {% else %}
                 <div class="empty-state-compact">
-                    <i class="fas fa-inbox"></i>
                     <p class="mb-0">Chưa nộp bài tập nào</p>
                 </div>
             {% endif %}

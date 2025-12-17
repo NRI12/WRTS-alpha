@@ -5,13 +5,6 @@
 {% block instructor_content %}
 <div class="page-header">
     <div>
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb mb-2">
-                <li class="breadcrumb-item"><a href="{{ url_for('instructor.classes') }}">Lớp học</a></li>
-                <li class="breadcrumb-item"><a href="{{ url_for('instructor.class_schedules', class_id=schedule.class_id) }}">Lịch học</a></li>
-                <li class="breadcrumb-item active">Sửa lịch</li>
-            </ol>
-        </nav>
         <h1 class="page-title">
             <i class="fas fa-edit text-primary me-2"></i>
             Sửa lịch học

@@ -5,16 +5,7 @@
 {% block instructor_content %}
 <div class="page-header-modern">
     <div class="page-header-content">
-        <div class="page-header-icon">
-            <i class="fas fa-calendar-alt"></i>
-        </div>
         <div class="page-header-text">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb mb-1">
-                    <li class="breadcrumb-item"><a href="{{ url_for('instructor.classes') }}">Lớp học</a></li>
-                    <li class="breadcrumb-item active">Lịch học</li>
-                </ol>
-            </nav>
             <h1 class="page-header-title">
                 Lịch học - {{ class_obj.class_name }} ({{ class_obj.class_code }})
             </h1>

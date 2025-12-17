@@ -1,31 +1,89 @@
-<div class="page-header-modern">
-    <div class="page-header-content">
-        <div class="page-header-icon">
-            <i class="fas fa-user"></i>
+<div class="container-fluid px-3">
+    <div class="profile-header-modern">
+        <div class="profile-header-content">
+            <div class="profile-header-text">
+                <h1 class="profile-header-title">Hồ sơ cá nhân</h1>
+                <p class="profile-header-subtitle mb-0">Xem và cập nhật thông tin tài khoản của bạn</p>
+            </div>
         </div>
-        <div class="page-header-text">
-            <h1 class="page-header-title">Hồ sơ cá nhân</h1>
-            <p class="page-header-subtitle mb-0">Xem và cập nhật thông tin tài khoản của bạn</p>
+        <div class="profile-header-actions">
+            <a href="{{ url_for('auth.edit_profile') }}" class="btn btn-light btn-sm">Chỉnh sửa thông tin</a>
+            <a href="{{ url_for('auth.change_password') }}" class="btn btn-light btn-sm">Đổi mật khẩu</a>
         </div>
-    </div>
-    <div class="page-header-actions">
-        <a href="{{ url_for('auth.edit_profile') }}" class="btn btn-light btn-sm">
-            <i class="fas fa-edit me-2"></i>Chỉnh sửa thông tin
-        </a>
-        <a href="{{ url_for('auth.change_password') }}" class="btn btn-light btn-sm">
-            <i class="fas fa-key me-2"></i>Đổi mật khẩu
-        </a>
     </div>
 </div>
 
-<div class="container-fluid mt-3">
-    <!-- Stats overview (giống dạng cards ở trang classes) -->
+<style>
+.profile-header-modern {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.profile-header-modern::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.profile-header-content {
+    flex: 1;
+    position: relative;
+    z-index: 1;
+}
+
+.profile-header-title {
+    color: white;
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.profile-header-subtitle {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.95rem;
+    margin: 0.25rem 0 0 0;
+}
+
+.profile-header-actions {
+    display: flex;
+    gap: 0.75rem;
+    position: relative;
+    z-index: 1;
+}
+
+.profile-header-actions .btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+}
+
+.profile-header-actions .btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: white;
+}
+</style>
+
+<div class="container-fluid px-3">
     <div class="row g-3 mb-3">
         <div class="col-6 col-md-3">
             <div class="stat-card-compact">
-                <div class="stat-icon-compact">
-                    <i class="fas fa-id-badge"></i>
-                </div>
                 <div class="stat-content-compact">
                     <div class="stat-value-compact">{{ user.username }}</div>
                     <div class="stat-label-compact">Username</div>
@@ -34,9 +92,6 @@
         </div>
         <div class="col-6 col-md-3">
             <div class="stat-card-compact">
-                <div class="stat-icon-compact">
-                    <i class="fas fa-user-tag"></i>
-                </div>
                 <div class="stat-content-compact">
                     <div class="stat-value-compact">{{ user.role.role_name }}</div>
                     <div class="stat-label-compact">Vai trò</div>
@@ -45,9 +100,6 @@
         </div>
         <div class="col-6 col-md-3">
             <div class="stat-card-compact">
-                <div class="stat-icon-compact">
-                    <i class="fas fa-signal"></i>
-                </div>
                 <div class="stat-content-compact">
                     <div class="stat-value-compact">
                         {% if user.is_active %}Hoạt động{% else %}Tạm dừng{% endif %}
@@ -58,9 +110,6 @@
         </div>
         <div class="col-6 col-md-3">
             <div class="stat-card-compact">
-                <div class="stat-icon-compact">
-                    <i class="fas fa-clock"></i>
-                </div>
                 <div class="stat-content-compact">
                     <div class="stat-value-compact">
                         {{ user.last_login_at.strftime('%d/%m/%Y') if user.last_login_at else '--' }}
@@ -72,8 +121,7 @@
     </div>
 
     <div class="row g-4">
-        <!-- Thông tin cá nhân + tài khoản -->
-        <div class="col-lg-8">
+        <div class="col-12">
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-body">
                     <div class="d-flex align-items-center mb-3">
@@ -89,29 +137,12 @@
                         </div>
                         <div>
                             <h2 class="mb-1" style="font-size:1.4rem; font-weight:600;">{{ display_name }}</h2>
-                            <div class="profile-role">
-                                {% if user.role.role_code == 'STUDENT' %}
-                                    <i class="fas fa-user-graduate"></i>
-                                    <span>Học viên</span>
-                                {% elif user.role.role_code == 'INSTRUCTOR' %}
-                                    <i class="fas fa-chalkboard-teacher"></i>
-                                    <span>Huấn luyện viên</span>
-                                {% elif user.role.role_code == 'ADMIN' %}
-                                    <i class="fas fa-user-shield"></i>
-                                    <span>Quản trị viên</span>
-                                {% elif user.role.role_code == 'MANAGER' %}
-                                    <i class="fas fa-user-tie"></i>
-                                    <span>Ban quản lý</span>
-                                {% endif %}
-                            </div>
+                            <div class="text-muted small">{{ user.role.role_name }}</div>
                         </div>
                     </div>
 
                     <div class="profile-section mb-3">
-                        <h3 class="profile-section-title">
-                            <i class="fas fa-user"></i>
-                            Thông tin cá nhân
-                        </h3>
+                        <h6 class="mb-3 fw-bold">Thông tin cá nhân</h6>
                         <div class="profile-info-grid">
                             <div class="profile-info-item">
                                 <span class="profile-info-label">Email</span>
@@ -153,10 +184,7 @@
                     </div>
 
                     <div class="profile-section mb-0">
-                        <h3 class="profile-section-title">
-                            <i class="fas fa-info-circle"></i>
-                            Thông tin tài khoản
-                        </h3>
+                        <h6 class="mb-3 fw-bold">Thông tin tài khoản</h6>
                         <div class="profile-info-grid">
                             <div class="profile-info-item">
                                 <span class="profile-info-label">Trạng thái</span>
@@ -172,13 +200,9 @@
                                 <span class="profile-info-label">Email đã xác thực</span>
                                 <span class="profile-info-value">
                                     {% if user.is_email_verified %}
-                                        <span class="badge bg-success">
-                                            <i class="fas fa-check"></i> Đã xác thực
-                                        </span>
+                                        <span class="badge bg-success">Đã xác thực</span>
                                     {% else %}
-                                        <span class="badge bg-warning">
-                                            <i class="fas fa-exclamation"></i> Chưa xác thực
-                                        </span>
+                                        <span class="badge bg-warning">Chưa xác thực</span>
                                     {% endif %}
                                 </span>
                             </div>
@@ -206,25 +230,6 @@
             </div>
         </div>
 
-        <!-- Cột hành động nhanh -->
-        <div class="col-lg-4">
-            <div class="card border-0 shadow-sm mb-3">
-                <div class="card-body">
-                    <h6 class="mb-3 fw-bold">
-                        <i class="fas fa-cog text-primary me-2"></i>
-                        Hành động nhanh
-                    </h6>
-                    <div class="d-grid gap-2">
-                        <a href="{{ url_for('auth.edit_profile') }}" class="btn btn-primary">
-                            <i class="fas fa-edit me-2"></i>Chỉnh sửa thông tin
-                        </a>
-                        <a href="{{ url_for('auth.change_password') }}" class="btn btn-outline-primary">
-                            <i class="fas fa-key me-2"></i>Đổi mật khẩu
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 

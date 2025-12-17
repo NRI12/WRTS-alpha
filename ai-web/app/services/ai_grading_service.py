@@ -77,10 +77,12 @@ class AIGradingService:
                     
                     template_base64 = template_result['template']
                     template_bytes = base64.b64decode(template_base64)
-                    
-                    import io
-                    template_buffer = io.BytesIO(template_bytes)
-                    teacher_template = np.load(template_buffer)
+                    shape = tuple(template_result.get('shape', ()))
+                    dtype_str = template_result.get('dtype', 'float32')
+                    dtype = np.dtype(dtype_str)
+                    teacher_template = np.frombuffer(template_bytes, dtype=dtype)
+                    if shape:
+                        teacher_template = teacher_template.reshape(shape)
                     
                     np.save(template_path, teacher_template)
                     print(f"[AIGradingService] Teacher template saved to: {template_path}", flush=True)
@@ -190,18 +192,47 @@ class AIGradingService:
                 print("\n[AIGradingService] Đang gọi AI server để chấm điểm...", flush=True)
                 sys.stdout.flush()
                 result = AIClientService.score_pose(student_video_path, teacher_template_path)
-                
+
+                total_score = result.get('total_score')
+                if total_score is None:
+                    total_score = result.get('total', 0)
+                accuracy_score = result.get('accuracy_score')
+                if accuracy_score is None:
+                    accuracy_score = result.get('pose', 0)
+                speed_score = result.get('speed_score')
+                if speed_score is None:
+                    speed_score = result.get('speed', 0)
+                stability_score = result.get('stability_score')
+                if stability_score is None:
+                    stability_score = result.get('stability', 0)
+                feedback_raw = result.get('feedback', [])
+                if isinstance(feedback_raw, dict):
+                    feedback_list = [v for v in feedback_raw.values()]
+                else:
+                    feedback_list = list(feedback_raw)
+                comments = "\n".join(str(fb) for fb in feedback_list)
+
                 print(f"\n[AIGradingService] Kết quả chấm điểm:", flush=True)
-                print(f"  - Điểm tổng: {result['total_score']}/100", flush=True)
-                print(f"  - Điểm độ chính xác (Kỹ thuật): {result['accuracy_score']}/50", flush=True)
-                print(f"  - Điểm tốc độ (Tinh thần): {result['speed_score']}/30", flush=True)
-                print(f"  - Điểm ổn định (Tư thế): {result['stability_score']}/20", flush=True)
-                print(f"\n[AIGradingService] Metrics chi tiết:", flush=True)
-                print(f"  - Cosine Similarity: {result['metrics']['cosine_similarity']:.4f}", flush=True)
-                print(f"  - DTW Distance: {result['metrics']['dtw_distance']:.2f}", flush=True)
-                print(f"  - Jitter MSE: {result['metrics']['jitter_mse']:.6f}", flush=True)
+                print(f"  - Điểm tổng: {total_score}/100", flush=True)
+                print(f"  - Điểm độ chính xác (Kỹ thuật): {accuracy_score}/50", flush=True)
+                print(f"  - Điểm tốc độ (Tinh thần): {speed_score}/30", flush=True)
+                print(f"  - Điểm ổn định (Tư thế): {stability_score}/20", flush=True)
+
+                metrics = result.get('metrics')
+                if isinstance(metrics, dict):
+                    print(f"\n[AIGradingService] Metrics chi tiết:", flush=True)
+                    cs = metrics.get('cosine_similarity')
+                    dtw = metrics.get('dtw_distance')
+                    jitter = metrics.get('jitter_mse')
+                    if cs is not None:
+                        print(f"  - Cosine Similarity: {cs:.4f}", flush=True)
+                    if dtw is not None:
+                        print(f"  - DTW Distance: {dtw:.2f}", flush=True)
+                    if jitter is not None:
+                        print(f"  - Jitter MSE: {jitter:.6f}", flush=True)
+
                 print(f"\n[AIGradingService] Feedback:", flush=True)
-                for i, fb in enumerate(result['feedback'], 1):
+                for i, fb in enumerate(feedback_list, 1):
                     print(f"  {i}. {fb}", flush=True)
                 
                 existing = ManualEvaluation.query.filter_by(
@@ -211,11 +242,10 @@ class AIGradingService:
                 
                 if existing:
                     print(f"\n[AIGradingService] Cập nhật đánh giá AI hiện có...", flush=True)
-                    existing.overall_score = result['total_score']
-                    existing.technique_score = result['accuracy_score']
-                    existing.posture_score = result['stability_score']
-                    existing.spirit_score = result['speed_score']
-                    comments = "\n".join(result['feedback'])
+                    existing.overall_score = total_score
+                    existing.technique_score = accuracy_score
+                    existing.posture_score = stability_score
+                    existing.spirit_score = speed_score
                     existing.comments = comments
                     from app.utils.helpers import get_vietnam_time
                     existing.evaluated_at = get_vietnam_time()
@@ -225,11 +255,11 @@ class AIGradingService:
                     evaluation = ManualEvaluation(
                         video_id=video_id,
                         instructor_id=assignment.assigned_by,
-                        overall_score=result['total_score'],
-                        technique_score=result['accuracy_score'],
-                        posture_score=result['stability_score'],
-                        spirit_score=result['speed_score'],
-                        comments="\n".join(result['feedback']),
+                        overall_score=total_score,
+                        technique_score=accuracy_score,
+                        posture_score=stability_score,
+                        spirit_score=speed_score,
+                        comments=comments,
                         evaluation_method='ai',
                         evaluated_at=get_vietnam_time()
                     )
@@ -243,7 +273,7 @@ class AIGradingService:
                 
                 print(f"\n[AIGradingService] Đã lưu kết quả vào database", flush=True)
                 print("="*60, flush=True)
-                print(f"[AIGradingService] Hoàn thành chấm điểm AI - Video {video_id}: {result['total_score']}/100\n", flush=True)
+                print(f"[AIGradingService] Hoàn thành chấm điểm AI - Video {video_id}: {total_score}/100\n", flush=True)
                 sys.stdout.flush()
                 
             except Exception as e:
